@@ -1,0 +1,146 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User Model
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String?
+  avatar    String?
+  bio       String?
+  status    String   @default("offline") // online, offline, away
+  emailVerified Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  conversations Conversation[]
+  messages      Message[]
+  sentRequests  FriendRequest[] @relation("sentRequests")
+  receivedRequests FriendRequest[] @relation("receivedRequests")
+  friends       Friend[] @relation("user")
+  friendOf      Friend[] @relation("friend")
+  emailVerifications EmailVerification[]
+  sessions      Session[]
+
+  @@index([email])
+  @@map("users")
+}
+
+// Email Verification Model
+model EmailVerification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("email_verifications")
+}
+
+// Session/Refresh Token Model
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refreshToken String   @unique
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+// Friend Request Model
+model FriendRequest {
+  id        String   @id @default(cuid())
+  senderId  String
+  sender    User     @relation("sentRequests", fields: [senderId], references: [id], onDelete: Cascade)
+  receiverId String
+  receiver  User     @relation("receivedRequests", fields: [receiverId], references: [id], onDelete: Cascade)
+  status    String   @default("pending") // pending, accepted, rejected
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([senderId, receiverId])
+  @@index([senderId])
+  @@index([receiverId])
+  @@map("friend_requests")
+}
+
+// Friend Model
+model Friend {
+  id       String   @id @default(cuid())
+  userId   String
+  user     User     @relation("user", fields: [userId], references: [id], onDelete: Cascade)
+  friendId String
+  friend   User     @relation("friend", fields: [friendId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, friendId])
+  @@index([userId])
+  @@index([friendId])
+  @@map("friends")
+}
+
+// Conversation/Chat Model
+model Conversation {
+  id        String   @id @default(cuid())
+  name      String?
+  type      String   @default("direct") // direct, group
+  createdBy String
+  owner     User     @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+  messages  Message[]
+  participants ConversationParticipant[]
+  lastMessageAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([createdBy])
+  @@map("conversations")
+}
+
+// Conversation Participants Model
+model ConversationParticipant {
+  id             String   @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId         String
+  joinedAt       DateTime @default(now())
+
+  @@unique([conversationId, userId])
+  @@index([conversationId])
+  @@map("conversation_participants")
+}
+
+// Message Model
+model Message {
+  id             String   @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  content        String
+  fileUrl        String?
+  fileType       String?
+  isEdited       Boolean  @default(false)
+  editedAt       DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([conversationId])
+  @@index([senderId])
+  @@map("messages")
+}
