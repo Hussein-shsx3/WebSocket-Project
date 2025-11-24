@@ -56,7 +56,7 @@ export class AuthService {
 
     // Send verification email
     const verificationLink = `${process.env.CLIENT_URL}/verify-email?token=${verificationToken}`;
-    await sendVerificationEmail(user.email, verificationToken, verificationLink);
+    await sendVerificationEmail(user.email, verificationToken, verificationLink, user.name || undefined);
 
     return {
       success: true,

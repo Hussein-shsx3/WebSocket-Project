@@ -1,5 +1,6 @@
 import nodemailer, { Transporter } from "nodemailer";
 import { config } from "../config/env.config";
+import { emailTemplates } from "./email.templates";
 
 /**
  * Email Transporter Configuration
@@ -67,26 +68,14 @@ export const sendEmail = async (options: EmailOptions): Promise<void> => {
 export const sendVerificationEmail = async (
   email: string,
   verificationToken: string,
-  verificationLink: string
+  verificationLink: string,
+  name?: string
 ): Promise<void> => {
-  const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h2>Email Verification</h2>
-      <p>Thank you for registering. Please verify your email address by clicking the link below:</p>
-      <p>
-        <a href="${verificationLink}" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
-          Verify Email
-        </a>
-      </p>
-      <p>Or copy this link in your browser:</p>
-      <p>${verificationLink}</p>
-      <p style="font-size: 12px; color: #666;">This link will expire in 24 hours.</p>
-    </div>
-  `;
+  const html = emailTemplates.verificationEmail(name || email.split("@")[0], verificationLink);
 
   await sendEmail({
     to: email,
-    subject: "Email Verification",
+    subject: "Verify Your Email Address",
     html,
   });
 };
@@ -97,22 +86,10 @@ export const sendVerificationEmail = async (
 export const sendPasswordResetEmail = async (
   email: string,
   resetToken: string,
-  resetLink: string
+  resetLink: string,
+  name?: string
 ): Promise<void> => {
-  const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h2>Password Reset Request</h2>
-      <p>You requested a password reset. Click the link below to reset your password:</p>
-      <p>
-        <a href="${resetLink}" style="background-color: #dc3545; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
-          Reset Password
-        </a>
-      </p>
-      <p>Or copy this link in your browser:</p>
-      <p>${resetLink}</p>
-      <p style="font-size: 12px; color: #666;">This link will expire in 1 hour.</p>
-    </div>
-  `;
+  const html = emailTemplates.passwordResetEmail(name || email.split("@")[0], resetLink);
 
   await sendEmail({
     to: email,
@@ -128,16 +105,7 @@ export const sendWelcomeEmail = async (
   email: string,
   name: string
 ): Promise<void> => {
-  const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h2>Welcome!</h2>
-      <p>Hi ${name},</p>
-      <p>Thank you for joining us. Your email has been verified and your account is now active.</p>
-      <p>You can now log in to your account and start using our services.</p>
-      <p>If you have any questions, feel free to contact us.</p>
-      <p>Best regards,<br>The Team</p>
-    </div>
-  `;
+  const html = emailTemplates.welcomeEmail(name);
 
   await sendEmail({
     to: email,
