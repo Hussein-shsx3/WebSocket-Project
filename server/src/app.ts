@@ -4,20 +4,12 @@ import helmet from "helmet";
 import { config, validateEnv } from "./config/env.config";
 import { errorHandler } from "./middleware/error.middleware";
 import { AppError } from "./types/error.types";
+import authRoutes from "./routes/auth.route";
 
-/**
- * Initialize Express Application
- */
 export const app: Express = express();
 
-/**
- * Validate environment variables
- */
 validateEnv();
 
-/**
- * Global Middleware
- */
 // Security Middleware
 app.use(helmet());
 
@@ -47,19 +39,19 @@ app.get("/api/health", (req: Request, res: Response) => {
 });
 
 /**
- * API Routes (Placeholder)
+ * API Routes
  */
 // Authentication Routes
-// app.use("/api/auth", authRoutes);
+app.use("/api/v1/auth", authRoutes);
 
 // User Routes
-// app.use("/api/users", userRoutes);
+// app.use("/api/v1/users", userRoutes);
 
 // Chat Routes
-// app.use("/api/chats", chatRoutes);
+// app.use("/api/v1/chats", chatRoutes);
 
 // Message Routes
-// app.use("/api/messages", messageRoutes);
+// app.use("/api/v1/messages", messageRoutes);
 
 /**
  * 404 Handler - Not Found

@@ -20,6 +20,7 @@ model User {
   bio       String?
   status    String   @default("offline") // online, offline, away
   emailVerified Boolean @default(false)
+  refreshToken String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
