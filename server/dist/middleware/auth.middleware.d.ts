@@ -1,0 +1,17 @@
+import { Request, Response, NextFunction } from "express";
+declare global {
+    namespace Express {
+        interface Request {
+            user?: {
+                userId: string;
+                email: string;
+                role: string;
+            };
+        }
+    }
+}
+export declare const authenticate: (req: Request, res: Response, next: NextFunction) => any;
+export declare const optionalAuthenticate: (req: Request, res: Response, next: NextFunction) => any;
+export declare const isAuthenticated: (req: Request) => boolean;
+export declare const authorize: (...allowedRoles: string[]) => (req: Request, res: Response, next: NextFunction) => any;
+//# sourceMappingURL=auth.middleware.d.ts.map

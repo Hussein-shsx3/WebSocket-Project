@@ -11,6 +11,7 @@ declare global {
       user?: {
         userId: string;
         email: string;
+        role: string;
       };
     }
   }
@@ -28,8 +29,12 @@ export const authenticate = (
     // Get token from Authorization header
     const authHeader = req.headers.authorization;
 
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      throw new AuthenticationError("No token provided");
+    if (!authHeader) {
+      throw new AuthenticationError("No token provided - Authorization header is missing");
+    }
+
+    if (!authHeader.startsWith("Bearer ")) {
+      throw new AuthenticationError("Invalid token format - use 'Bearer <token>'");
     }
 
     // Extract token (remove "Bearer " prefix)
@@ -42,6 +47,7 @@ export const authenticate = (
     req.user = {
       userId: decoded.userId,
       email: decoded.email,
+      role: decoded.role || "USER",
     };
 
     next();
@@ -94,6 +100,7 @@ export const optionalAuthenticate = (
       req.user = {
         userId: decoded.userId,
         email: decoded.email,
+        role: decoded.role || "USER",
       };
     }
 
@@ -109,4 +116,27 @@ export const optionalAuthenticate = (
  */
 export const isAuthenticated = (req: Request): boolean => {
   return !!(req.user && req.user.userId);
+};
+
+/**
+ * Authorize by role
+ */
+export const authorize = (...allowedRoles: string[]) => {
+  return (req: Request, res: Response, next: NextFunction): any => {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: "Not authenticated",
+      });
+    }
+
+    if (!allowedRoles.includes(req.user.role)) {
+      return res.status(403).json({
+        success: false,
+        message: "Insufficient permissions. Required roles: " + allowedRoles.join(", "),
+      });
+    }
+
+    next();
+  };
 };

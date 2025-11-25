@@ -7,6 +7,7 @@ import { config } from "../config/env.config";
 export interface TokenPayload {
   userId: string;
   email: string;
+  role?: string;
   iat?: number;
   exp?: number;
 }

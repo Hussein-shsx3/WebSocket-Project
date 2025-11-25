@@ -1,6 +1,6 @@
 import nodemailer, { Transporter } from "nodemailer";
 import { config } from "../config/env.config";
-import { emailTemplates } from "./email.templates";
+import { emailTemplates } from "./templates/email.templates";
 
 /**
  * Email Transporter Configuration
@@ -71,7 +71,10 @@ export const sendVerificationEmail = async (
   verificationLink: string,
   name?: string
 ): Promise<void> => {
-  const html = emailTemplates.verificationEmail(name || email.split("@")[0], verificationLink);
+  const html = emailTemplates.verificationEmail(
+    name || email.split("@")[0],
+    verificationLink
+  );
 
   await sendEmail({
     to: email,
@@ -89,7 +92,10 @@ export const sendPasswordResetEmail = async (
   resetLink: string,
   name?: string
 ): Promise<void> => {
-  const html = emailTemplates.passwordResetEmail(name || email.split("@")[0], resetLink);
+  const html = emailTemplates.passwordResetEmail(
+    name || email.split("@")[0],
+    resetLink
+  );
 
   await sendEmail({
     to: email,

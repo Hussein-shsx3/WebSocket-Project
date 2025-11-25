@@ -1,6 +1,7 @@
 import express, { Express, Request, Response, NextFunction } from "express";
 import cors from "cors";
 import helmet from "helmet";
+import cookieParser from "cookie-parser";
 import { config, validateEnv } from "./config/env.config";
 import { errorHandler } from "./middleware/error.middleware";
 import { AppError } from "./types/error.types";
@@ -26,6 +27,8 @@ app.use(
 // Body Parser Middleware
 app.use(express.json({ limit: "10kb" }));
 app.use(express.urlencoded({ limit: "10kb", extended: true }));
+// Cookie parser (for refresh token cookie)
+app.use(cookieParser());
 
 /**
  * Health Check Route
