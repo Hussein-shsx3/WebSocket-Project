@@ -64,7 +64,7 @@ export class AuthService {
       message: "User registered successfully. Please verify your email.",
       data: {
         user,
-        verificationToken, 
+        verificationToken,
       },
     };
   }
@@ -88,6 +88,9 @@ export class AuthService {
     }
 
     // Compare password
+    if (!user.password) {
+      throw new AppError("Invalid email or password", 401);
+    }
     const isPasswordValid = await bcrypt.compare(data.password, user.password);
 
     if (!isPasswordValid) {

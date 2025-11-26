@@ -78,7 +78,7 @@ const authorize = (...allowedRoles) => {
                 message: "Not authenticated",
             });
         }
-        if (!allowedRoles.includes(req.user.role)) {
+        if (!allowedRoles.includes(req.user.role || "USER")) {
             return res.status(403).json({
                 success: false,
                 message: "Insufficient permissions. Required roles: " + allowedRoles.join(", "),

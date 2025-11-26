@@ -8,10 +8,14 @@ const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const helmet_1 = __importDefault(require("helmet"));
 const cookie_parser_1 = __importDefault(require("cookie-parser"));
+const express_session_1 = __importDefault(require("express-session"));
+const passport_1 = __importDefault(require("passport"));
 const env_config_1 = require("./config/env.config");
 const error_middleware_1 = require("./middleware/error.middleware");
 const error_types_1 = require("./types/error.types");
 const auth_route_1 = __importDefault(require("./routes/auth.route"));
+const google_auth_route_1 = __importDefault(require("./routes/google-auth.route"));
+require("./config/google-auth.config");
 exports.app = (0, express_1.default)();
 (0, env_config_1.validateEnv)();
 exports.app.use((0, helmet_1.default)());
@@ -24,6 +28,19 @@ exports.app.use((0, cors_1.default)({
 exports.app.use(express_1.default.json({ limit: "10kb" }));
 exports.app.use(express_1.default.urlencoded({ limit: "10kb", extended: true }));
 exports.app.use((0, cookie_parser_1.default)());
+exports.app.use((0, express_session_1.default)({
+    secret: env_config_1.config.JWT_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        secure: env_config_1.config.NODE_ENV === "production",
+        httpOnly: true,
+        sameSite: "strict",
+        maxAge: 24 * 60 * 60 * 1000,
+    },
+}));
+exports.app.use(passport_1.default.initialize());
+exports.app.use(passport_1.default.session());
 exports.app.get("/api/health", (req, res) => {
     res.status(200).json({
         success: true,
@@ -32,6 +49,7 @@ exports.app.get("/api/health", (req, res) => {
     });
 });
 exports.app.use("/api/v1/auth", auth_route_1.default);
+exports.app.use("/api/v1/auth", google_auth_route_1.default);
 exports.app.use((req, res, next) => {
     const error = new error_types_1.AppError(`Cannot find ${req.originalUrl} on this server!`, 404);
     next(error);

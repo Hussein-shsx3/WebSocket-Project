@@ -3,16 +3,14 @@ import { verifyAccessToken } from "../utils/jwt.util";
 import { AuthenticationError } from "../types/error.types";
 
 /**
- * Extend Express Request to include user data
+ * Extend Passport User type to include custom fields
  */
 declare global {
   namespace Express {
-    interface Request {
-      user?: {
-        userId: string;
-        email: string;
-        role: string;
-      };
+    interface User {
+      userId?: string;
+      email?: string;
+      role?: string;
     }
   }
 }
@@ -130,7 +128,7 @@ export const authorize = (...allowedRoles: string[]) => {
       });
     }
 
-    if (!allowedRoles.includes(req.user.role)) {
+    if (!allowedRoles.includes((req.user as any).role || "USER")) {
       return res.status(403).json({
         success: false,
         message: "Insufficient permissions. Required roles: " + allowedRoles.join(", "),

@@ -1,6 +1,7 @@
 export declare const config: {
     NODE_ENV: string;
     PORT: number;
+    SERVER_URL: string;
     CLIENT_URL: string;
     DATABASE_URL: string | undefined;
     JWT_SECRET: string;

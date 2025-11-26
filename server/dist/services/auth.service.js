@@ -71,6 +71,9 @@ class AuthService {
         if (!user) {
             throw new error_types_1.AppError("Invalid email or password", 401);
         }
+        if (!user.password) {
+            throw new error_types_1.AppError("Invalid email or password", 401);
+        }
         const isPasswordValid = await bcrypt_1.default.compare(data.password, user.password);
         if (!isPasswordValid) {
             throw new error_types_1.AppError("Invalid email or password", 401);

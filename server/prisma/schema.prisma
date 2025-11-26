@@ -19,7 +19,7 @@ enum UserRole {
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
-  password  String
+  password  String?
   name      String?
   avatar    String?
   bio       String?
@@ -27,6 +27,7 @@ model User {
   status    String   @default("offline") // online, offline, away
   emailVerified Boolean @default(false)
   refreshToken String?
+  googleId  String?  @unique // For Google OAuth
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
