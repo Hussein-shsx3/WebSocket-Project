@@ -3,9 +3,7 @@ import passport from "passport";
 import {
   googleCallback,
   googleAuth,
-  googleLogout,
 } from "../controllers/google-auth.controller";
-import { authenticate } from "../middleware/auth.middleware";
 
 const router = Router();
 
@@ -61,17 +59,5 @@ router.get(
   }),
   googleCallback
 );
-
-/**
- * Step 3: Logout Google authenticated user
- * 
- * Requires: Authorization header with valid JWT token
- * 
- * What happens:
- * 1. Auth middleware verifies JWT and attaches user to req
- * 2. Handler clears the session and refresh token
- * 3. Frontend will delete the access token from localStorage
- */
-router.post("/google/logout", authenticate, googleLogout);
 
 export default router;

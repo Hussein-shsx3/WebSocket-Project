@@ -6,14 +6,14 @@ const error_types_1 = require("../types/error.types");
 const authenticate = (req, res, next) => {
     try {
         const authHeader = req.headers.authorization;
-        if (!authHeader) {
-            throw new error_types_1.AuthenticationError("No token provided - Authorization header is missing");
-        }
-        if (!authHeader.startsWith("Bearer ")) {
-            throw new error_types_1.AuthenticationError("Invalid token format - use 'Bearer <token>'");
+        console.log("🔍 Auth Header:", authHeader);
+        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+            throw new error_types_1.AuthenticationError("No token provided");
         }
         const token = authHeader.slice(7);
+        console.log("🔍 Token:", token);
         const decoded = (0, jwt_util_1.verifyAccessToken)(token);
+        console.log("🔍 Decoded:", decoded);
         req.user = {
             userId: decoded.userId,
             email: decoded.email,
@@ -22,27 +22,11 @@ const authenticate = (req, res, next) => {
         next();
     }
     catch (error) {
-        if (error instanceof error_types_1.AuthenticationError) {
-            return res.status(401).json({
-                success: false,
-                message: error.message,
-            });
-        }
-        if (error instanceof Error && error.message.includes("expired")) {
-            return res.status(401).json({
-                success: false,
-                message: "Token has expired",
-            });
-        }
-        if (error instanceof Error && error.message.includes("Invalid")) {
-            return res.status(401).json({
-                success: false,
-                message: "Invalid token",
-            });
-        }
+        console.error("❌ Auth Error:", error.message);
         return res.status(401).json({
             success: false,
-            message: "Authentication failed",
+            message: "Unauthorized",
+            error: error.message,
         });
     }
 };
@@ -81,7 +65,8 @@ const authorize = (...allowedRoles) => {
         if (!allowedRoles.includes(req.user.role || "USER")) {
             return res.status(403).json({
                 success: false,
-                message: "Insufficient permissions. Required roles: " + allowedRoles.join(", "),
+                message: "Insufficient permissions. Required roles: " +
+                    allowedRoles.join(", "),
             });
         }
         next();

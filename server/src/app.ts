@@ -5,11 +5,12 @@ import cookieParser from "cookie-parser";
 import session from "express-session";
 import passport from "passport";
 import { config, validateEnv } from "./config/env.config";
-import { errorHandler } from "./middleware/error.middleware";
+import { errorHandler, notFound } from "./middleware/error.middleware";
 import { AppError } from "./types/error.types";
 import authRoutes from "./routes/auth.route";
 import googleAuthRoutes from "./routes/google-auth.route";
-import "./config/google-auth.config"; // Initialize Passport strategies
+import userRoutes from "./routes/user.route";
+import "./config/google-auth.config"; 
 
 export const app: Express = express();
 
@@ -88,7 +89,7 @@ app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/auth", googleAuthRoutes);
 
 // User Routes
-// app.use("/api/v1/users", userRoutes);
+app.use("/api/v1/users", userRoutes);
 
 // Chat Routes
 // app.use("/api/v1/chats", chatRoutes);
@@ -99,13 +100,7 @@ app.use("/api/v1/auth", googleAuthRoutes);
 /**
  * 404 Handler - Not Found
  */
-app.use((req: Request, res: Response, next: NextFunction) => {
-  const error = new AppError(
-    `Cannot find ${req.originalUrl} on this server!`,
-    404
-  );
-  next(error);
-});
+app.use(notFound);
 
 /**
  * Global Error Handler Middleware

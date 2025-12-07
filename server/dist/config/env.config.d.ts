@@ -18,6 +18,9 @@ export declare const config: {
     VERIFICATION_EXPIRY: string;
     GOOGLE_CLIENT_ID: string | undefined;
     GOOGLE_CLIENT_SECRET: string | undefined;
+    CLOUDINARY_CLOUD_NAME: string;
+    CLOUDINARY_API_KEY: string;
+    CLOUDINARY_API_SECRET: string;
 };
 export declare const validateEnv: () => void;
 //# sourceMappingURL=env.config.d.ts.map

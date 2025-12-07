@@ -130,7 +130,6 @@ export const refreshTokens = asyncHandler(async (req: Request, res: Response) =>
 });
 
 export const logout = asyncHandler(async (req: Request, res: Response) => {
-  // Get userId from auth middleware (assumes auth middleware sets user on req)
   const userId = (req as any).user?.userId;
 
   if (!userId) {

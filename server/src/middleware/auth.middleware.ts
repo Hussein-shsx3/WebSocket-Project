@@ -24,24 +24,19 @@ export const authenticate = (
   next: NextFunction
 ): any => {
   try {
-    // Get token from Authorization header
     const authHeader = req.headers.authorization;
+    console.log("🔍 Auth Header:", authHeader); // Debug log
 
-    if (!authHeader) {
-      throw new AuthenticationError("No token provided - Authorization header is missing");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      throw new AuthenticationError("No token provided");
     }
 
-    if (!authHeader.startsWith("Bearer ")) {
-      throw new AuthenticationError("Invalid token format - use 'Bearer <token>'");
-    }
-
-    // Extract token (remove "Bearer " prefix)
     const token = authHeader.slice(7);
+    console.log("🔍 Token:", token); // Debug log
 
-    // Verify token
     const decoded = verifyAccessToken(token);
+    console.log("🔍 Decoded:", decoded); // Debug log
 
-    // Attach user info to request
     req.user = {
       userId: decoded.userId,
       email: decoded.email,
@@ -49,33 +44,12 @@ export const authenticate = (
     };
 
     next();
-  } catch (error) {
-    if (error instanceof AuthenticationError) {
-      return res.status(401).json({
-        success: false,
-        message: error.message,
-      });
-    }
-
-    // Handle token expiration
-    if (error instanceof Error && error.message.includes("expired")) {
-      return res.status(401).json({
-        success: false,
-        message: "Token has expired",
-      });
-    }
-
-    // Handle invalid token
-    if (error instanceof Error && error.message.includes("Invalid")) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid token",
-      });
-    }
-
+  } catch (error: any) {
+    console.error("❌ Auth Error:", error.message); // Debug log
     return res.status(401).json({
       success: false,
-      message: "Authentication failed",
+      message: "Unauthorized",
+      error: error.message,
     });
   }
 };
@@ -131,7 +105,9 @@ export const authorize = (...allowedRoles: string[]) => {
     if (!allowedRoles.includes((req.user as any).role || "USER")) {
       return res.status(403).json({
         success: false,
-        message: "Insufficient permissions. Required roles: " + allowedRoles.join(", "),
+        message:
+          "Insufficient permissions. Required roles: " +
+          allowedRoles.join(", "),
       });
     }
 
