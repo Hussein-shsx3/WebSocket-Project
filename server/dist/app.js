@@ -15,6 +15,7 @@ const error_middleware_1 = require("./middleware/error.middleware");
 const auth_route_1 = __importDefault(require("./routes/auth.route"));
 const google_auth_route_1 = __importDefault(require("./routes/google-auth.route"));
 const user_route_1 = __importDefault(require("./routes/user.route"));
+const friend_route_1 = __importDefault(require("./routes/friend.route"));
 require("./config/google-auth.config");
 exports.app = (0, express_1.default)();
 (0, env_config_1.validateEnv)();
@@ -51,6 +52,7 @@ exports.app.get("/api/health", (req, res) => {
 exports.app.use("/api/v1/auth", auth_route_1.default);
 exports.app.use("/api/v1/auth", google_auth_route_1.default);
 exports.app.use("/api/v1/users", user_route_1.default);
+exports.app.use("/api/v1/friends", friend_route_1.default);
 exports.app.use(error_middleware_1.notFound);
 exports.app.use(error_middleware_1.errorHandler);
 exports.default = exports.app;

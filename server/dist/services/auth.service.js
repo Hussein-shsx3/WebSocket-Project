@@ -16,7 +16,7 @@ class AuthService {
             where: { email: data.email },
         });
         if (existingUser) {
-            throw new error_types_1.AppError("Email already registered", 409);
+            throw new error_types_1.ConflictError("Email already registered");
         }
         const hashedPassword = await bcrypt_1.default.hash(data.password, parseInt(process.env.BCRYPT_ROUNDS || "10"));
         const user = await db_1.default.user.create({
@@ -69,14 +69,14 @@ class AuthService {
             },
         });
         if (!user) {
-            throw new error_types_1.AppError("Invalid email or password", 401);
+            throw new error_types_1.AuthenticationError("Invalid email or password");
         }
         if (!user.password) {
-            throw new error_types_1.AppError("Invalid email or password", 401);
+            throw new error_types_1.AuthenticationError("Invalid email or password");
         }
         const isPasswordValid = await bcrypt_1.default.compare(data.password, user.password);
         if (!isPasswordValid) {
-            throw new error_types_1.AppError("Invalid email or password", 401);
+            throw new error_types_1.AuthenticationError("Invalid email or password");
         }
         const accessToken = (0, jwt_util_1.generateAccessToken)({
             userId: user.id,
@@ -113,10 +113,10 @@ class AuthService {
             where: { token: tokenHash },
         });
         if (!verification) {
-            throw new error_types_1.AppError("Invalid verification token", 400);
+            throw new error_types_1.BadRequestError("Invalid verification token");
         }
         if (verification.expiresAt < new Date()) {
-            throw new error_types_1.AppError("Verification token has expired", 400);
+            throw new error_types_1.BadRequestError("Verification token has expired");
         }
         const user = await db_1.default.user.update({
             where: { id: verification.userId },
@@ -140,9 +140,9 @@ class AuthService {
     async resendVerification(email) {
         const user = await db_1.default.user.findUnique({ where: { email } });
         if (!user)
-            throw new error_types_1.AppError("User not found", 404);
+            throw new error_types_1.NotFoundError("User not found");
         if (user.emailVerified)
-            throw new error_types_1.AppError("Email already verified", 400);
+            throw new error_types_1.BadRequestError("Email already verified");
         await db_1.default.emailVerification.deleteMany({ where: { userId: user.id } });
         const verificationToken = crypto_1.default.randomBytes(32).toString("hex");
         const verificationTokenHash = crypto_1.default.createHash("sha256").update(verificationToken).digest("hex");
@@ -162,7 +162,7 @@ class AuthService {
         if (!user)
             return { success: true, message: "If that email exists, a reset link has been sent" };
         if (!user.emailVerified)
-            throw new error_types_1.AppError("Email is not verified", 400);
+            throw new error_types_1.BadRequestError("Email is not verified");
         await db_1.default.passwordReset.deleteMany({ where: { userId: user.id } });
         const resetToken = crypto_1.default.randomBytes(32).toString("hex");
         const resetTokenHash = crypto_1.default.createHash("sha256").update(resetToken).digest("hex");
@@ -181,9 +181,9 @@ class AuthService {
         const tokenHash = crypto_1.default.createHash("sha256").update(token).digest("hex");
         const reset = await db_1.default.passwordReset.findUnique({ where: { token: tokenHash } });
         if (!reset)
-            throw new error_types_1.AppError("Invalid or expired reset token", 400);
+            throw new error_types_1.BadRequestError("Invalid or expired reset token");
         if (reset.expiresAt < new Date())
-            throw new error_types_1.AppError("Reset token has expired", 400);
+            throw new error_types_1.BadRequestError("Reset token has expired");
         const hashed = await bcrypt_1.default.hash(newPassword, parseInt(process.env.BCRYPT_ROUNDS || "10"));
         const user = await db_1.default.user.update({
             where: { id: reset.userId },
@@ -196,13 +196,13 @@ class AuthService {
     }
     async refreshTokens(refreshToken) {
         if (!refreshToken)
-            throw new error_types_1.AppError("Refresh token missing", 401);
+            throw new error_types_1.AuthenticationError("Refresh token missing");
         const decoded = (0, jwt_util_1.verifyRefreshToken)(refreshToken);
         const dbUser = await db_1.default.user.findUnique({ where: { id: decoded.userId } });
         if (!dbUser || !dbUser.refreshToken)
-            throw new error_types_1.AppError("Invalid session", 401);
+            throw new error_types_1.AuthenticationError("Invalid session");
         if (dbUser.refreshToken !== refreshToken)
-            throw new error_types_1.AppError("Invalid refresh token", 401);
+            throw new error_types_1.AuthenticationError("Invalid refresh token");
         const tokens = (0, jwt_util_1.generateAuthTokens)({ userId: decoded.userId, email: decoded.email });
         await db_1.default.user.update({ where: { id: decoded.userId }, data: { refreshToken: tokens.refreshToken } });
         return { success: true, tokens };

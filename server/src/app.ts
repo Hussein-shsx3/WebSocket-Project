@@ -6,10 +6,10 @@ import session from "express-session";
 import passport from "passport";
 import { config, validateEnv } from "./config/env.config";
 import { errorHandler, notFound } from "./middleware/error.middleware";
-import { AppError } from "./types/error.types";
 import authRoutes from "./routes/auth.route";
 import googleAuthRoutes from "./routes/google-auth.route";
 import userRoutes from "./routes/user.route";
+import friendRoutes from "./routes/friend.route";
 import "./config/google-auth.config"; 
 
 export const app: Express = express();
@@ -90,6 +90,9 @@ app.use("/api/v1/auth", googleAuthRoutes);
 
 // User Routes
 app.use("/api/v1/users", userRoutes);
+
+// Friend Routes
+app.use("/api/v1/friends", friendRoutes);
 
 // Chat Routes
 // app.use("/api/v1/chats", chatRoutes);

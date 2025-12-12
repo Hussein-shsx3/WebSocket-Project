@@ -11,8 +11,8 @@ router.patch("/profile", auth_middleware_1.authenticate, user_controller_1.updat
 router.post("/avatar", auth_middleware_1.authenticate, upload_middleware_1.upload.single("avatar"), user_controller_1.uploadAvatar);
 router.patch("/status", auth_middleware_1.authenticate, user_controller_1.updateStatus);
 router.delete("/profile", auth_middleware_1.authenticate, user_controller_1.deleteAccount);
-router.get("/search", user_controller_1.searchUsersHandler);
-router.get("/:id", user_controller_1.getUserByIdHandler);
+router.get("/search", auth_middleware_1.authenticate, user_controller_1.searchUsersHandler);
 router.get("/admin/all", auth_middleware_1.authenticate, (0, auth_middleware_2.authorize)("ADMIN"), user_controller_1.getAllUsersHandler);
+router.get("/:id", auth_middleware_1.authenticate, user_controller_1.getUserByIdHandler);
 exports.default = router;
 //# sourceMappingURL=user.route.js.map

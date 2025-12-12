@@ -2,7 +2,7 @@ import bcrypt from "bcrypt";
 import prisma from "../config/db";
 import { RegisterDTO, LoginDTO } from "../dto/auth.dto";
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken, generateAuthTokens } from "../utils/jwt.util";
-import { AppError } from "../types/error.types";
+import { ConflictError, AuthenticationError, BadRequestError, NotFoundError } from "../types/error.types";
 import crypto from "crypto";
 import { sendVerificationEmail, sendPasswordResetEmail, sendWelcomeEmail } from "../utils/email.util";
 
@@ -14,7 +14,7 @@ export class AuthService {
     });
 
     if (existingUser) {
-      throw new AppError("Email already registered", 409);
+      throw new ConflictError("Email already registered");
     }
 
     // Hash password
@@ -84,17 +84,17 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new AppError("Invalid email or password", 401);
+      throw new AuthenticationError("Invalid email or password");
     }
 
     // Compare password
     if (!user.password) {
-      throw new AppError("Invalid email or password", 401);
+      throw new AuthenticationError("Invalid email or password");
     }
     const isPasswordValid = await bcrypt.compare(data.password, user.password);
 
     if (!isPasswordValid) {
-      throw new AppError("Invalid email or password", 401);
+      throw new AuthenticationError("Invalid email or password");
     }
 
     // Generate tokens
@@ -141,12 +141,12 @@ export class AuthService {
     });
 
     if (!verification) {
-      throw new AppError("Invalid verification token", 400);
+      throw new BadRequestError("Invalid verification token");
     }
 
     // Check if token expired
     if (verification.expiresAt < new Date()) {
-      throw new AppError("Verification token has expired", 400);
+      throw new BadRequestError("Verification token has expired");
     }
 
     // Update user to verified
@@ -175,8 +175,8 @@ export class AuthService {
 
   async resendVerification(email: string) {
     const user = await prisma.user.findUnique({ where: { email } });
-    if (!user) throw new AppError("User not found", 404);
-    if (user.emailVerified) throw new AppError("Email already verified", 400);
+    if (!user) throw new NotFoundError("User not found");
+    if (user.emailVerified) throw new BadRequestError("Email already verified");
 
     // Remove old tokens
     await prisma.emailVerification.deleteMany({ where: { userId: user.id } });
@@ -203,7 +203,7 @@ export class AuthService {
     const user = await prisma.user.findUnique({ where: { email } });
     // Do not reveal whether user exists
     if (!user) return { success: true, message: "If that email exists, a reset link has been sent" };
-    if (!user.emailVerified) throw new AppError("Email is not verified", 400);
+    if (!user.emailVerified) throw new BadRequestError("Email is not verified");
 
     // Delete existing resets
     await prisma.passwordReset.deleteMany({ where: { userId: user.id } });
@@ -229,8 +229,8 @@ export class AuthService {
     const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
 
     const reset = await prisma.passwordReset.findUnique({ where: { token: tokenHash } });
-    if (!reset) throw new AppError("Invalid or expired reset token", 400);
-    if (reset.expiresAt < new Date()) throw new AppError("Reset token has expired", 400);
+    if (!reset) throw new BadRequestError("Invalid or expired reset token");
+    if (reset.expiresAt < new Date()) throw new BadRequestError("Reset token has expired");
 
     const hashed = await bcrypt.hash(newPassword, parseInt(process.env.BCRYPT_ROUNDS || "10"));
 
@@ -251,14 +251,14 @@ export class AuthService {
   }
 
   async refreshTokens(refreshToken: string) {
-    if (!refreshToken) throw new AppError("Refresh token missing", 401);
+    if (!refreshToken) throw new AuthenticationError("Refresh token missing");
     // verify refresh token
     const decoded = verifyRefreshToken(refreshToken);
 
     // Make sure token matches what we have stored for the user
     const dbUser = await prisma.user.findUnique({ where: { id: decoded.userId } });
-    if (!dbUser || !dbUser.refreshToken) throw new AppError("Invalid session", 401);
-    if (dbUser.refreshToken !== refreshToken) throw new AppError("Invalid refresh token", 401);
+    if (!dbUser || !dbUser.refreshToken) throw new AuthenticationError("Invalid session");
+    if (dbUser.refreshToken !== refreshToken) throw new AuthenticationError("Invalid refresh token");
 
     // Generate new tokens
     const tokens = generateAuthTokens({ userId: decoded.userId, email: decoded.email });
