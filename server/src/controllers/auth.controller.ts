@@ -130,7 +130,7 @@ export const refreshTokens = asyncHandler(async (req: Request, res: Response) =>
 });
 
 export const logout = asyncHandler(async (req: Request, res: Response) => {
-  const userId = (req as any).user?.userId;
+  const userId = req.user?.userId;
 
   if (!userId) {
     return res.status(401).json({

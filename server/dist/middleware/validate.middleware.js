@@ -7,7 +7,7 @@ const validate = (schema) => {
         try {
             const validatedData = await schema.parseAsync(req.body);
             req.body = validatedData;
-            return next();
+            next();
         }
         catch (error) {
             if (error instanceof zod_1.ZodError) {
@@ -15,13 +15,14 @@ const validate = (schema) => {
                     field: issue.path.join("."),
                     message: issue.message,
                 }));
-                return res.status(400).json({
+                res.status(400).json({
                     success: false,
                     message: "Validation failed",
                     errors,
                 });
+                return;
             }
-            return res.status(500).json({
+            res.status(500).json({
                 success: false,
                 message: "Internal server error during validation",
             });
@@ -34,7 +35,7 @@ const validateQuery = (schema) => {
         try {
             const validatedData = await schema.parseAsync(req.query);
             req.query = validatedData;
-            return next();
+            next();
         }
         catch (error) {
             if (error instanceof zod_1.ZodError) {
@@ -42,13 +43,14 @@ const validateQuery = (schema) => {
                     field: issue.path.join("."),
                     message: issue.message,
                 }));
-                return res.status(400).json({
+                res.status(400).json({
                     success: false,
                     message: "Query validation failed",
                     errors,
                 });
+                return;
             }
-            return res.status(500).json({
+            res.status(500).json({
                 success: false,
                 message: "Internal server error during validation",
             });
@@ -61,7 +63,7 @@ const validateParams = (schema) => {
         try {
             const validatedData = await schema.parseAsync(req.params);
             req.params = validatedData;
-            return next();
+            next();
         }
         catch (error) {
             if (error instanceof zod_1.ZodError) {
@@ -69,13 +71,14 @@ const validateParams = (schema) => {
                     field: issue.path.join("."),
                     message: issue.message,
                 }));
-                return res.status(400).json({
+                res.status(400).json({
                     success: false,
-                    message: "Parameter validation failed",
+                    message: "Params validation failed",
                     errors,
                 });
+                return;
             }
-            return res.status(500).json({
+            res.status(500).json({
                 success: false,
                 message: "Internal server error during validation",
             });

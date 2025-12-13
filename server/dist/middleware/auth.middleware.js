@@ -22,11 +22,12 @@ const authenticate = (req, res, next) => {
         next();
     }
     catch (error) {
-        console.error("❌ Auth Error:", error.message);
-        return res.status(401).json({
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.error("❌ Auth Error:", errorMessage);
+        res.status(401).json({
             success: false,
             message: "Unauthorized",
-            error: error.message,
+            error: errorMessage,
         });
     }
 };
@@ -57,17 +58,19 @@ exports.isAuthenticated = isAuthenticated;
 const authorize = (...allowedRoles) => {
     return (req, res, next) => {
         if (!req.user) {
-            return res.status(401).json({
+            res.status(401).json({
                 success: false,
                 message: "Not authenticated",
             });
+            return;
         }
         if (!allowedRoles.includes(req.user.role || "USER")) {
-            return res.status(403).json({
+            res.status(403).json({
                 success: false,
                 message: "Insufficient permissions. Required roles: " +
                     allowedRoles.join(", "),
             });
+            return;
         }
         next();
     };

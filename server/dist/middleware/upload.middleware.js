@@ -11,7 +11,7 @@ const fileFilter = (req, file, cb) => {
         cb(null, true);
     }
     else {
-        cb(new Error("Only image files are allowed"), false);
+        cb(null, false);
     }
 };
 exports.upload = (0, multer_1.default)({

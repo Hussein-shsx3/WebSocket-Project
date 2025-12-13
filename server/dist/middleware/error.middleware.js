@@ -4,10 +4,18 @@ exports.asyncHandler = exports.notFound = exports.errorHandler = void 0;
 const error_types_1 = require("../types/error.types");
 const zod_1 = require("zod");
 const handlePrismaError = (error) => {
-    if (error.code) {
-        switch (error.code) {
+    if (typeof error !== 'object' || error === null) {
+        return {
+            success: false,
+            message: "Database operation failed",
+            statusCode: 500,
+        };
+    }
+    const prismaError = error;
+    if (prismaError.code) {
+        switch (prismaError.code) {
             case "P2002":
-                const field = error.meta?.target?.join(", ") || "field";
+                const field = prismaError.meta?.target?.join(", ") || "field";
                 return {
                     success: false,
                     message: `${field} already exists`,
@@ -71,8 +79,8 @@ const errorHandler = (error, req, res, next) => {
             statusCode: error.statusCode,
         };
     }
-    else if (error.name === "PrismaClientKnownRequestError" ||
-        error.code) {
+    else if ((error instanceof Error && error.name === "PrismaClientKnownRequestError") ||
+        (typeof error === 'object' && error !== null && 'code' in error)) {
         response = handlePrismaError(error);
     }
     else if (error instanceof zod_1.ZodError) {

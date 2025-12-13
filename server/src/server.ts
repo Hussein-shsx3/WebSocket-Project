@@ -3,6 +3,8 @@ import { Server as SocketIOServer } from "socket.io";
 import { app } from "./app";
 import { config } from "./config/env.config";
 import { PrismaClient } from "@prisma/client";
+import { setupChatSocket } from "./socket/chat.socket";
+import { verifyAccessToken } from "./utils/jwt.util";
 
 /**
  * Initialize Prisma Client
@@ -26,50 +28,46 @@ export const io = new SocketIOServer(server, {
 });
 
 /**
- * Socket.IO Events
+ * Socket.IO Middleware - Extract userId from JWT token
  */
-io.on("connection", (socket) => {
-  console.log(`✅ Client connected: ${socket.id}`);
+io.use((socket, next) => {
+  try {
+    // Get token from auth header or auth.token
+    let token = socket.handshake.auth.token;
+    
+    if (!token && socket.handshake.headers.authorization) {
+      // Extract token from "Bearer <token>" format
+      const authHeader = socket.handshake.headers.authorization;
+      token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : authHeader;
+    }
 
-  // Handle user joining a room
-  socket.on("join_room", (roomId: string) => {
-    socket.join(roomId);
-    socket.broadcast.to(roomId).emit("user_joined", {
-      userId: socket.id,
-      message: "A user has joined the room",
-    });
-    console.log(`User ${socket.id} joined room ${roomId}`);
-  });
+    if (!token) {
+      return next(new Error("No token provided"));
+    }
 
-  // Handle sending messages
-  socket.on("send_message", (data: any) => {
-    io.to(data.roomId).emit("receive_message", {
-      userId: socket.id,
-      message: data.message,
-      timestamp: new Date(),
-    });
-  });
+    // Verify and decode token
+    const decoded = verifyAccessToken(token);
+    
+    if (!decoded.userId) {
+      return next(new Error("userId not found in token"));
+    }
 
-  // Handle user leaving a room
-  socket.on("leave_room", (roomId: string) => {
-    socket.leave(roomId);
-    socket.broadcast.to(roomId).emit("user_left", {
-      userId: socket.id,
-      message: "A user has left the room",
-    });
-    console.log(`User ${socket.id} left room ${roomId}`);
-  });
+    // Add userId to socket.data for later use
+    socket.data.userId = decoded.userId;
+    socket.data.email = decoded.email;
+    socket.data.role = decoded.role;
 
-  // Handle disconnect
-  socket.on("disconnect", () => {
-    console.log(`❌ Client disconnected: ${socket.id}`);
-  });
-
-  // Error handling
-  socket.on("error", (error) => {
-    console.error(`Socket error for ${socket.id}:`, error);
-  });
+    next();
+  } catch (error: any) {
+    console.error("❌ Socket.IO Auth Error:", error.message);
+    return next(new Error(`Authentication failed: ${error.message}`));
+  }
 });
+
+/**
+ * Initialize Chat Socket Handlers
+ */
+setupChatSocket(io);
 
 /**
  * Database Connection

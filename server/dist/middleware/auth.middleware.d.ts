@@ -8,8 +8,8 @@ declare global {
         }
     }
 }
-export declare const authenticate: (req: Request, res: Response, next: NextFunction) => any;
-export declare const optionalAuthenticate: (req: Request, res: Response, next: NextFunction) => any;
+export declare const authenticate: (req: Request, res: Response, next: NextFunction) => void;
+export declare const optionalAuthenticate: (req: Request, res: Response, next: NextFunction) => void;
 export declare const isAuthenticated: (req: Request) => boolean;
-export declare const authorize: (...allowedRoles: string[]) => (req: Request, res: Response, next: NextFunction) => any;
+export declare const authorize: (...allowedRoles: string[]) => (req: Request, res: Response, next: NextFunction) => void;
 //# sourceMappingURL=auth.middleware.d.ts.map

@@ -1,5 +1,6 @@
 import prisma from "../config/db";
 import { NotFoundError, BadRequestError } from "../types/error.types";
+import { Prisma } from "@prisma/client";
 
 /**
  * Friend Service
@@ -299,7 +300,7 @@ export async function getFriends(
   );
 
   // Build where clause for search
-  const whereClause: any = {
+  const whereClause: Prisma.UserWhereInput = {
     id: { in: friendIds },
   };
 
@@ -345,7 +346,7 @@ export async function getFriendsCount(userId: string, search?: string) {
     f.userId === userId ? f.friendId : f.userId
   );
 
-  const whereClause: any = {
+  const whereClause: Prisma.UserWhereInput = {
     id: { in: friendIds },
   };
 

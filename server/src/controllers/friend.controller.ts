@@ -23,7 +23,7 @@ import {
  */
 export const sendFriendRequestHandler = asyncHandler(
   async (req: Request, res: Response) => {
-    const userId = (req as any).user?.userId;
+    const userId = req.user?.userId;
 
     if (!userId) {
       res.status(401).json({ message: "Unauthorized" });
@@ -58,7 +58,7 @@ export const sendFriendRequestHandler = asyncHandler(
  */
 export const acceptFriendRequestHandler = asyncHandler(
   async (req: Request, res: Response) => {
-    const userId = (req as any).user?.userId;
+    const userId = req.user?.userId;
     const { requestId } = req.params;
 
     if (!userId) {
@@ -81,7 +81,7 @@ export const acceptFriendRequestHandler = asyncHandler(
  */
 export const rejectFriendRequestHandler = asyncHandler(
   async (req: Request, res: Response) => {
-    const userId = (req as any).user?.userId;
+    const userId = req.user?.userId;
     const { requestId } = req.params;
 
     if (!userId) {
@@ -104,7 +104,7 @@ export const rejectFriendRequestHandler = asyncHandler(
  */
 export const cancelFriendRequestHandler = asyncHandler(
   async (req: Request, res: Response) => {
-    const userId = (req as any).user?.userId;
+    const userId = req.user?.userId;
     const { requestId } = req.params;
 
     if (!userId) {
@@ -125,7 +125,7 @@ export const cancelFriendRequestHandler = asyncHandler(
  */
 export const getFriendRequestsHandler = asyncHandler(
   async (req: Request, res: Response) => {
-    const userId = (req as any).user?.userId;
+    const userId = req.user?.userId;
 
     if (!userId) {
       res.status(401).json({ message: "Unauthorized" });
@@ -178,7 +178,7 @@ export const getFriendRequestsHandler = asyncHandler(
  */
 export const getFriendsHandler = asyncHandler(
   async (req: Request, res: Response) => {
-    const userId = (req as any).user?.userId;
+    const userId = req.user?.userId;
 
     if (!userId) {
       res.status(401).json({ message: "Unauthorized" });
@@ -225,7 +225,7 @@ export const getFriendsHandler = asyncHandler(
  */
 export const removeFriendHandler = asyncHandler(
   async (req: Request, res: Response) => {
-    const userId = (req as any).user?.userId;
+    const userId = req.user?.userId;
     const { friendId } = req.params;
 
     if (!userId) {

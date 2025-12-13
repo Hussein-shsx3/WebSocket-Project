@@ -10,6 +10,9 @@ import authRoutes from "./routes/auth.route";
 import googleAuthRoutes from "./routes/google-auth.route";
 import userRoutes from "./routes/user.route";
 import friendRoutes from "./routes/friend.route";
+import conversationRoutes from "./routes/conversation.route";
+import messageRoutes from "./routes/message.route";
+import callRoutes from "./routes/call.route";
 import "./config/google-auth.config"; 
 
 export const app: Express = express();
@@ -94,11 +97,14 @@ app.use("/api/v1/users", userRoutes);
 // Friend Routes
 app.use("/api/v1/friends", friendRoutes);
 
-// Chat Routes
-// app.use("/api/v1/chats", chatRoutes);
+// Conversation Routes (Chat)
+app.use("/api/v1/conversations", conversationRoutes);
 
 // Message Routes
-// app.use("/api/v1/messages", messageRoutes);
+app.use("/api/v1/messages", messageRoutes);
+
+// Call Routes (Audio/Video calls)
+app.use("/api/v1/calls", callRoutes);
 
 /**
  * 404 Handler - Not Found

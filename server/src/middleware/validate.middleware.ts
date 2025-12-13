@@ -9,7 +9,7 @@ export const validate = (schema: ZodType) => {
     req: Request,
     res: Response,
     next: NextFunction
-  ): Promise<any> => {
+  ): Promise<void> => {
     try {
       // Validate request body
       const validatedData = await schema.parseAsync(req.body);
@@ -17,7 +17,7 @@ export const validate = (schema: ZodType) => {
       // Replace request body with validated data
       req.body = validatedData;
 
-      return next();
+      next();
     } catch (error) {
       if (error instanceof ZodError) {
         // Format Zod errors
@@ -26,15 +26,16 @@ export const validate = (schema: ZodType) => {
           message: issue.message,
         }));
 
-        return res.status(400).json({
+        res.status(400).json({
           success: false,
           message: "Validation failed",
           errors,
         });
+        return;
       }
 
       // Handle unexpected errors
-      return res.status(500).json({
+      res.status(500).json({
         success: false,
         message: "Internal server error during validation",
       });
@@ -50,11 +51,11 @@ export const validateQuery = (schema: ZodType) => {
     req: Request,
     res: Response,
     next: NextFunction
-  ): Promise<any> => {
+  ): Promise<void> => {
     try {
       const validatedData = await schema.parseAsync(req.query);
-      req.query = validatedData as any;
-      return next();
+      req.query = validatedData as Record<string, any>;
+      next();
     } catch (error) {
       if (error instanceof ZodError) {
         const errors = error.issues.map((issue) => ({
@@ -62,14 +63,15 @@ export const validateQuery = (schema: ZodType) => {
           message: issue.message,
         }));
 
-        return res.status(400).json({
+        res.status(400).json({
           success: false,
           message: "Query validation failed",
           errors,
         });
+        return;
       }
 
-      return res.status(500).json({
+      res.status(500).json({
         success: false,
         message: "Internal server error during validation",
       });
@@ -85,11 +87,11 @@ export const validateParams = (schema: ZodType) => {
     req: Request,
     res: Response,
     next: NextFunction
-  ): Promise<any> => {
+  ): Promise<void> => {
     try {
       const validatedData = await schema.parseAsync(req.params);
-      req.params = validatedData as any;
-      return next();
+      req.params = validatedData as Record<string, any>;
+      next();
     } catch (error) {
       if (error instanceof ZodError) {
         const errors = error.issues.map((issue) => ({
@@ -97,14 +99,15 @@ export const validateParams = (schema: ZodType) => {
           message: issue.message,
         }));
 
-        return res.status(400).json({
+        res.status(400).json({
           success: false,
-          message: "Parameter validation failed",
+          message: "Params validation failed",
           errors,
         });
+        return;
       }
 
-      return res.status(500).json({
+      res.status(500).json({
         success: false,
         message: "Internal server error during validation",
       });

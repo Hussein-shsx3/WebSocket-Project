@@ -17,7 +17,7 @@ import { asyncHandler } from "../middleware/error.middleware";
  * Get current user's profile
  */
 export const getProfile = asyncHandler(async (req: Request, res: Response) => {
-  const userId = (req as any).user?.userId;
+  const userId = req.user?.userId;
 
   if (!userId) {
     res.status(401).json({ message: "Unauthorized" });
@@ -50,7 +50,7 @@ export const getUserByIdHandler = asyncHandler(async (req: Request, res: Respons
  * Update user profile
  */
 export const updateProfile = asyncHandler(async (req: Request, res: Response) => {
-  const userId = (req as any).user?.userId;
+  const userId = req.user?.userId;
 
   if (!userId) {
     res.status(401).json({ message: "Unauthorized" });
@@ -80,7 +80,7 @@ export const updateProfile = asyncHandler(async (req: Request, res: Response) =>
  * Upload user avatar
  */
 export const uploadAvatar = asyncHandler(async (req: Request, res: Response) => {
-  const userId = (req as any).user?.userId;
+  const userId = req.user?.userId;
 
   if (!userId) {
     res.status(401).json({ message: "Unauthorized" });
@@ -131,7 +131,7 @@ export const searchUsersHandler = asyncHandler(async (req: Request, res: Respons
  * Update user status
  */
 export const updateStatus = asyncHandler(async (req: Request, res: Response) => {
-  const userId = (req as any).user?.userId;
+  const userId = req.user?.userId;
 
   if (!userId) {
     res.status(401).json({ message: "Unauthorized" });
@@ -157,7 +157,7 @@ export const updateStatus = asyncHandler(async (req: Request, res: Response) => 
  * Delete user account
  */
 export const deleteAccount = asyncHandler(async (req: Request, res: Response) => {
-  const userId = (req as any).user?.userId;
+  const userId = req.user?.userId;
 
   if (!userId) {
     res.status(401).json({ message: "Unauthorized" });

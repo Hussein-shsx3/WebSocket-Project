@@ -9,6 +9,8 @@ const socket_io_1 = require("socket.io");
 const app_1 = require("./app");
 const env_config_1 = require("./config/env.config");
 const client_1 = require("@prisma/client");
+const chat_socket_1 = require("./socket/chat.socket");
+const jwt_util_1 = require("./utils/jwt.util");
 const prisma = new client_1.PrismaClient();
 exports.prisma = prisma;
 const server = http_1.default.createServer(app_1.app);
@@ -20,38 +22,31 @@ exports.io = new socket_io_1.Server(server, {
         credentials: true,
     },
 });
-exports.io.on("connection", (socket) => {
-    console.log(`✅ Client connected: ${socket.id}`);
-    socket.on("join_room", (roomId) => {
-        socket.join(roomId);
-        socket.broadcast.to(roomId).emit("user_joined", {
-            userId: socket.id,
-            message: "A user has joined the room",
-        });
-        console.log(`User ${socket.id} joined room ${roomId}`);
-    });
-    socket.on("send_message", (data) => {
-        exports.io.to(data.roomId).emit("receive_message", {
-            userId: socket.id,
-            message: data.message,
-            timestamp: new Date(),
-        });
-    });
-    socket.on("leave_room", (roomId) => {
-        socket.leave(roomId);
-        socket.broadcast.to(roomId).emit("user_left", {
-            userId: socket.id,
-            message: "A user has left the room",
-        });
-        console.log(`User ${socket.id} left room ${roomId}`);
-    });
-    socket.on("disconnect", () => {
-        console.log(`❌ Client disconnected: ${socket.id}`);
-    });
-    socket.on("error", (error) => {
-        console.error(`Socket error for ${socket.id}:`, error);
-    });
+exports.io.use((socket, next) => {
+    try {
+        let token = socket.handshake.auth.token;
+        if (!token && socket.handshake.headers.authorization) {
+            const authHeader = socket.handshake.headers.authorization;
+            token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : authHeader;
+        }
+        if (!token) {
+            return next(new Error("No token provided"));
+        }
+        const decoded = (0, jwt_util_1.verifyAccessToken)(token);
+        if (!decoded.userId) {
+            return next(new Error("userId not found in token"));
+        }
+        socket.data.userId = decoded.userId;
+        socket.data.email = decoded.email;
+        socket.data.role = decoded.role;
+        next();
+    }
+    catch (error) {
+        console.error("❌ Socket.IO Auth Error:", error.message);
+        return next(new Error(`Authentication failed: ${error.message}`));
+    }
 });
+(0, chat_socket_1.setupChatSocket)(exports.io);
 const connectDatabase = async () => {
     try {
         await prisma.$connect();

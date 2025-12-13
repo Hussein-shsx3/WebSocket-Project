@@ -22,7 +22,7 @@ export const authenticate = (
   req: Request,
   res: Response,
   next: NextFunction
-): any => {
+): void => {
   try {
     const authHeader = req.headers.authorization;
     console.log("🔍 Auth Header:", authHeader); // Debug log
@@ -44,12 +44,13 @@ export const authenticate = (
     };
 
     next();
-  } catch (error: any) {
-    console.error("❌ Auth Error:", error.message); // Debug log
-    return res.status(401).json({
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error("❌ Auth Error:", errorMessage); // Debug log
+    res.status(401).json({
       success: false,
       message: "Unauthorized",
-      error: error.message,
+      error: errorMessage,
     });
   }
 };
@@ -61,7 +62,7 @@ export const optionalAuthenticate = (
   req: Request,
   res: Response,
   next: NextFunction
-): any => {
+): void => {
   try {
     const authHeader = req.headers.authorization;
 
@@ -94,21 +95,23 @@ export const isAuthenticated = (req: Request): boolean => {
  * Authorize by role
  */
 export const authorize = (...allowedRoles: string[]) => {
-  return (req: Request, res: Response, next: NextFunction): any => {
+  return (req: Request, res: Response, next: NextFunction): void => {
     if (!req.user) {
-      return res.status(401).json({
+      res.status(401).json({
         success: false,
         message: "Not authenticated",
       });
+      return;
     }
 
-    if (!allowedRoles.includes((req.user as any).role || "USER")) {
-      return res.status(403).json({
+    if (!allowedRoles.includes(req.user.role || "USER")) {
+      res.status(403).json({
         success: false,
         message:
           "Insufficient permissions. Required roles: " +
           allowedRoles.join(", "),
       });
+      return;
     }
 
     next();

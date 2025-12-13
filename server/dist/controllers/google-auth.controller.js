@@ -3,10 +3,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.googleLogout = exports.googleAuth = exports.googleCallback = void 0;
 const jwt_util_1 = require("../utils/jwt.util");
 const env_config_1 = require("../config/env.config");
+const error_middleware_1 = require("../middleware/error.middleware");
 const googleCallback = async (req, res) => {
     try {
-        const user = req.user;
-        if (!user) {
+        const googleUser = req.user;
+        if (!googleUser || !googleUser.id || !googleUser.email) {
             res.status(401).json({
                 success: false,
                 message: "Authentication failed",
@@ -14,9 +15,9 @@ const googleCallback = async (req, res) => {
             return;
         }
         const tokens = (0, jwt_util_1.generateAuthTokens)({
-            userId: user.id,
-            email: user.email,
-            role: user.role || "USER",
+            userId: googleUser.id,
+            email: googleUser.email,
+            role: googleUser.role || "USER",
         });
         res.cookie("refreshToken", tokens.refreshToken, {
             httpOnly: true,
@@ -25,11 +26,11 @@ const googleCallback = async (req, res) => {
             maxAge: 30 * 24 * 60 * 60 * 1000,
         });
         const redirectUrl = `${env_config_1.config.CLIENT_URL}/auth/google/callback?token=${tokens.accessToken}&user=${encodeURIComponent(JSON.stringify({
-            id: user.id,
-            email: user.email,
-            name: user.name,
-            avatar: user.avatar,
-            role: user.role,
+            id: googleUser.id,
+            email: googleUser.email,
+            name: googleUser.name || "",
+            avatar: googleUser.avatar || "",
+            role: googleUser.role || "USER",
         }))}`;
         res.redirect(redirectUrl);
     }
@@ -46,38 +47,19 @@ const googleAuth = (req, res) => {
     });
 };
 exports.googleAuth = googleAuth;
-const googleLogout = async (req, res) => {
-    try {
-        const userId = req.user?.userId;
-        if (!userId) {
-            res.status(401).json({
-                success: false,
-                message: "Not authenticated",
-            });
-            return;
-        }
-        req.logout((err) => {
-            if (err) {
-                res.status(500).json({
-                    success: false,
-                    message: "Logout failed",
-                });
-                return;
-            }
-            res.clearCookie("refreshToken");
-            res.json({
-                success: true,
-                message: "Logged out successfully",
-            });
-        });
-    }
-    catch (error) {
-        console.error("Google logout error:", error);
-        res.status(500).json({
+exports.googleLogout = (0, error_middleware_1.asyncHandler)(async (req, res) => {
+    const userId = req.user?.userId;
+    if (!userId) {
+        res.status(401).json({
             success: false,
-            message: "Logout failed",
+            message: "Not authenticated",
         });
+        return;
     }
-};
-exports.googleLogout = googleLogout;
+    res.clearCookie("refreshToken");
+    res.status(200).json({
+        success: true,
+        message: "Logged out successfully",
+    });
+});
 //# sourceMappingURL=google-auth.controller.js.map

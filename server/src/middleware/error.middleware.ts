@@ -16,13 +16,23 @@ interface ErrorResponse {
 /**
  * Handle Prisma Errors
  */
-const handlePrismaError = (error: any): ErrorResponse => {
+const handlePrismaError = (error: unknown): ErrorResponse => {
+  // Type guard for Prisma errors
+  if (typeof error !== 'object' || error === null) {
+    return {
+      success: false,
+      message: "Database operation failed",
+      statusCode: 500,
+    };
+  }
+
+  const prismaError = error as Record<string, unknown>;
   // Check for Prisma error codes
-  if (error.code) {
-    switch (error.code) {
+  if (prismaError.code) {
+    switch (prismaError.code as string) {
       case "P2002":
         // Unique constraint violation
-        const field = (error.meta?.target as string[])?.join(", ") || "field";
+        const field = ((prismaError.meta as any)?.target as string[])?.join(", ") || "field";
         return {
           success: false,
           message: `${field} already exists`,
@@ -113,8 +123,8 @@ export const errorHandler = (
   }
   // Handle Prisma errors (check by name property)
   else if (
-    error.name === "PrismaClientKnownRequestError" ||
-    (error as any).code
+    (error instanceof Error && error.name === "PrismaClientKnownRequestError") ||
+    (typeof error === 'object' && error !== null && 'code' in error)
   ) {
     response = handlePrismaError(error);
   }

@@ -27,8 +27,8 @@ export interface AuthTokens {
  */
 export const generateAccessToken = (payload: Omit<TokenPayload, "iat" | "exp">): string => {
   try {
-    const signOptions: any = {
-      expiresIn: config.JWT_EXPIRE,
+    const signOptions: SignOptions = {
+      expiresIn: config.JWT_EXPIRE as any,
       algorithm: "HS256",
     };
     const token = jwt.sign(payload, config.JWT_SECRET as string, signOptions);
@@ -44,8 +44,8 @@ export const generateAccessToken = (payload: Omit<TokenPayload, "iat" | "exp">):
  */
 export const generateRefreshToken = (payload: Omit<TokenPayload, "iat" | "exp">): string => {
   try {
-    const signOptions: any = {
-      expiresIn: config.JWT_REFRESH_EXPIRE,
+    const signOptions: SignOptions = {
+      expiresIn: config.JWT_REFRESH_EXPIRE as any,
       algorithm: "HS256",
     };
     const token = jwt.sign(payload, config.JWT_REFRESH_SECRET as string, signOptions);
