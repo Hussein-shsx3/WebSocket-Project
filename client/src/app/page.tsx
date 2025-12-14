@@ -1,5 +1,5 @@
-import Home from "@/components/pages/home";
+import { redirectBasedOnAuth } from "@/protect";
 
-const HomePage = () => <Home />;
-
-export default HomePage;
+export default async function MainPage() {
+  await redirectBasedOnAuth();
+}

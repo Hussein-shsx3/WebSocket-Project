@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Poppins } from "next/font/google";
 import "@/styles/globals.css";
+import { Providers } from "@/providers";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -53,10 +54,10 @@ export default function RootLayout({
       className={`${inter.variable} ${poppins.variable}`}
       suppressHydrationWarning
     >
-      <body
-        className={`${inter.className} antialiased bg-[#37475a] text-white overflow-hidden`}
-      >
-        {children}
+      <body className={`${inter.className} antialiased overflow-hidden`}>
+        <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
   );
