@@ -42,6 +42,7 @@ function setupChatSocket(io) {
                     senderId: userId,
                     content: message.content,
                     type: message.type,
+                    status: "SENT",
                     createdAt: message.createdAt,
                     sender: {
                         id: userId,
@@ -49,16 +50,6 @@ function setupChatSocket(io) {
                         avatar: message.sender?.avatar,
                     },
                 });
-                const room = io.sockets.adapter.rooms.get(conversationId);
-                if (room) {
-                    for (const socketId of room) {
-                        const recipientSocket = io.sockets.sockets.get(socketId);
-                        if (recipientSocket && recipientSocket.data.userId !== userId) {
-                            await message_service_1.messageService.markMessagesAsRead(conversationId, recipientSocket.data.userId);
-                            console.log(`✅ Auto-marked message as read for ${recipientSocket.data.userId}`);
-                        }
-                    }
-                }
                 console.log(`📤 Message broadcasted to ${conversationId}`);
             }
             catch (error) {
@@ -66,25 +57,39 @@ function setupChatSocket(io) {
                 socket.emit("error", { message: "Failed to send message" });
             }
         });
-        socket.on("message:received", async (data) => {
+        socket.on("message:edit", async (data) => {
             try {
-                const { conversationId, messageId } = data;
-                if (socket.rooms.has(conversationId)) {
-                    await message_service_1.messageService.markMessagesAsRead(conversationId, userId);
-                    socket.to(conversationId).emit("message:read", {
-                        conversationId,
-                        messageId,
-                        userId,
-                        readAt: new Date(),
-                    });
-                    console.log(`✅ Auto-marked message as read for ${userId}`);
-                }
-                else {
-                    console.log(`🔵 Message left unread - ${userId} not in room`);
-                }
+                const { messageId, conversationId, newContent } = data;
+                console.log(`✏️ User ${userId} editing message ${messageId}`);
+                const updatedMessage = await message_service_1.messageService.editMessage(messageId, userId, newContent);
+                io.to(conversationId).emit("message:edited", {
+                    messageId,
+                    conversationId,
+                    newContent: updatedMessage.content,
+                    isEdited: true,
+                    editedAt: updatedMessage.editedAt,
+                });
+                console.log(`✅ Message edit broadcasted to ${conversationId}`);
             }
             catch (error) {
-                console.error("Error marking message as read:", error);
+                console.error("Error editing message:", error);
+                socket.emit("error", { message: "Failed to edit message" });
+            }
+        });
+        socket.on("message:delete", async (data) => {
+            try {
+                const { messageId, conversationId } = data;
+                console.log(`🗑️ User ${userId} deleting message ${messageId}`);
+                await message_service_1.messageService.deleteMessage(messageId, userId);
+                io.to(conversationId).emit("message:deleted", {
+                    messageId,
+                    conversationId,
+                });
+                console.log(`✅ Message deletion broadcasted to ${conversationId}`);
+            }
+            catch (error) {
+                console.error("Error deleting message:", error);
+                socket.emit("error", { message: "Failed to delete message" });
             }
         });
         socket.on("typing:start", (conversationId) => {
@@ -96,11 +101,47 @@ function setupChatSocket(io) {
             });
         });
         socket.on("typing:stop", (conversationId) => {
+            console.log(`⌨️ ${userId} stopped typing in ${conversationId}`);
             socket.to(conversationId).emit("user:typing", {
                 conversationId,
                 userId,
                 isTyping: false,
             });
+        });
+        socket.on("message:read", (data) => {
+            try {
+                const { conversationId, messageIds } = data;
+                console.log(`👁️ ${userId} read messages in ${conversationId}`);
+                socket.to(conversationId).emit("user:read-receipt", {
+                    conversationId,
+                    userId,
+                    messageIds,
+                    readAt: new Date(),
+                });
+                console.log(`✅ Read receipt broadcasted to ${conversationId}`);
+            }
+            catch (error) {
+                console.error("Error broadcasting read receipt:", error);
+            }
+        });
+        socket.on("message:react", async (data) => {
+            try {
+                const { messageId, conversationId, emoji } = data;
+                console.log(`😊 ${userId} reacted with ${emoji} to message ${messageId}`);
+                const reaction = await message_service_1.messageService.reactToMessage(messageId, userId, emoji);
+                io.to(conversationId).emit("message:reaction", {
+                    messageId,
+                    conversationId,
+                    userId,
+                    emoji,
+                    removed: reaction.removed || false,
+                });
+                console.log(`✅ Reaction broadcasted to ${conversationId}`);
+            }
+            catch (error) {
+                console.error("Error reacting to message:", error);
+                socket.emit("error", { message: "Failed to react to message" });
+            }
         });
         socket.on("user:online", () => {
             console.log(`🟢 ${userId} is online`);

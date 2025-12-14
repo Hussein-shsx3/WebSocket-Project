@@ -51,6 +51,8 @@ export function setupChatSocket(io: Server) {
     /**
      * When a NEW MESSAGE is SENT
      * Save message and broadcast to conversation room
+     * NOTE: Real-time only - no auto-mark here
+     * Clients will mark as read via HTTP or conversation:open event
      */
     socket.on("message:send", async (data: any) => {
       try {
@@ -67,13 +69,14 @@ export function setupChatSocket(io: Server) {
           mediaUrls
         );
 
-        // Broadcast message to all users in conversation
+        // Broadcast message to ALL users (including sender for confirmation)
         io.to(conversationId).emit("message:received", {
           id: message.id,
           conversationId,
           senderId: userId,
           content: message.content,
           type: message.type,
+          status: "SENT",
           createdAt: message.createdAt,
           sender: {
             id: userId,
@@ -81,19 +84,6 @@ export function setupChatSocket(io: Server) {
             avatar: message.sender?.avatar,
           },
         });
-
-        // Auto-mark message as read for all users in the room (except sender)
-        const room = io.sockets.adapter.rooms.get(conversationId);
-        if (room) {
-          for (const socketId of room) {
-            const recipientSocket = io.sockets.sockets.get(socketId);
-            if (recipientSocket && recipientSocket.data.userId !== userId) {
-              // Mark message as read for this user
-              await messageService.markMessagesAsRead(conversationId, recipientSocket.data.userId);
-              console.log(`✅ Auto-marked message as read for ${recipientSocket.data.userId}`);
-            }
-          }
-        }
 
         console.log(`📤 Message broadcasted to ${conversationId}`);
       } catch (error) {
@@ -103,39 +93,69 @@ export function setupChatSocket(io: Server) {
     });
 
     /**
-     * When a MESSAGE is RECEIVED
-     * If user is in conversation: AUTO-MARK as read
-     * If user is NOT in conversation: Keep as unread
+     * Socket.IO does NOT handle message:received
+     * This is a real-time push event from server only
+     * Clients acknowledge with HTTP POST /mark-as-read or via conversation:open
      */
-    socket.on("message:received", async (data: any) => {
+    // Note: Removed message:received handler - this is server->client only
+
+    /**
+     * When a MESSAGE is EDITED
+     * Broadcast edit to all users in conversation
+     */
+    socket.on("message:edit", async (data: any) => {
       try {
-        const { conversationId, messageId } = data;
+        const { messageId, conversationId, newContent } = data;
 
-        // ✅ Only mark as read if user is IN the conversation room
-        if (socket.rooms.has(conversationId)) {
-          // User is in the conversation - AUTO-MARK as read
-          await messageService.markMessagesAsRead(conversationId, userId);
+        console.log(`✏️ User ${userId} editing message ${messageId}`);
 
-          // Notify sender that message is read
-          socket.to(conversationId).emit("message:read", {
-            conversationId,
-            messageId,
-            userId,
-            readAt: new Date(),
-          });
+        // Update in database via service
+        const updatedMessage = await messageService.editMessage(messageId, userId, newContent);
 
-          console.log(`✅ Auto-marked message as read for ${userId}`);
-        } else {
-          // User is NOT in the conversation - keep as unread
-          console.log(`🔵 Message left unread - ${userId} not in room`);
-        }
+        // Broadcast edit to conversation
+        io.to(conversationId).emit("message:edited", {
+          messageId,
+          conversationId,
+          newContent: updatedMessage.content,
+          isEdited: true,
+          editedAt: updatedMessage.editedAt,
+        });
+
+        console.log(`✅ Message edit broadcasted to ${conversationId}`);
       } catch (error) {
-        console.error("Error marking message as read:", error);
+        console.error("Error editing message:", error);
+        socket.emit("error", { message: "Failed to edit message" });
       }
     });
 
     /**
-     * Typing indicator
+     * When a MESSAGE is DELETED
+     * Broadcast deletion to all users in conversation
+     */
+    socket.on("message:delete", async (data: any) => {
+      try {
+        const { messageId, conversationId } = data;
+
+        console.log(`🗑️ User ${userId} deleting message ${messageId}`);
+
+        // Delete from database via service
+        await messageService.deleteMessage(messageId, userId);
+
+        // Broadcast deletion to conversation
+        io.to(conversationId).emit("message:deleted", {
+          messageId,
+          conversationId,
+        });
+
+        console.log(`✅ Message deletion broadcasted to ${conversationId}`);
+      } catch (error) {
+        console.error("Error deleting message:", error);
+        socket.emit("error", { message: "Failed to delete message" });
+      }
+    });
+
+    /**
+     * Typing indicator - REAL-TIME ONLY (no database)
      */
     socket.on("typing:start", (conversationId: string) => {
       console.log(`⌨️ ${userId} is typing in ${conversationId}`);
@@ -147,11 +167,65 @@ export function setupChatSocket(io: Server) {
     });
 
     socket.on("typing:stop", (conversationId: string) => {
+      console.log(`⌨️ ${userId} stopped typing in ${conversationId}`);
       socket.to(conversationId).emit("user:typing", {
         conversationId,
         userId,
         isTyping: false,
       });
+    });
+
+    /**
+     * Message read receipt - REAL-TIME ONLY
+     * Notify other users that messages are read
+     */
+    socket.on("message:read", (data: any) => {
+      try {
+        const { conversationId, messageIds } = data;
+
+        console.log(`👁️ ${userId} read messages in ${conversationId}`);
+
+        // Broadcast read receipt to other users
+        socket.to(conversationId).emit("user:read-receipt", {
+          conversationId,
+          userId,
+          messageIds,
+          readAt: new Date(),
+        });
+
+        console.log(`✅ Read receipt broadcasted to ${conversationId}`);
+      } catch (error) {
+        console.error("Error broadcasting read receipt:", error);
+      }
+    });
+
+    /**
+     * Message reactions - REAL-TIME + DATABASE
+     * Broadcast reactions to all users in conversation
+     */
+    socket.on("message:react", async (data: any) => {
+      try {
+        const { messageId, conversationId, emoji } = data;
+
+        console.log(`😊 ${userId} reacted with ${emoji} to message ${messageId}`);
+
+        // Save/toggle reaction in database
+        const reaction = await messageService.reactToMessage(messageId, userId, emoji);
+
+        // Broadcast reaction to conversation
+        io.to(conversationId).emit("message:reaction", {
+          messageId,
+          conversationId,
+          userId,
+          emoji,
+          removed: (reaction as any).removed || false,
+        });
+
+        console.log(`✅ Reaction broadcasted to ${conversationId}`);
+      } catch (error) {
+        console.error("Error reacting to message:", error);
+        socket.emit("error", { message: "Failed to react to message" });
+      }
     });
 
     /**

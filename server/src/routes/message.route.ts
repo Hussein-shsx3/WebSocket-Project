@@ -22,7 +22,6 @@ const router = Router();
 
 // Mark messages as read (MUST be before /:conversationId)
 router.post("/mark-as-read", authenticate, markAsRead);
-router.patch("/mark-read", authenticate, markAsRead);
 
 // Search messages (MUST be before /:messageId)
 router.get("/search", authenticate, searchMessages);
