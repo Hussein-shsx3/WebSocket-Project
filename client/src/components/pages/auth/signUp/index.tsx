@@ -1,10 +1,11 @@
 "use client";
+import AuthContainer from "@/components/ui/display/AuthContainer";
 
 const SignUp = () => {
   return (
-    <div>
-      
-    </div>
+    <AuthContainer>
+      hi
+    </AuthContainer>
   );
 }
 

@@ -3,6 +3,7 @@
 @tailwind utilities;
 
 :root {
+  --primary-bg: #4eac6d;
   --sidebar-bg: #1a1a1a;
   --panel-bg: #2a2a2a;
   --main-bg: #ffffff;

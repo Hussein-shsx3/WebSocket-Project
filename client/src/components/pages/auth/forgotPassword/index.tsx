@@ -1,7 +1,8 @@
 "use client";
+import AuthContainer from "@/components/ui/display/AuthContainer";
 
 const ForgotPassword = () => {
-  return <div></div>;
+  return <AuthContainer>hi</AuthContainer>;
 };
 
 export default ForgotPassword;

@@ -10,6 +10,7 @@ module.exports = {
     extend: {
       colors: {
         // Application Layout Colors - using CSS variables with hex
+        primaryBg: "var(--primary-bg)",
         sidebar: "var(--sidebar-bg)",
         panel: "var(--panel-bg)",
         main: "var(--main-bg)",
