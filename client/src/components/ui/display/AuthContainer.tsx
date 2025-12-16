@@ -7,7 +7,7 @@ interface ContainerProps {
 }
 const AuthContainer = ({ children }: ContainerProps) => {
   return (
-    <section className="h-[100dvh] w-[100vw] flex flex-col xl:flex-row items-start justify-center xl:justify-between bg-primaryBg p-7">
+    <section className="h-[100dvh] w-[100vw] flex flex-col xl:flex-row items-start justify-center xl:justify-between bg-primaryColor p-7">
       <div className="w-full xl:w-[20%] p-8">
         <div className="flex flex-col justify-center items-center xl:items-start xl:justify-start">
           <h2 className="text-white font-medium flex flex-row items-center gap-4">
@@ -19,16 +19,15 @@ const AuthContainer = ({ children }: ContainerProps) => {
           </p>
         </div>
       </div>
-      <div className="w-full xl:w-[74%] h-full bg-white rounded-2xl flex justify-center items-center">
+      <div className="w-full xl:w-[74%] h-full bg-white rounded-2xl flex justify-center items-center p-5">
         {children}
       </div>
       <Image
-        className="absolute hidden lg:block bottom-2 left-2 md:bottom-5 md:left-8 xl:left-16 w-40 h-auto md:w-96 lg:w-[730px] xl:w-[800px]"
+        className="absolute hidden lg:block bottom-2 left-2 md:bottom-5 md:left-8 xl:left-16 w-40 h-auto md:w-56 lg:w-[600px] xl:w-[700px]"
         src="/images/auth-img.png"
         alt="Authentication Image"
         width={830}
         height={830}
-        sizes="(max-width: 640px) 10vw, (max-width: 1024px) 30vw, 830px"
       />
     </section>
   );
