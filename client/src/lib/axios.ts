@@ -89,6 +89,14 @@ axiosInstance.interceptors.response.use(
       return Promise.reject(error);
     }
 
+    // If this is a login/register/auth endpoint, don't try to refresh - return error as is
+    if (originalRequest?.url?.includes("/auth/login") || 
+        originalRequest?.url?.includes("/auth/register") ||
+        originalRequest?.url?.includes("/auth/forgot-password") ||
+        originalRequest?.url?.includes("/auth/reset-password")) {
+      return Promise.reject(error);
+    }
+
     // If this is a refresh token endpoint, logout
     if (originalRequest?.url?.includes("/auth/refresh-tokens")) {
       tokenManager.clearTokens();
