@@ -7,9 +7,9 @@ interface ContainerProps {
 }
 const AuthContainer = ({ children }: ContainerProps) => {
   return (
-    <section className="h-[100dvh] w-[100vw] flex flex-col xl:flex-row items-start justify-center xl:justify-between bg-primaryColor p-7">
-      <div className="w-full xl:w-[20%] p-8">
-        <div className="flex flex-col justify-center items-center xl:items-start xl:justify-start">
+    <section className="h-[100dvh] w-[100vw] flex flex-col lg:flex-row items-start justify-start lg:justify-between bg-primaryColor p-4 md:p-7">
+      <div className="w-full lg:w-[20%] p-8">
+        <div className="flex flex-col justify-center items-center lg:items-start lg:justify-start">
           <h2 className="text-white font-medium flex flex-row items-center gap-4">
             <MessageSquareText size={25} />
             <p>Doot</p>
@@ -19,11 +19,11 @@ const AuthContainer = ({ children }: ContainerProps) => {
           </p>
         </div>
       </div>
-      <div className="w-full xl:w-[74%] h-full bg-white rounded-2xl flex justify-center items-center p-5">
+      <div className="w-full lg:w-[74%] md:h-full bg-white rounded-2xl flex justify-center items-center py-10 md:py-5 px-5 mt-10 md:mt-0">
         {children}
       </div>
       <Image
-        className="absolute hidden lg:block bottom-2 left-2 md:bottom-5 md:left-8 xl:left-16 w-40 h-auto md:w-56 lg:w-[600px] xl:w-[700px]"
+        className="absolute hidden lg:block bottom-2 left-2 md:bottom-5 md:left-8 xl:left-16 w-40 h-auto md:w-56 lg:w-[500px] xl:w-[600px]"
         src="/images/auth-img.png"
         alt="Authentication Image"
         width={830}

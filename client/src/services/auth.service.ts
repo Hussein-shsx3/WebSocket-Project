@@ -13,7 +13,6 @@ export interface RegisterRequest {
 
 export interface AuthResponse {
   accessToken: string;
-  refreshToken: string;
   user: {
     id: string;
     email: string;
@@ -30,22 +29,32 @@ export const authService = {
    * Login with email and password
    */
   async login(data: LoginRequest): Promise<AuthResponse> {
-    const response = await axiosInstance.post<AuthResponse>(
-      "/auth/login",
-      data
-    );
-    return response.data;
+    const response = await axiosInstance.post<{
+      success: boolean;
+      message: string;
+      data: { user: AuthResponse['user']; accessToken: string };
+    }>("/auth/login", data);
+    
+    return {
+      accessToken: response.data.data.accessToken,
+      user: response.data.data.user,
+    };
   },
 
   /**
    * Register a new user
    */
   async register(data: RegisterRequest): Promise<AuthResponse> {
-    const response = await axiosInstance.post<AuthResponse>(
-      "/auth/register",
-      data
-    );
-    return response.data;
+    const response = await axiosInstance.post<{
+      success: boolean;
+      message: string;
+      data: { user: AuthResponse['user']; verificationToken: string };
+    }>("/auth/register", data);
+    
+    return {
+      accessToken: "", // No access token on register
+      user: response.data.data.user,
+    };
   },
 
   /**

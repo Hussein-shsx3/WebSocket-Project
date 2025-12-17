@@ -22,7 +22,7 @@ export const useSignIn = () => {
   // Validation
   const validateForm = (): boolean => {
     const newErrors: Partial<LoginRequest> = {};
-    setGeneralError(""); // Clear previous errors
+    setGeneralError("");
 
     if (!formData.email) {
       newErrors.email = "Email is required";
@@ -46,14 +46,12 @@ export const useSignIn = () => {
       ...prev,
       [field]: value,
     }));
-    // Clear error for this field when user starts typing
     if (errors[field]) {
       setErrors((prev) => ({
         ...prev,
         [field]: undefined,
       }));
     }
-    // Clear general error when user starts typing
     if (generalError) {
       setGeneralError("");
     }
@@ -63,41 +61,33 @@ export const useSignIn = () => {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    // Validate form
     if (!validateForm()) {
       return;
     }
 
-    // Call login API
     loginMutation.mutate(formData, {
       onSuccess: () => {
-        // Redirect to chats on success
+        // Use router.push for proper SPA navigation
         router.push("/chats");
       },
       onError: (error: Error) => {
-        // Handle API error
         const axiosError = error as AxiosError<{ message: string }>;
         const errorMessage =
-          axiosError?.response?.data?.message || "Login failed. Please try again.";
+          axiosError?.response?.data?.message ||
+          "Login failed. Please try again.";
         setGeneralError(errorMessage);
       },
     });
   };
 
   return {
-    // Form data
     formData,
     errors,
     generalError,
-
-    // Handlers
     handleChange,
     handleSubmit,
     clearGeneralError: () => setGeneralError(""),
-
-    // State
     isLoading: loginMutation.isPending,
     isError: loginMutation.isError,
   };
 };
-

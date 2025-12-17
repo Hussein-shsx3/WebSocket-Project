@@ -21,7 +21,7 @@ const SignIn = () => {
     <AuthContainer>
       <form
         onSubmit={handleSubmit}
-        className="w-full md:w-1/3 flex flex-col gap-4 z-20"
+        className="w-full md:w-1/2 lg:w-1/3 flex flex-col gap-4 z-20"
       >
         <FormHeader />
 

@@ -9,9 +9,9 @@ export const useLogin = () => {
   return useMutation({
     mutationFn: (data: LoginRequest) => authService.login(data),
     onSuccess: (data: AuthResponse) => {
-      // Store tokens in cookies
+      // Store access token in cookie
+      // Note: refreshToken is already set as httpOnly cookie by the server
       tokenManager.setAccessToken(data.accessToken);
-      tokenManager.setRefreshToken(data.refreshToken);
     },
     onError: (error) => {
       console.error("Login failed:", error);
@@ -26,9 +26,9 @@ export const useRegister = () => {
   return useMutation({
     mutationFn: (data: RegisterRequest) => authService.register(data),
     onSuccess: (data: AuthResponse) => {
-      // Store tokens in cookies
+      // Store access token in cookie
+      // Note: refreshToken is already set as httpOnly cookie by the server
       tokenManager.setAccessToken(data.accessToken);
-      tokenManager.setRefreshToken(data.refreshToken);
     },
     onError: (error) => {
       console.error("Registration failed:", error);

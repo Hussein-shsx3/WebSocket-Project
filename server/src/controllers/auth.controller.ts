@@ -17,8 +17,11 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
 
   return res.status(201).json({
     success: true,
-    message: result.message,
-    data: result.data,
+    message: "User registered successfully. Please verify your email.",
+    data: {
+      user: result.user,
+      verificationToken: result.verificationToken,
+    },
   });
 });
 
@@ -31,17 +34,22 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
 
   const result = await authService.login(parse.data);
 
+  // Set refresh token as httpOnly cookie (for security - cannot be accessed by JavaScript)
   res.cookie("refreshToken", result.refreshToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict",
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days (matches JWT_REFRESH_EXPIRE)
   });
 
+  // Return access token in response body - client will store it
   return res.status(200).json({
     success: true,
-    message: result.message,
-    data: result.data,
+    message: "Login successful",
+    data: {
+      user: result.user,
+      accessToken: result.accessToken,
+    },
   });
 });
 

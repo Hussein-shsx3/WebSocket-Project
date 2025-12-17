@@ -20,20 +20,16 @@ const tokenManager = {
   getAccessToken: () => Cookies.get("accessToken"),
   setAccessToken: (token: string) =>
     Cookies.set("accessToken", token, {
-      expires: 7,
+      expires: 1/48, // 30 minutes (1 day / 48 = 30 minutes)
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
     }),
-  getRefreshToken: () => Cookies.get("refreshToken"),
-  setRefreshToken: (token: string) =>
-    Cookies.set("refreshToken", token, {
-      expires: 30,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-    }),
+  // Note: refreshToken is set by the server as httpOnly cookie
+  // We cannot and should not try to access or set it from the client
+  // The browser automatically handles httpOnly cookies in requests
   clearTokens: () => {
     Cookies.remove("accessToken");
-    Cookies.remove("refreshToken");
+    // refreshToken will be cleared by server on logout endpoint
   },
 };
 
@@ -118,23 +114,16 @@ axiosInstance.interceptors.response.use(
     }
 
     isRefreshing = true;
-    const refreshToken = tokenManager.getRefreshToken();
-
-    if (!refreshToken) {
-      tokenManager.clearTokens();
-      if (typeof window !== "undefined") {
-        window.location.href = "/signIn";
-      }
-      return Promise.reject(error);
-    }
 
     try {
       // Attempt to refresh token
+      // Note: refreshToken is sent automatically by the browser in httpOnly cookie
       const response = await axios.post(
         `${API_BASE_URL}/auth/refresh-tokens`,
-        { refreshToken },
+        {},
         {
           headers: { "Content-Type": "application/json" },
+          withCredentials: true, // Ensure cookies are sent
         }
       );
 

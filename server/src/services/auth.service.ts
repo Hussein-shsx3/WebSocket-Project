@@ -60,12 +60,8 @@ export class AuthService {
     await sendVerificationEmail(user.email, verificationToken, verificationLink, user.name || undefined);
 
     return {
-      success: true,
-      message: "User registered successfully. Please verify your email.",
-      data: {
-        user,
-        verificationToken,
-      },
+      user,
+      verificationToken,
     };
   }
 
@@ -116,17 +112,13 @@ export class AuthService {
     });
 
     return {
-      success: true,
-      message: "Login successful",
-      data: {
-        user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          createdAt: user.createdAt,
-        },
-        accessToken,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        createdAt: user.createdAt,
       },
+      accessToken,
       refreshToken,
     };
   }
