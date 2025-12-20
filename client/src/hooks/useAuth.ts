@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { authService, LoginRequest, RegisterRequest, AuthResponse } from "@/services/auth.service";
+import { authService, LoginRequest, RegisterRequest, AuthResponse} from "@/services/auth.service";
 import { tokenManager } from "@/lib/axios";
 
 /**
@@ -9,8 +9,6 @@ export const useLogin = () => {
   return useMutation({
     mutationFn: (data: LoginRequest) => authService.login(data),
     onSuccess: (data: AuthResponse) => {
-      // Store access token in cookie
-      // Note: refreshToken is already set as httpOnly cookie by the server
       tokenManager.setAccessToken(data.accessToken);
     },
     onError: (error) => {
@@ -25,11 +23,6 @@ export const useLogin = () => {
 export const useRegister = () => {
   return useMutation({
     mutationFn: (data: RegisterRequest) => authService.register(data),
-    onSuccess: (data: AuthResponse) => {
-      // Store access token in cookie
-      // Note: refreshToken is already set as httpOnly cookie by the server
-      tokenManager.setAccessToken(data.accessToken);
-    },
     onError: (error) => {
       console.error("Registration failed:", error);
     },
@@ -43,12 +36,10 @@ export const useLogout = () => {
   return useMutation({
     mutationFn: () => authService.logout(),
     onSuccess: () => {
-      // Clear tokens from cookies
       tokenManager.clearTokens();
     },
     onError: (error) => {
       console.error("Logout failed:", error);
-      // Still clear tokens even if logout API fails
       tokenManager.clearTokens();
     },
   });

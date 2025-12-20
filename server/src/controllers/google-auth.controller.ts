@@ -30,7 +30,7 @@ export const googleCallback = async (req: Request, res: Response): Promise<void>
       maxAge: 30 * 24 * 60 * 60 * 1000,
     });
 
-    const redirectUrl = `${config.CLIENT_URL}/auth/google/callback?token=${tokens.accessToken}&user=${encodeURIComponent(
+    const redirectUrl = `${config.CLIENT_URL}/google-callback?token=${tokens.accessToken}&user=${encodeURIComponent(
       JSON.stringify({
         id: googleUser.id,
         email: googleUser.email,

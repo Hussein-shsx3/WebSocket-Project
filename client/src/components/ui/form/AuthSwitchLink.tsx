@@ -3,15 +3,15 @@
 import Link from "next/link";
 
 interface AuthSwitchLinkProps {
-  mode: "signin" | "signup";
+  mode: "signIn" | "signUp";
 }
 
 const AuthSwitchLink = ({ mode }: AuthSwitchLinkProps) => {
-  return mode === "signin" ? (
-    <div className="text-center text-gray-600 mt-5">
-      Don&apos;t have an account?{" "}
+  return mode === "signIn" ? (
+    <div className="text-center text-gray-600 mt-5 text-sm">
+      Don&apos;t have an account ?{" "}
       <Link
-        href="/register"
+        href="/signUp"
         className="text-primaryColor hover:underline font-medium"
       >
         Register
@@ -19,7 +19,7 @@ const AuthSwitchLink = ({ mode }: AuthSwitchLinkProps) => {
     </div>
   ) : (
     <div className="text-center text-sm text-gray-600 mt-2">
-      Already have an account?{" "}
+      Already have an account ?{" "}
       <Link
         href="/signIn"
         className="text-primaryColor hover:underline font-medium"

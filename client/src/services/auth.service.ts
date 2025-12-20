@@ -20,6 +20,15 @@ export interface AuthResponse {
   };
 }
 
+export interface RegisterResponse {
+  user: {
+    id: string;
+    email: string;
+    name: string;
+  };
+  verificationToken: string;
+}
+
 export interface RefreshTokenResponse {
   accessToken: string;
 }
@@ -44,16 +53,16 @@ export const authService = {
   /**
    * Register a new user
    */
-  async register(data: RegisterRequest): Promise<AuthResponse> {
+  async register(data: RegisterRequest): Promise<RegisterResponse> {
     const response = await axiosInstance.post<{
       success: boolean;
       message: string;
-      data: { user: AuthResponse['user']; verificationToken: string };
+      data: { user: RegisterResponse['user']; verificationToken: string };
     }>("/auth/register", data);
     
     return {
-      accessToken: "", // No access token on register
       user: response.data.data.user,
+      verificationToken: response.data.data.verificationToken,
     };
   },
 
@@ -114,5 +123,14 @@ export const authService = {
       newPassword,
     });
     return response.data;
+  },
+
+  /**
+   * Initiate Google OAuth login
+   * Redirects user to Google login page
+   */
+  initiateGoogleAuth(): void {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    window.location.href = `${apiUrl}/auth/google`;
   },
 };
