@@ -4,31 +4,36 @@
 
 :root {
   --primary-color: #4eac6d;
-  --sidebar-bg: #1a1a1a;
-  --panel-bg: #2a2a2a;
-  --main-bg: #ffffff;
-  --header-bg: #f9f9f9;
-  --text-primary: #1a1a1a;
-  --text-secondary: #666666;
-  --border-color: #e5e5e5;
-  --hover-bg: #f0f0f0;
-  --accent-color: #00d084;
+
+  /* Light Mode Colors */
+  --sidebar-bg: #37475a;
+  --panel-bg: #f5f7fb;
+  --main-bg: #e6ebf5;
+  --header-bg: #ffffff;
+  --text-primary: #495057;
+  --text-secondary: #7a7f9a;
+  --border-color: #e1e5eb;
+  --hover-bg: #eef0f5;
+  --search-bg: #eef2f8;
+  --chat-hover: #e8ecf4;
 }
 
 .dark {
-  --sidebar-bg: #1a1a1a;
-  --panel-bg: #2a2a2a;
-  --main-bg: #1a1a1a;
-  --header-bg: #3a3a3a;
-  --text-primary: #ffffff;
-  --text-secondary: #a0a0a0;
-  --border-color: #3a3a3a;
-  --hover-bg: #3a3a3a;
-  --accent-color: #00d084;
+  /* Dark Mode Colors */
+  --sidebar-bg: #36404a;
+  --panel-bg: #262e35;
+  --main-bg: #1b2028;
+  --header-bg: #303841;
+  --text-primary: #e1e9f0;
+  --text-secondary: #9ca3af;
+  --border-color: #38424d;
+  --hover-bg: #303841;
+  --search-bg: #303841;
+  --chat-hover: #303841;
 }
 
 @layer base {
-  body{
+  body {
     @apply min-h-[100dvh] w-full overflow-hidden;
   }
 

@@ -1,6 +1,6 @@
 import React from 'react';
 
-const Calls = () => {
+const FriendsRequests = () => {
   return (
     <div>
       
@@ -8,4 +8,4 @@ const Calls = () => {
   );
 }
 
-export default Calls;
+export default FriendsRequests;
