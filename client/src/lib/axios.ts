@@ -11,6 +11,7 @@ export const axiosInstance: AxiosInstance = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+  withCredentials: true, // Include cookies in requests (needed for refresh token)
 });
 
 /**
@@ -127,7 +128,7 @@ axiosInstance.interceptors.response.use(
         }
       );
 
-      const { accessToken: newAccessToken } = response.data;
+      const { accessToken: newAccessToken } = response.data.data;
       tokenManager.setAccessToken(newAccessToken);
 
       // Update original request with new token

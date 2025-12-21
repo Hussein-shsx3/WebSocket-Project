@@ -2,6 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Enable smooth transitions for dark mode */
 :root {
   --primary-color: #4eac6d;
 
@@ -16,6 +17,8 @@
   --hover-bg: #eef0f5;
   --search-bg: #eef2f8;
   --chat-hover: #e8ecf4;
+
+  color-scheme: light;
 }
 
 .dark {
@@ -30,11 +33,23 @@
   --hover-bg: #303841;
   --search-bg: #303841;
   --chat-hover: #303841;
+
+  color-scheme: dark;
 }
 
 @layer base {
+  html {
+    @apply transition-colors duration-300;
+  }
+
+  * {
+    @apply transition-colors duration-300;
+  }
+
   body {
     @apply min-h-[100dvh] w-full overflow-hidden;
+    background-color: var(--main-bg);
+    color: var(--text-primary);
   }
 
   h1 {

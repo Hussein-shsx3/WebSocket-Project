@@ -13,6 +13,7 @@ import {
   Users,
   Bookmark,
   LogOut,
+  UserPlus,
 } from "lucide-react";
 import { useLogout } from "@/hooks/useAuth";
 
@@ -20,20 +21,36 @@ export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const [isDark, setIsDark] = React.useState(false);
+  const [mounted, setMounted] = React.useState(false);
   const logoutMutation = useLogout();
+
+  // Initialize theme from localStorage
+  React.useEffect(() => {
+    setMounted(true);
+    const isDarkMode = localStorage.getItem("theme") === "dark" || 
+                       document.documentElement.classList.contains("dark");
+    setIsDark(isDarkMode);
+  }, []);
 
   const navigation = [
     { name: "Chats", href: "/chats", icon: MessageSquare },
-    { name: "Groups", href: "/groups", icon: Users },
+    { name: "Friend Requests", href: "/friendsRequests", icon: UserPlus },
     { name: "Contacts", href: "/contacts", icon: User },
     { name: "Calls", href: "/calls", icon: Phone },
-    { name: "Bookmarks", href: "/bookmarks", icon: Bookmark },
     { name: "Settings", href: "/settings", icon: Settings },
   ];
 
   const toggleTheme = () => {
-    setIsDark(!isDark);
-    document.documentElement.classList.toggle("dark");
+    const newIsDark = !isDark;
+    setIsDark(newIsDark);
+    
+    if (newIsDark) {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+    }
   };
 
   const handleLogout = () => {
@@ -91,13 +108,13 @@ export function Sidebar() {
         {/* Theme Toggle */}
         <button
           onClick={toggleTheme}
-          className="w-full h-11 flex items-center justify-center text-gray-400 hover:text-gray-300 transition-colors"
+          className="w-full h-11 flex items-center justify-center text-gray-400 hover:text-gray-300 transition-all duration-300 transform hover:scale-110"
           title="Toggle theme"
         >
           {isDark ? (
-            <Sun className="w-4 h-4" strokeWidth={2} />
+            <Sun className="w-4 h-4 transition-transform duration-300" strokeWidth={2} />
           ) : (
-            <Moon className="w-4 h-4" strokeWidth={2} />
+            <Moon className="w-4 h-4 transition-transform duration-300" strokeWidth={2} />
           )}
         </button>
 
