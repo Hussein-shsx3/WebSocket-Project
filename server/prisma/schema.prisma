@@ -1,0 +1,315 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  USER
+}
+
+enum ConversationType {
+  PRIVATE
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  VIDEO
+  FILE
+  SYSTEM_MESSAGE
+}
+
+enum MessageStatus {
+  SENT
+  DELIVERED
+  READ
+  FAILED
+}
+
+enum CallType {
+  AUDIO
+  VIDEO
+}
+
+enum CallStatus {
+  INITIATING
+  RINGING
+  ACTIVE
+  ENDED
+  DECLINED
+  MISSED
+  CANCELED
+}
+
+// User Model
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String?
+  name      String?
+  avatar    String?
+  bio       String?
+  role      UserRole @default(USER)
+  status    String   @default("offline") // online, offline, away
+  emailVerified Boolean @default(false)
+  refreshToken String?
+  googleId  String?  @unique // For Google OAuth
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations - Authentication
+  emailVerifications EmailVerification[]
+  sessions      Session[]
+  passwordResets PasswordReset[]
+  
+  // Relations - Friends
+  sentRequests  FriendRequest[] @relation("sentRequests")
+  receivedRequests FriendRequest[] @relation("receivedRequests")
+  friends       Friend[] @relation("user")
+  
+  // Relations - Chat & Messages
+  conversationParticipants ConversationParticipant[]
+  sentMessages Message[]
+  messageReads MessageRead[]
+  messageReactions MessageReaction[]
+  
+  // Relations - Calls
+  calledCalls Call[] @relation("callerCalls")
+  receivedCalls Call[] @relation("receiverCalls")
+
+  @@index([email])
+  @@map("users")
+}
+
+// Email Verification Model
+model EmailVerification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("email_verifications")
+}
+
+// Password Reset Model
+model PasswordReset {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("password_resets")
+}
+
+// Session/Refresh Token Model
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refreshToken String   @unique
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+// Friend Request Model
+model FriendRequest {
+  id        String   @id @default(cuid())
+  senderId  String
+  sender    User     @relation("sentRequests", fields: [senderId], references: [id], onDelete: Cascade)
+  receiverId String
+  receiver  User     @relation("receivedRequests", fields: [receiverId], references: [id], onDelete: Cascade)
+  status    String   @default("pending") // pending, accepted, rejected
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([senderId, receiverId])
+  @@index([senderId])
+  @@index([receiverId])
+  @@map("friend_requests")
+}
+
+// Friend Model
+model Friend {
+  id       String   @id @default(cuid())
+  userId   String
+  user     User     @relation("user", fields: [userId], references: [id], onDelete: Cascade)
+  friendId String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, friendId])
+  @@index([userId])
+  @@index([friendId])
+  @@map("friends")
+}
+
+// Conversation/Chat Model (Private chats only between 2 friends)
+model Conversation {
+  id        String   @id @default(cuid())
+  
+  // Relations
+  participants ConversationParticipant[]
+  messages  Message[]
+  calls     Call[]
+  
+  // Metadata
+  isArchived Boolean @default(false)
+  lastMessageAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Indexes
+  @@index([createdAt])
+  @@map("conversations")
+}
+
+// Conversation Participants Model (for private chats between 2 friends)
+model ConversationParticipant {
+  id             String   @id @default(cuid())
+  
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  
+  userId         String
+  user           User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Individual user settings
+  isArchived     Boolean @default(false)
+  isMuted        Boolean @default(false)
+  lastReadAt     DateTime?
+  
+  // Metadata
+  joinedAt       DateTime @default(now())
+  
+  // Ensure one entry per user per conversation
+  @@unique([conversationId, userId])
+  @@index([userId])
+  @@index([conversationId])
+  @@map("conversation_participants")
+}
+
+// Message Model
+model Message {
+  id             String   @id @default(cuid())
+  
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  
+  senderId       String
+  sender         User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  
+  // Message content
+  content        String
+  type           MessageType @default(TEXT)
+  
+  // Media/attachments
+  mediaUrls      String[] // JSON array of media URLs
+  
+  // Message status
+  status         MessageStatus @default(SENT)
+  
+  // Read receipts
+  readBy         MessageRead[]
+  
+  // Reactions
+  reactions      MessageReaction[]
+  
+  // Edit history
+  isEdited       Boolean @default(false)
+  editedAt       DateTime?
+  editedContent  String? // Keep original for edit history
+  
+  // Metadata
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
+  // Indexes
+  @@index([conversationId])
+  @@index([senderId])
+  @@index([createdAt])
+  @@map("messages")
+}
+
+// Message Read Receipt Model
+model MessageRead {
+  id             String   @id @default(cuid())
+  
+  messageId      String
+  message        Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  
+  userId         String
+  user           User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  readAt         DateTime @default(now())
+  
+  @@unique([messageId, userId])
+  @@index([userId])
+  @@index([messageId])
+  @@map("message_reads")
+}
+
+// Message Reaction Model
+model MessageReaction {
+  id             String   @id @default(cuid())
+  
+  messageId      String
+  message        Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  
+  userId         String
+  user           User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  emoji          String // e.g., "👍", "❤️", "😂"
+  
+  createdAt      DateTime @default(now())
+  
+  @@unique([messageId, userId, emoji])
+  @@index([messageId])
+  @@index([userId])
+  @@map("message_reactions")
+}
+
+// Call Model (for video/audio calls)
+model Call {
+  id             String   @id @default(cuid())
+  
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  
+  callerId       String
+  caller         User @relation("callerCalls", fields: [callerId], references: [id], onDelete: Cascade)
+  
+  receiverId     String?
+  receiver       User? @relation("receiverCalls", fields: [receiverId], references: [id], onDelete: SetNull)
+  
+  // Call details
+  type           CallType @default(AUDIO)
+  status         CallStatus @default(INITIATING)
+  duration       Int? // Duration in seconds
+  
+  // Metadata
+  startedAt      DateTime?
+  endedAt        DateTime?
+  createdAt      DateTime @default(now())
+  
+  @@index([conversationId])
+  @@index([callerId])
+  @@index([receiverId])
+  @@index([createdAt])
+  @@map("calls")
+}

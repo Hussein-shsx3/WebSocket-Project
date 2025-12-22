@@ -1,0 +1,78 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Enable smooth transitions for dark mode */
+:root {
+  --primary-color: #4eac6d;
+
+  /* Light Mode Colors */
+  --sidebar-bg: #37475a;
+  --panel-bg: #f5f7fb;
+  --main-bg: #e6ebf5;
+  --header-bg: #ffffff;
+  --text-primary: #495057;
+  --text-secondary: #7a7f9a;
+  --border-color: #e1e5eb;
+  --hover-bg: #eef0f5;
+  --search-bg: #eef2f8;
+  --chat-hover: #e8ecf4;
+
+  color-scheme: light;
+}
+
+.dark {
+  /* Dark Mode Colors */
+  --sidebar-bg: #36404a;
+  --panel-bg: #262e35;
+  --main-bg: #1b2028;
+  --header-bg: #303841;
+  --text-primary: #e1e9f0;
+  --text-secondary: #9ca3af;
+  --border-color: #38424d;
+  --hover-bg: #303841;
+  --search-bg: #303841;
+  --chat-hover: #303841;
+
+  color-scheme: dark;
+}
+
+@layer base {
+  html {
+    @apply transition-colors duration-300;
+  }
+
+  * {
+    @apply transition-colors duration-300;
+  }
+
+  body {
+    @apply min-h-[100dvh] w-full overflow-hidden;
+    background-color: var(--main-bg);
+    color: var(--text-primary);
+  }
+
+  h1 {
+    @apply font-display text-4xl font-normal tracking-tight;
+  }
+
+  h2 {
+    @apply font-display text-3xl font-normal tracking-tight;
+  }
+
+  h3 {
+    @apply font-display text-2xl font-normal tracking-tight;
+  }
+
+  h4 {
+    @apply font-display text-xl font-normal;
+  }
+
+  h5 {
+    @apply font-display text-lg font-normal;
+  }
+
+  h6 {
+    @apply font-display text-base font-normal;
+  }
+}
