@@ -13,41 +13,24 @@ import {
   searchMessages,
 } from "../controllers/message.controller";
 
+// REORDER specific routes BEFORE dynamic routes
+
 const router = Router();
 
-/**
- * All routes require authentication
- * Order matters! Specific routes before dynamic routes
- */
-
-// Mark messages as read (MUST be before /:conversationId)
+// ✅ SPECIFIC ROUTES FIRST
 router.post("/mark-as-read", authenticate, markAsRead);
-
-// Search messages (MUST be before /:messageId)
 router.get("/search", authenticate, searchMessages);
-
-// React to message
 router.post("/react", authenticate, reactToMessage);
-
-// Remove reaction
 router.delete("/react", authenticate, removeReaction);
-
-// Edit message
 router.patch("/edit", authenticate, editMessage);
 
-// Get reactions for a message (MUST be before /:conversationId)
+// ✅ THEN PARAMETERIZED ROUTES
 router.get("/:messageId/reactions", authenticate, getReactions);
-
-// Get read receipts for a message (MUST be before /:conversationId)
 router.get("/:messageId/read-receipts", authenticate, getReadReceipts);
 
-// Send message
+// ✅ FINALLY GENERIC ROUTES
 router.post("/", authenticate, sendMessage);
-
-// Delete message (soft delete)
 router.delete("/", authenticate, deleteMessage);
-
-// Get messages in conversation (dynamic route - LAST)
 router.get("/:conversationId", authenticate, getMessages);
 
 export default router;
