@@ -6,7 +6,7 @@ import { useEffect, useRef } from "react";
 import { DateSeparator } from "./DateSeparator";
 import { MessageGroup } from "./MessageGroup";
 import { groupMessagesByDate } from "@/utils/message.utils";
-import type { Message } from "@/services/messages.service";
+import type { Message } from "@/types/chat.types";
 
 interface MessagesListProps {
   messages: Message[];

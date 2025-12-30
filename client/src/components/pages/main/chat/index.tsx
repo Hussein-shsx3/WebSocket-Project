@@ -120,7 +120,7 @@ const Chat = ({ conversationId: propConversationId }: ChatProps) => {
   // ============================================
 
   return (
-    <div className="h-full flex flex-col bg-main">
+    <div className="h-full flex flex-col bg-main pb-16 sm:pb-0">
       {/* Chat Header */}
       <ChatHeader
         user={otherUser}

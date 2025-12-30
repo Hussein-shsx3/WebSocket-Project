@@ -2,8 +2,8 @@
 
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { Send, Smile, Paperclip } from "lucide-react";
+import { useState, useRef } from "react";
+import { Send, Smile, Paperclip, Loader2, X } from "lucide-react";
 import { socketEmitters } from "@/socket/emitters";
 import toast from "react-hot-toast";
 import { useQueryClient } from "@tanstack/react-query";
@@ -24,9 +24,9 @@ interface MessageInputProps {
  * Handles message composition and sending via Socket.IO
  *
  * Features:
- * - Auto-resize textarea
+ * - Single-line input field
  * - Typing indicators (TODO)
- * - Send on Enter (Shift+Enter for new line)
+ * - Send on Enter
  * - Socket.IO integration for real-time sending
  */
 export const MessageInput = ({
@@ -36,22 +36,13 @@ export const MessageInput = ({
 }: MessageInputProps) => {
   const [message, setMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const queryClient = useQueryClient();
   const currentUser = useCurrentUser();
   const { showEmojiPicker, toggleEmojiPicker, closeEmojiPicker, insertEmoji } = useEmojiPicker();
   const { mediaUrls, isUploading, uploadFile, clearMedia } = useFileUpload();
-
-  // Auto-resize textarea
-  useEffect(() => {
-    const textarea = textareaRef.current;
-    if (textarea) {
-      textarea.style.height = "auto";
-      textarea.style.height = `${Math.min(textarea.scrollHeight, 120)}px`;
-    }
-  }, [message]);
 
   // Send typing indicator
   const handleTyping = () => {
@@ -73,7 +64,7 @@ export const MessageInput = ({
   const handleEmojiClick = (emojiData: { emoji: string }) => {
     setMessage((prev) => insertEmoji(prev, emojiData.emoji));
     closeEmojiPicker();
-    textareaRef.current?.focus();
+    inputRef.current?.focus();
   };
 
   // Handle file selection
@@ -86,7 +77,7 @@ export const MessageInput = ({
   };
 
   // Handle input change
-  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setMessage(e.target.value);
     handleTyping();
   };
@@ -186,9 +177,9 @@ export const MessageInput = ({
   };
 
   // Handle keyboard shortcuts
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    // Send on Enter (without Shift)
-    if (e.key === "Enter" && !e.shiftKey) {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Send on Enter
+    if (e.key === "Enter") {
       e.preventDefault();
       handleSend();
     }
@@ -196,15 +187,58 @@ export const MessageInput = ({
 
   return (
     <div className="p-4 border-t border-border bg-panel">
-      <div className="flex items-center gap-1">
+      {/* File Preview - Show above input when files are attached */}
+      {mediaUrls.length > 0 && (
+        <div className="mb-3 p-3 bg-muted rounded-lg border border-border">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-primary">Attachment</span>
+            <button
+              onClick={clearMedia}
+              className="p-1 text-secondary hover:text-red-500 transition-colors rounded-full hover:bg-red-50 dark:hover:bg-red-900/20"
+              title="Remove attachment"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="flex-shrink-0">
+              <div className="w-10 h-10 bg-primaryColor/10 rounded-lg flex items-center justify-center">
+                <Paperclip className="w-5 h-5 text-primaryColor" />
+              </div>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm text-primary truncate">File attached</p>
+              <p className="text-xs text-secondary">Ready to send</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Upload Loading State */}
+      {isUploading && (
+        <div className="mb-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+          <div className="flex items-center gap-3">
+            <div className="flex-shrink-0">
+              <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm text-blue-700 dark:text-blue-300">Uploading file...</p>
+              <p className="text-xs text-blue-600 dark:text-blue-400">Please wait</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Input Area */}
+      <div className="flex items-end gap-2">
         {/* Emoji Picker Button */}
-        <div className="relative">
+        <div className="relative flex-shrink-0">
           <button
             type="button"
             onClick={toggleEmojiPicker}
-            className="p-2 text-secondary hover:text-primary transition-colors rounded-lg hover:bg-muted"
+            className="p-2 text-secondary hover:text-primary transition-colors rounded-lg hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
             title="Add emoji"
-            disabled={disabled}
+            disabled={disabled || isSending}
           >
             <Smile className="w-5 h-5" />
           </button>
@@ -217,40 +251,37 @@ export const MessageInput = ({
 
         {/* Message Input */}
         <div className="flex-1 relative">
-          <textarea
-            ref={textareaRef}
+          <input
+            ref={inputRef}
             value={message}
             onChange={handleChange}
             onKeyDown={handleKeyDown}
             placeholder="Type a message..."
-            disabled={disabled || isSending}
-            rows={1}
-            className="w-full px-4 py-2 pr-10 bg-search-bg border border-border rounded-lg text-sm text-primary placeholder:text-secondary focus:outline-none focus:ring-1 focus:ring-primaryColor/30 resize-none max-h-[130px] disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={disabled || isSending || isUploading}
+            className="w-full px-4 py-3 bg-search-bg border border-border rounded-lg text-sm text-primary placeholder:text-secondary focus:outline-none focus:ring-2 focus:ring-primaryColor/30 focus:border-primaryColor disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           />
+
+          {/* Character count */}
+          {message.length > 0 && (
+            <div className="absolute -top-6 right-0 text-xs text-secondary">
+              {message.length}
+            </div>
+          )}
         </div>
 
-        {/* File preview */}
-        {mediaUrls.length > 0 && (
-          <div className="mt-2 p-2 bg-muted rounded-lg flex items-center gap-2">
-            <span className="text-sm text-secondary">File attached</span>
-            <button
-              onClick={clearMedia}
-              className="text-red-500 hover:text-red-700"
-            >
-              ✕
-            </button>
-          </div>
-        )}
-
-        {/* Character count (optional) */}
+        {/* Attachment Button */}
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          disabled={disabled || isUploading}
-          className="p-2 text-secondary hover:text-primary transition-colors rounded-lg hover:bg-muted disabled:opacity-50"
+          disabled={disabled || isSending || isUploading}
+          className="p-2 text-secondary hover:text-primary transition-colors rounded-lg hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
           title="Attach file"
         >
-          <Paperclip className="w-5 h-5" />
+          {isUploading ? (
+            <Loader2 className="w-5 h-5 animate-spin" />
+          ) : (
+            <Paperclip className="w-5 h-5" />
+          )}
         </button>
 
         {/* Hidden file input */}
@@ -260,28 +291,23 @@ export const MessageInput = ({
           onChange={handleFileChange}
           accept="image/*,video/*,.pdf,.doc,.docx,.txt"
           className="hidden"
-          title="Attach a file"
-          placeholder="Attach a file"
         />
 
         {/* Send Button */}
         <button
           type="button"
           onClick={handleSend}
-          disabled={!message.trim() && mediaUrls.length === 0 || isSending || isUploading || disabled}
-          className="p-2 bg-primaryColor text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={(!message.trim() && mediaUrls.length === 0) || isSending || isUploading || disabled}
+          className="p-3 bg-primaryColor text-white rounded-lg hover:bg-primaryColor/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
           title="Send message"
         >
-          <Send className="w-5 h-5" />
+          {isSending ? (
+            <Loader2 className="w-5 h-5 animate-spin" />
+          ) : (
+            <Send className="w-5 h-5" />
+          )}
         </button>
       </div>
-
-      {/* Character count (optional) */}
-      {message.length > 0 && (
-        <div className="mt-1 text-xs text-secondary text-right">
-          {message.length} characters
-        </div>
-      )}
     </div>
   );
 };

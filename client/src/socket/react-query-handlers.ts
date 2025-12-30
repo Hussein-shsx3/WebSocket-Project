@@ -20,7 +20,7 @@ export const useSocketHandlers = (): SocketEventHandlers => {
     // NEW MESSAGE RECEIVED
     // ============================================
     onMessageReceived: (data) => {
-      // new message received (log removed)
+      console.log("📨 WebSocket message received:", data);
 
       // Convert socket data to Message type
       const newMessage: Message = {
@@ -41,21 +41,17 @@ export const useSocketHandlers = (): SocketEventHandlers => {
         reactions: [],
       };
 
-      // 1️⃣ Update messages list (infinite query)
-      queryClient.setQueryData<InfiniteMessagesData>(
-        ["messages", data.conversationId],
-        (oldData) => {
-          if (!oldData?.pages) return oldData;
-
-          const newPages = [...oldData.pages];
-          if (newPages[0]) {
-            newPages[0] = [newMessage, ...newPages[0]];
-          }
-
-          return {
-            ...oldData,
-            pages: newPages,
-          };
+      // 1️⃣ Update messages list
+      // The useMessages hook uses select: data.messages, so cache contains just the messages array
+      console.log("🔄 Updating cache for conversation:", data.conversationId);
+      queryClient.setQueryData(
+        ["messages", data.conversationId, { limit: 50, page: 1 }],
+        (oldData: Message[] | undefined) => {
+          // Remove any optimistic messages with temp IDs
+          const currentMessages = Array.isArray(oldData) ? oldData.filter(msg => !msg.id.startsWith('temp-')) : [];
+          const newMessages = [newMessage, ...currentMessages];
+          console.log("📝 Cache updated with messages:", newMessages.length);
+          return newMessages;
         }
       );
 

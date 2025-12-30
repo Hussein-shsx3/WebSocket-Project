@@ -36,7 +36,7 @@ export function MainLayout({ children }: MainLayoutProps) {
         <div className={conversationId ? "hidden md:block" : "block"}>{children}</div>
 
         {conversationId && (
-          <div className="md:hidden w-full h-[91%]">
+          <div className="md:hidden w-full h-full">
             <Chat conversationId={conversationId} />
           </div>
         )}

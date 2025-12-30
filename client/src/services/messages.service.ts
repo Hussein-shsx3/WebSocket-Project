@@ -16,18 +16,52 @@ export interface ApiResponse<T = any> {
 export interface Message {
   id: string;
   conversationId: string;
+  senderId: string;
   content: string;
+  type: "TEXT" | "IMAGE" | "VIDEO" | "FILE" | "SYSTEM_MESSAGE";
+  mediaUrls: string[];
+  status: "SENT" | "DELIVERED" | "READ" | "FAILED";
+  isEdited: boolean;
+  editedAt: string | Date | null;
+  editedContent: string | null;
+  createdAt: string | Date;
+  updatedAt: string | Date;
   sender: {
     id: string;
-    name: string;
-    avatar?: string;
+    name: string | null;
+    avatar: string | null;
   };
-  isRead: boolean;
-  isEdited?: boolean;
-  editedAt?: string;
-  isDeleted?: boolean;
-  deletedAt?: string;
-  createdAt: string;
+  readBy?: {
+    userId: string;
+    readAt: string | Date;
+    user?: {
+      id: string;
+      name: string | null;
+      email: string;
+      avatar: string | null;
+      bio?: string | null;
+      status: "online" | "offline" | "away";
+      role?: "ADMIN" | "USER";
+      createdAt: string | Date;
+    };
+  }[];
+  reactions?: {
+    id: string;
+    messageId: string;
+    userId: string;
+    emoji: string;
+    createdAt: string | Date;
+    user?: {
+      id: string;
+      name: string | null;
+      email: string;
+      avatar: string | null;
+      bio?: string | null;
+      status: "online" | "offline" | "away";
+      role?: "ADMIN" | "USER";
+      createdAt: string | Date;
+    };
+  }[];
 }
 
 /**

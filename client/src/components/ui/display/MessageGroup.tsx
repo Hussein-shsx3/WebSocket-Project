@@ -1,7 +1,7 @@
 // client/src/components/ui/display/MessageGroup.tsx
 
 import { MessageBubble } from "./MessageBubble";
-import type { Message } from "@/services/messages.service";
+import type { Message } from "@/types/chat.types";
 
 interface MessageGroupProps {
   messages: Message[];
