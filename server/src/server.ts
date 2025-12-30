@@ -34,11 +34,13 @@ io.use((socket, next) => {
   try {
     // Get token from auth header or auth.token
     let token = socket.handshake.auth.token;
-    
+
     if (!token && socket.handshake.headers.authorization) {
       // Extract token from "Bearer <token>" format
       const authHeader = socket.handshake.headers.authorization;
-      token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : authHeader;
+      token = authHeader.startsWith("Bearer ")
+        ? authHeader.slice(7)
+        : authHeader;
     }
 
     if (!token) {
@@ -47,7 +49,7 @@ io.use((socket, next) => {
 
     // Verify and decode token
     const decoded = verifyAccessToken(token);
-    
+
     if (!decoded.userId) {
       return next(new Error("userId not found in token"));
     }
@@ -59,7 +61,8 @@ io.use((socket, next) => {
 
     next();
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
     console.error("❌ Socket.IO Auth Error:", errorMessage);
     return next(new Error(`Authentication failed: ${errorMessage}`));
   }
@@ -129,8 +132,10 @@ const startServer = async () => {
 
     // Start listening
     server.listen(config.PORT, () => {
-      // server started (logs removed)
-      // WebSocket server initialized
+      console.log(`🚀 Server running on http://localhost:${config.PORT}`);
+      console.log(
+        `✅ WebSocket server initialized with CORS origin: ${config.CLIENT_URL}`
+      );
     });
   } catch (error) {
     console.error("❌ Failed to start server:", error);

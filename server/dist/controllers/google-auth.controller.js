@@ -25,7 +25,7 @@ const googleCallback = async (req, res) => {
             sameSite: "strict",
             maxAge: 30 * 24 * 60 * 60 * 1000,
         });
-        const redirectUrl = `${env_config_1.config.CLIENT_URL}/auth/google/callback?token=${tokens.accessToken}&user=${encodeURIComponent(JSON.stringify({
+        const redirectUrl = `${env_config_1.config.CLIENT_URL}/google-callback?token=${tokens.accessToken}&user=${encodeURIComponent(JSON.stringify({
             id: googleUser.id,
             email: googleUser.email,
             name: googleUser.name || "",

@@ -1,31 +1,23 @@
 import { RegisterDTO, LoginDTO } from "../dto/auth.dto";
 export declare class AuthService {
     register(data: RegisterDTO): Promise<{
-        success: boolean;
-        message: string;
-        data: {
-            user: {
-                name: string | null;
-                id: string;
-                email: string;
-                role: import(".prisma/client").$Enums.UserRole;
-                createdAt: Date;
-            };
-            verificationToken: string;
+        user: {
+            name: string | null;
+            id: string;
+            email: string;
+            role: import(".prisma/client").$Enums.UserRole;
+            createdAt: Date;
         };
+        verificationToken: string;
     }>;
     login(data: LoginDTO): Promise<{
-        success: boolean;
-        message: string;
-        data: {
-            user: {
-                id: string;
-                name: string | null;
-                email: string;
-                createdAt: Date;
-            };
-            accessToken: string;
+        user: {
+            id: string;
+            name: string | null;
+            email: string;
+            createdAt: Date;
         };
+        accessToken: string;
         refreshToken: string;
     }>;
     verifyEmail(token: string): Promise<{

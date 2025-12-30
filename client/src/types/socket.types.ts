@@ -61,6 +61,7 @@ export interface MessageReceivedData {
   senderId: string;
   content: string;
   type: "TEXT" | "IMAGE" | "VIDEO" | "FILE" | "SYSTEM_MESSAGE";
+  mediaUrls?: string[];
   status: "SENT" | "DELIVERED" | "READ" | "FAILED";
   createdAt: Date | string;
   sender: {

@@ -36,7 +36,9 @@ class ConversationService {
             include: {
                 participants: {
                     include: {
-                        user: { select: { id: true, name: true, email: true, avatar: true } },
+                        user: {
+                            select: { id: true, name: true, email: true, avatar: true },
+                        },
                     },
                 },
                 messages: { take: 1, orderBy: { createdAt: "desc" } },
@@ -49,17 +51,16 @@ class ConversationService {
             data: {
                 participants: {
                     createMany: {
-                        data: [
-                            { userId },
-                            { userId: friendId },
-                        ],
+                        data: [{ userId }, { userId: friendId }],
                     },
                 },
             },
             include: {
                 participants: {
                     include: {
-                        user: { select: { id: true, name: true, email: true, avatar: true } },
+                        user: {
+                            select: { id: true, name: true, email: true, avatar: true },
+                        },
                     },
                 },
                 messages: { take: 1, orderBy: { createdAt: "desc" } },
@@ -88,7 +89,15 @@ class ConversationService {
             include: {
                 participants: {
                     include: {
-                        user: { select: { id: true, name: true, email: true, avatar: true, status: true } },
+                        user: {
+                            select: {
+                                id: true,
+                                name: true,
+                                email: true,
+                                avatar: true,
+                                status: true,
+                            },
+                        },
                     },
                 },
                 messages: { take: 1, orderBy: { createdAt: "desc" } },
@@ -107,13 +116,23 @@ class ConversationService {
             include: {
                 participants: {
                     include: {
-                        user: { select: { id: true, name: true, email: true, avatar: true, status: true } },
+                        user: {
+                            select: {
+                                id: true,
+                                name: true,
+                                email: true,
+                                avatar: true,
+                                status: true,
+                            },
+                        },
                     },
                 },
                 messages: {
                     take: 50,
                     orderBy: { createdAt: "desc" },
-                    include: { sender: { select: { id: true, name: true, avatar: true } } },
+                    include: {
+                        sender: { select: { id: true, name: true, avatar: true } },
+                    },
                 },
             },
         });
@@ -132,7 +151,15 @@ class ConversationService {
             include: {
                 participants: {
                     include: {
-                        user: { select: { id: true, name: true, email: true, avatar: true, status: true } },
+                        user: {
+                            select: {
+                                id: true,
+                                name: true,
+                                email: true,
+                                avatar: true,
+                                status: true,
+                            },
+                        },
                     },
                 },
             },

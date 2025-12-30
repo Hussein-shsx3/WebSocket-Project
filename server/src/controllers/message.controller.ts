@@ -11,6 +11,7 @@ import {
 import { sendResponse } from "../utils/response.util";
 import { BadRequestError, AuthorizationError } from "../types/error.types";
 import { asyncHandler } from "../middleware/error.middleware";
+import cloudinary from "../config/cloudinary.config";
 
 // Send a message
 export const sendMessage = asyncHandler(async (req: Request, res: Response) => {
@@ -191,3 +192,32 @@ export const searchMessages = asyncHandler(
     sendResponse(res, 200, "Messages found", messages);
   }
 );
+
+// Upload message media
+export const uploadMessageMedia = asyncHandler(async (req: Request, res: Response) => {
+  const userId = req.user?.userId;
+  if (!userId) {
+    throw new AuthorizationError("Unauthorized");
+  }
+
+  if (!req.file) {
+    throw new BadRequestError("No file uploaded");
+  }
+
+  // Upload to Cloudinary
+  const result = await new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder: "messages",
+        resource_type: "auto",
+      },
+      (error, result) => {
+        if (error) reject(error);
+        else resolve(result);
+      }
+    );
+    stream.end(req.file!.buffer);
+  });
+
+  sendResponse(res, 200, "File uploaded", { url: (result as any).secure_url });
+});

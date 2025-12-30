@@ -48,12 +48,8 @@ class AuthService {
         const verificationLink = `${process.env.CLIENT_URL}/verify-email?token=${verificationToken}`;
         await (0, email_util_1.sendVerificationEmail)(user.email, verificationToken, verificationLink, user.name || undefined);
         return {
-            success: true,
-            message: "User registered successfully. Please verify your email.",
-            data: {
-                user,
-                verificationToken,
-            },
+            user,
+            verificationToken,
         };
     }
     async login(data) {
@@ -93,17 +89,13 @@ class AuthService {
             data: { refreshToken },
         });
         return {
-            success: true,
-            message: "Login successful",
-            data: {
-                user: {
-                    id: user.id,
-                    name: user.name,
-                    email: user.email,
-                    createdAt: user.createdAt,
-                },
-                accessToken,
+            user: {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                createdAt: user.createdAt,
             },
+            accessToken,
             refreshToken,
         };
     }
@@ -145,7 +137,10 @@ class AuthService {
             throw new error_types_1.BadRequestError("Email already verified");
         await db_1.default.emailVerification.deleteMany({ where: { userId: user.id } });
         const verificationToken = crypto_1.default.randomBytes(32).toString("hex");
-        const verificationTokenHash = crypto_1.default.createHash("sha256").update(verificationToken).digest("hex");
+        const verificationTokenHash = crypto_1.default
+            .createHash("sha256")
+            .update(verificationToken)
+            .digest("hex");
         await db_1.default.emailVerification.create({
             data: {
                 userId: user.id,
@@ -160,12 +155,18 @@ class AuthService {
     async forgotPassword(email) {
         const user = await db_1.default.user.findUnique({ where: { email } });
         if (!user)
-            return { success: true, message: "If that email exists, a reset link has been sent" };
+            return {
+                success: true,
+                message: "If that email exists, a reset link has been sent",
+            };
         if (!user.emailVerified)
             throw new error_types_1.BadRequestError("Email is not verified");
         await db_1.default.passwordReset.deleteMany({ where: { userId: user.id } });
         const resetToken = crypto_1.default.randomBytes(32).toString("hex");
-        const resetTokenHash = crypto_1.default.createHash("sha256").update(resetToken).digest("hex");
+        const resetTokenHash = crypto_1.default
+            .createHash("sha256")
+            .update(resetToken)
+            .digest("hex");
         await db_1.default.passwordReset.create({
             data: {
                 userId: user.id,
@@ -175,11 +176,16 @@ class AuthService {
         });
         const resetLink = `${process.env.CLIENT_URL}/reset-password?token=${resetToken}`;
         await (0, email_util_1.sendPasswordResetEmail)(user.email, resetToken, resetLink, user.name || undefined);
-        return { success: true, message: "If that email exists, a reset link has been sent" };
+        return {
+            success: true,
+            message: "If that email exists, a reset link has been sent",
+        };
     }
     async resetPassword(token, newPassword) {
         const tokenHash = crypto_1.default.createHash("sha256").update(token).digest("hex");
-        const reset = await db_1.default.passwordReset.findUnique({ where: { token: tokenHash } });
+        const reset = await db_1.default.passwordReset.findUnique({
+            where: { token: tokenHash },
+        });
         if (!reset)
             throw new error_types_1.BadRequestError("Invalid or expired reset token");
         if (reset.expiresAt < new Date())
@@ -192,23 +198,41 @@ class AuthService {
         });
         await db_1.default.passwordReset.deleteMany({ where: { userId: reset.userId } });
         await (0, email_util_1.sendWelcomeEmail)(user.email, user.name || user.email.split("@")[0]);
-        return { success: true, message: "Password has been reset. Please login with your new password.", data: { user } };
+        return {
+            success: true,
+            message: "Password has been reset. Please login with your new password.",
+            data: { user },
+        };
     }
     async refreshTokens(refreshToken) {
         if (!refreshToken)
             throw new error_types_1.AuthenticationError("Refresh token missing");
         const decoded = (0, jwt_util_1.verifyRefreshToken)(refreshToken);
-        const dbUser = await db_1.default.user.findUnique({ where: { id: decoded.userId } });
+        const dbUser = await db_1.default.user.findUnique({
+            where: { id: decoded.userId },
+        });
         if (!dbUser || !dbUser.refreshToken)
             throw new error_types_1.AuthenticationError("Invalid session");
         if (dbUser.refreshToken !== refreshToken)
             throw new error_types_1.AuthenticationError("Invalid refresh token");
-        const tokens = (0, jwt_util_1.generateAuthTokens)({ userId: decoded.userId, email: decoded.email });
-        await db_1.default.user.update({ where: { id: decoded.userId }, data: { refreshToken: tokens.refreshToken } });
+        const tokens = (0, jwt_util_1.generateAuthTokens)({
+            userId: decoded.userId,
+            email: decoded.email,
+        });
+        await db_1.default.user.update({
+            where: { id: decoded.userId },
+            data: { refreshToken: tokens.refreshToken },
+        });
         return { success: true, tokens };
     }
     async logout(userId) {
-        await db_1.default.user.update({ where: { id: userId }, data: { refreshToken: null } });
+        await db_1.default.user.update({
+            where: { id: userId },
+            data: {
+                refreshToken: null,
+                status: "offline",
+            },
+        });
         return { success: true, message: "Logged out" };
     }
 }

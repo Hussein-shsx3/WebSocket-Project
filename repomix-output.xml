@@ -43,10 +43,7 @@ The content is organized as follows:
 .gitignore
 .hintrc
 client/.gitignore
-client/COMPONENT_UPDATES.md
 client/eslint.config.mjs
-client/FRONTEND_ARCHITECTURE.md
-client/MIDDLEWARE_GUIDE.md
 client/next.config.ts
 client/package.json
 client/postcss.config.js
@@ -72,7 +69,6 @@ client/public/images/search.png
 client/public/images/theme.png
 client/public/images/video.png
 client/README.md
-client/SERVICES_HOOKS_REFERENCE.md
 client/src/app/(auth)/forgotPassword/page.tsx
 client/src/app/(auth)/google-callback/page.tsx
 client/src/app/(auth)/layout.tsx
@@ -80,6 +76,7 @@ client/src/app/(auth)/resetPassword/page.tsx
 client/src/app/(auth)/signIn/page.tsx
 client/src/app/(auth)/signUp/page.tsx
 client/src/app/(auth)/verifyEmail/page.tsx
+client/src/app/(main)/chats/[conversationId]/page.tsx
 client/src/app/(main)/chats/page.tsx
 client/src/app/(main)/friendsRequests/page.tsx
 client/src/app/(main)/layout.tsx
@@ -101,13 +98,17 @@ client/src/components/pages/auth/signUp/index.tsx
 client/src/components/pages/auth/signUp/useSignUp.ts
 client/src/components/pages/auth/verifyEmail/index.tsx
 client/src/components/pages/auth/verifyEmail/useVerifyEmailForm.ts
+client/src/components/pages/main/chat/index.tsx
 client/src/components/pages/main/chats/index.tsx
 client/src/components/pages/main/friendsRequests/index.tsx
 client/src/components/pages/main/profile/index.tsx
 client/src/components/ui/buttons/AddButton.tsx
 client/src/components/ui/buttons/index.ts
+client/src/components/ui/buttons/LogoutButton.tsx
 client/src/components/ui/display/AuthContainer.tsx
 client/src/components/ui/display/Panel.tsx
+client/src/components/ui/display/PathHeader.tsx
+client/src/components/ui/display/UserAvatar.tsx
 client/src/components/ui/feedback/ErrorAlert.tsx
 client/src/components/ui/form/AuthSwitchLink.tsx
 client/src/components/ui/form/Button.tsx
@@ -117,7 +118,6 @@ client/src/components/ui/form/GoogleButton.tsx
 client/src/components/ui/form/index.ts
 client/src/components/ui/form/Input.tsx
 client/src/components/ui/form/Milestone.tsx
-client/src/components/ui/navigation/LogoutButton.tsx
 client/src/components/ui/navigation/Sidebar.tsx
 client/src/components/ui/navigation/ThemeToggle.tsx
 client/src/hooks/useAuth.ts
@@ -125,20 +125,28 @@ client/src/hooks/useConversations.ts
 client/src/hooks/useFriends.ts
 client/src/hooks/useGoogleAuth.ts
 client/src/hooks/useMessages.ts
+client/src/hooks/useSocket.ts
 client/src/lib/axios.ts
 client/src/middleware.ts
 client/src/providers/index.tsx
+client/src/providers/ReactQueryProvider.tsx
+client/src/providers/SocketProvider.tsx
 client/src/providers/ThemeProvider.tsx
 client/src/services/auth.service.ts
 client/src/services/conversations.service.ts
 client/src/services/friends.service.ts
 client/src/services/messages.service.ts
+client/src/socket/client.ts
+client/src/socket/emitters.ts
+client/src/socket/events.ts
+client/src/socket/react-query-handlers.ts
 client/src/store/themeStore.ts
 client/src/styles/dark-mode-transitions.css
 client/src/styles/globals.css
+client/src/types/chat.types.ts
+client/src/types/socket.types.ts
 client/tailwind.config.js
 client/tsconfig.json
-DARK_MODE_GUIDE.md
 README.md
 server/.gitignore
 server/dist/app.d.ts
@@ -470,219 +478,6 @@ yarn-error.log*
 next-env.d.ts
 </file>
 
-<file path="client/COMPONENT_UPDATES.md">
-# Component Updates & TypeScript Fixes - December 21, 2025
-
-## Overview
-Fixed TypeScript type errors, created reusable AddButton component, and improved type safety across components.
-
----
-
-## Changes Made
-
-### 1. Created Reusable AddButton Component ✅
-**File:** `client/src/components/ui/buttons/AddButton.tsx`
-
-**Features:**
-- Reusable button component with Plus icon from lucide-react
-- Two size variants: `sm` (w-5 h-5) and `md` (w-7 h-7)
-- Proper `type="button"` attribute to prevent form submission
-- Hover and transition effects
-- Full TypeScript support with `AddButtonProps` interface
-
-**Props:**
-```typescript
-interface AddButtonProps {
-  onClick?: () => void;
-  size?: "sm" | "md";
-  className?: string;
-  title?: string;
-}
-```
-
-**Usage Examples:**
-```tsx
-// Header/large button
-<AddButton size="md" title="Start new chat" />
-
-// Section button
-<AddButton size="sm" title="New conversation" />
-
-// With click handler
-<AddButton 
-  size="md" 
-  onClick={() => handleAddClick()} 
-  title="Add new item"
-/>
-```
-
-### 2. Updated Chats Component ✅
-**File:** `client/src/components/pages/main/chats/index.tsx`
-
-**Fixes:**
-- Fixed property error: Changed `conversations?.participants?.[1]?.name` to `conversations?.otherUser?.name`
-  - Response type is `ConversationListItem[]` which has `otherUser` property, not `participants`
-- Added proper TypeScript import: `import type { ConversationListItem }`
-- Fixed button type attributes: All buttons now have `type="button"`
-- Fixed implicit `any` type: `ConversationItem` now accepts `ConversationListItem` type
-- Removed unused imports: `Pin` from lucide-react
-- Replaced manual Plus button markup with `<AddButton />` component in 2 locations
-
-**Before:**
-```tsx
-const conversations = conversationsData?.conversations || [];
-const filteredConversations = conversations.filter((conv) =>
-  conv.participants?.[1]?.name  // ❌ WRONG PROPERTY
-);
-
-// Manual button code
-<button className="w-7 h-7 rounded-md bg-primaryColor/10...">
-  <Plus className="w-4 h-4" />
-</button>
-
-// Untyped props
-function ConversationItem({
-  conversation,  // ❌ any type
-  onClick,
-})
-```
-
-**After:**
-```tsx
-const conversations = conversationsData?.conversations || [];
-const filteredConversations = conversations.filter((conv) =>
-  conv.otherUser?.name  // ✅ CORRECT PROPERTY
-);
-
-// Reusable component
-<AddButton size="md" title="Start new chat" />
-
-// Properly typed
-function ConversationItem({
-  conversation,  // ✅ ConversationListItem type
-  onClick,
-}: {
-  conversation: ConversationListItem;
-  onClick: () => void;
-})
-```
-
-**Type Changes:**
-- Removed: `interface Chat` (not needed with real data)
-- Added: `import type { ConversationListItem }`
-- Updated: `ConversationItem` function signature with proper types
-
-### 3. Updated Friend Requests Component ✅
-**File:** `client/src/components/pages/main/friendsRequests/index.tsx`
-
-**Fixes:**
-- Added TypeScript import: `import type { FriendRequest }`
-- Fixed implicit `any` type in `FriendRequestItemProps`
-  - Changed `request: any` to `request: FriendRequest`
-- Fixed property access: `request.sender` for both incoming and sent (sender object is in the FriendRequest)
-
-**Before:**
-```tsx
-interface FriendRequestItemProps {
-  request: any;  // ❌ any type
-}
-
-const user = isIncoming ? request.sender : request.recipient;  // ❌ no recipient field
-```
-
-**After:**
-```tsx
-interface FriendRequestItemProps {
-  request: FriendRequest;  // ✅ typed
-}
-
-const user = isIncoming ? request.sender : request.sender;  // ✅ correct
-```
-
-### 4. Created Button Export Index ✅
-**File:** `client/src/components/ui/buttons/index.ts`
-
-**Purpose:** Centralized exports for button components
-
-**Exports:**
-```typescript
-export { AddButton } from "./AddButton";
-export { LogoutButton } from "./LogoutButton";
-```
-
-**Usage:**
-```tsx
-// Before
-import { AddButton } from "@/components/ui/buttons/AddButton";
-
-// After
-import { AddButton } from "@/components/ui/buttons";
-```
-
----
-
-## TypeScript Error Resolutions
-
-| Error | Cause | Solution |
-|-------|-------|----------|
-| `Property 'conversations' does not exist on type 'ConversationListItem[]'` | Wrong property name | Changed `participants?.[1]?.name` to `otherUser?.name` |
-| `Button type attribute has not been set` | Missing `type` attribute on buttons | Added `type="button"` to all buttons |
-| `Parameter 'conversation' implicitly has an 'any' type` | Untyped function parameter | Added explicit type: `ConversationListItem` |
-| `Unexpected any. Specify a different type` | Untyped interface property | Changed `request: any` to `request: FriendRequest` |
-
----
-
-## Files Modified Summary
-
-### New Files
-- ✅ `client/src/components/ui/buttons/AddButton.tsx` (41 lines)
-- ✅ `client/src/components/ui/buttons/index.ts` (2 lines)
-
-### Updated Files
-- ✅ `client/src/components/pages/main/chats/index.tsx` (166 lines)
-  - Removed 50+ lines of manual button markup
-  - Added 1 import for AddButton
-  - Fixed all TypeScript errors
-  
-- ✅ `client/src/components/pages/main/friendsRequests/index.tsx` (228 lines)
-  - Added 1 import for FriendRequest type
-  - Fixed interface typing
-  - Fixed property access
-
----
-
-## Benefits
-
-1. **Type Safety**: All `any` types eliminated, full TypeScript coverage
-2. **DRY Principle**: AddButton used consistently across components
-3. **Maintainability**: Button styling changes only need to be made in one place
-4. **Accessibility**: Proper `type="button"` prevents accidental form submission
-5. **Consistency**: All buttons follow the same pattern and styling
-
----
-
-## Next Steps
-
-The components are now fully typed and ready for:
-- [ ] Integration with message sending functionality
-- [ ] Real-time Socket.IO updates
-- [ ] Additional components (Groups, Calls, Contacts)
-- [ ] Component testing with proper TypeScript support
-
----
-
-## Code Quality Checklist
-
-- ✅ All TypeScript errors resolved
-- ✅ No implicit `any` types
-- ✅ Button `type` attributes set
-- ✅ Proper imports with type safety
-- ✅ DRY principle followed (reusable AddButton)
-- ✅ Consistent prop interfaces
-- ✅ JSDoc comments maintained
-- ✅ Error handling preserved
-</file>
-
 <file path="client/eslint.config.mjs">
 import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
@@ -702,714 +497,6 @@ const eslintConfig = defineConfig([
 ]);
 
 export default eslintConfig;
-</file>
-
-<file path="client/FRONTEND_ARCHITECTURE.md">
-# Frontend Architecture & Integration Guide
-
-## Overview
-
-This document outlines the client-side architecture for the Doot chat application, including service layers, hooks, and component integration patterns.
-
----
-
-## Service Layer Architecture
-
-### 1. Authentication Service (`services/auth.service.ts`)
-**Purpose:** Handles user authentication, registration, and OAuth flows
-
-**Key Methods:**
-- `login()` - Email/password login
-- `register()` - User registration
-- `verifyEmail()` - Email verification
-- `resendVerification()` - Resend verification email
-- `requestPasswordReset()` - Request password reset
-- `resetPassword()` - Reset password with token
-- `initiateGoogleAuth()` - Start Google OAuth flow
-
-**Used By:** `useAuth.ts` hook
-
-**Pattern:**
-```typescript
-// Service returns typed responses extracted from API response
-async login(data: LoginRequest): Promise<AuthResponse> {
-  const response = await axiosInstance.post(url, data);
-  return response.data.data; // Extract from { success, message, data }
-}
-```
-
----
-
-### 2. Friends Service (`services/friends.service.ts`)
-**Purpose:** Handles all friend-related operations
-
-**Key Methods:**
-- `sendFriendRequest()` - Send friend request to user
-- `acceptFriendRequest()` - Accept incoming request
-- `rejectFriendRequest()` - Reject request
-- `cancelFriendRequest()` - Cancel sent request
-- `getPendingRequests()` - Get incoming requests
-- `getSentRequests()` - Get sent requests
-- `getFriends()` - Get friends list
-- `removeFriend()` - Remove friend
-
-**Used By:** `useFriends.ts` hooks
-
-**Pattern:**
-```typescript
-// Service handles API calls and response extraction
-// Hooks wrap service calls with React Query
-```
-
----
-
-### 3. Conversations Service (`services/conversations.service.ts`)
-**Purpose:** Handles conversation management
-
-**Key Methods:**
-- `getOrCreateConversation()` - Get or create conversation with friend
-- `getConversations()` - Get all user conversations
-- `getConversation()` - Get single conversation
-- `getOtherUser()` - Get other user in conversation
-- `archiveConversation()` - Archive conversation
-- `unarchiveConversation()` - Unarchive conversation
-- `deleteConversation()` - Delete conversation
-
-**Used By:** `useConversations.ts` hooks
-
----
-
-### 4. Messages Service (`services/messages.service.ts`)
-**Purpose:** Handles message operations
-
-**Key Methods:**
-- `sendMessage()` - Send message in conversation
-- `getMessages()` - Get messages in conversation
-- `editMessage()` - Edit message content
-- `deleteMessage()` - Delete message (soft delete)
-- `markAsRead()` - Mark messages as read
-- `getReadReceipts()` - Get read receipts for message
-- `reactToMessage()` - Add emoji reaction
-- `removeReaction()` - Remove reaction
-- `getReactions()` - Get all reactions on message
-- `searchMessages()` - Search messages in conversation
-
-**Used By:** `useMessages.ts` hooks
-
----
-
-## React Hooks Layer
-
-### Query Hooks (Read Operations)
-
-```typescript
-// Get data that can be cached and refetched
-const { data, isLoading, error } = useFriendsList();
-
-// Features:
-// - Automatic caching
-// - Background refetching
-// - Stale-while-revalidate pattern
-// - Optimistic updates possible
-```
-
-### Mutation Hooks (Write Operations)
-
-```typescript
-// Perform mutations with callbacks
-const mutation = useSendMessage();
-
-mutation.mutate(data, {
-  onSuccess: (result) => {
-    // Handle success
-  },
-  onError: (error) => {
-    // Handle error
-  },
-});
-```
-
-### Available Hooks
-
-**Friends Hooks:**
-- `useSendFriendRequest()` - Send request mutation
-- `useAcceptFriendRequest()` - Accept request mutation
-- `useRejectFriendRequest()` - Reject request mutation
-- `useCancelFriendRequest()` - Cancel request mutation
-- `usePendingFriendRequests()` - Query pending requests
-- `useSentFriendRequests()` - Query sent requests
-- `useFriendsList()` - Query friends list
-- `useRemoveFriend()` - Remove friend mutation
-
-**Conversation Hooks:**
-- `useGetOrCreateConversation()` - Create/get conversation mutation
-- `useConversations()` - Query all conversations
-- `useConversation()` - Query single conversation
-- `useConversationOtherUser()` - Query other user in conversation
-- `useArchiveConversation()` - Archive conversation mutation
-- `useUnarchiveConversation()` - Unarchive conversation mutation
-- `useDeleteConversation()` - Delete conversation mutation
-
-**Message Hooks:**
-- `useSendMessage()` - Send message mutation
-- `useMessages()` - Query messages in conversation
-- `useEditMessage()` - Edit message mutation
-- `useDeleteMessage()` - Delete message mutation
-- `useMarkAsRead()` - Mark messages as read mutation
-- `useReadReceipts()` - Query read receipts
-- `useReactToMessage()` - React to message mutation
-- `useRemoveReaction()` - Remove reaction mutation
-- `useMessageReactions()` - Query message reactions
-- `useSearchMessages()` - Search messages query
-
----
-
-## Component Integration Pattern
-
-### Step 1: Import Hook
-```typescript
-import { useConversations } from "@/hooks/useConversations";
-import { useFriendsList } from "@/hooks/useFriends";
-```
-
-### Step 2: Use Hook in Component
-```typescript
-const MyComponent = () => {
-  const { data: conversations, isLoading, error } = useConversations();
-  const { data: friends } = useFriendsList();
-
-  if (isLoading) return <div>Loading...</div>;
-  if (error) return <div>Error: {error.message}</div>;
-
-  return (
-    <div>
-      {conversations?.map(conv => (
-        <ConversationItem key={conv.id} conversation={conv} />
-      ))}
-    </div>
-  );
-};
-```
-
-### Step 3: Handle Mutations
-```typescript
-const ChatComponent = () => {
-  const sendMessage = useSendMessage();
-  const conversations = useConversations();
-
-  const handleSendMessage = (content: string) => {
-    sendMessage.mutate(
-      {
-        conversationId: "uuid",
-        content,
-      },
-      {
-        onSuccess: (data) => {
-          console.log("Message sent:", data);
-          // Invalidate cache to refetch messages
-          queryClient.invalidateQueries({
-            queryKey: ["messages", "uuid"],
-          });
-        },
-      }
-    );
-  };
-
-  return (
-    <input
-      onKeyPress={(e) => {
-        if (e.key === "Enter") {
-          handleSendMessage(e.target.value);
-        }
-      }}
-    />
-  );
-};
-```
-
----
-
-## Data Flow Architecture
-
-### Query Flow (Reading Data)
-```
-Component → Hook (useConversations) 
-  → React Query (caching/fetching)
-    → Service (conversationsService)
-      → Axios (HTTP request)
-        → Backend API
-          → Response
-```
-
-### Mutation Flow (Writing Data)
-```
-Component (handleSubmit)
-  → Mutation Hook (useSendMessage)
-    → React Query Mutation
-      → Service (messagesService)
-        → Axios (HTTP request)
-          → Backend API
-            → Response
-              → onSuccess callback
-                → Invalidate queries
-                → Update UI
-```
-
----
-
-## Error Handling Pattern
-
-### Service Layer
-```typescript
-// Services throw errors naturally
-try {
-  const response = await axiosInstance.get(url);
-  return response.data.data;
-} catch (error) {
-  // Axios interceptor handles 401 (token refresh)
-  // Other errors bubble up to hooks
-  throw error;
-}
-```
-
-### Hook Layer
-```typescript
-useQuery({
-  queryFn: () => friendsService.getFriends(),
-  onError: (error) => {
-    console.error("Fetch failed:", error);
-    // Can add toast notification here
-  },
-});
-```
-
-### Component Layer
-```typescript
-const { data, error, isLoading } = useFriends();
-
-if (error) {
-  return <ErrorAlert message={error.message} />;
-}
-```
-
----
-
-## Caching & Invalidation Strategy
-
-### Query Keys
-```typescript
-// Format: [resource, params]
-["friends"]
-["friendRequests", "pending"]
-["conversations", { limit: 50, offset: 0 }]
-["messages", conversationId]
-["readReceipts", messageId]
-```
-
-### Invalidation
-```typescript
-// After mutation, invalidate related queries
-const mutation = useSendMessage();
-
-mutation.mutate(data, {
-  onSuccess: () => {
-    // Refetch messages in this conversation
-    queryClient.invalidateQueries({
-      queryKey: ["messages", conversationId],
-    });
-    
-    // Refetch conversations list
-    queryClient.invalidateQueries({
-      queryKey: ["conversations"],
-    });
-  },
-});
-```
-
----
-
-## Real-time Integration (Socket.IO)
-
-### Planned Socket.IO Events
-
-**Friends:**
-- `friendRequestReceived` - New friend request received
-- `friendAdded` - Friend request accepted
-- `friendRemoved` - Friend removed
-
-**Conversations:**
-- `newMessage` - New message in conversation
-- `messageEdited` - Message was edited
-- `messageDeleted` - Message was deleted
-- `conversationArchived` - Conversation archived
-- `conversationDeleted` - Conversation deleted
-
-**Messages:**
-- `messagesRead` - Messages marked as read by other user
-- `userTyping` - Other user is typing
-- `userStoppedTyping` - Other user stopped typing
-
-**User Status:**
-- `userStatusChanged` - User online/offline/away status changed
-
-### Integration Pattern
-```typescript
-// Example: Listen for new messages
-useEffect(() => {
-  socket.on("newMessage", (message) => {
-    // Update cache with new message
-    queryClient.setQueryData(
-      ["messages", conversationId],
-      (old) => {
-        return {
-          ...old,
-          messages: [...old.messages, message],
-        };
-      }
-    );
-  });
-
-  return () => {
-    socket.off("newMessage");
-  };
-}, [conversationId]);
-```
-
----
-
-## State Management Summary
-
-### Where State Lives
-
-**React Query (Queries):**
-- Conversations list
-- Messages in conversation
-- Friends list
-- Friend requests
-- User profile
-
-**React Query (Mutations):**
-- Sending messages
-- Accepting friend requests
-- Creating conversations
-
-**Local Component State:**
-- Form inputs
-- UI state (dropdowns, modals)
-- Temporary UI flags
-
-**Not Used:**
-- Redux (complexity not needed)
-- Context (React Query handles caching)
-
----
-
-## Implementation Checklist
-
-For each new feature, follow this checklist:
-
-- [ ] Create service file in `services/`
-  - [ ] Define TypeScript interfaces
-  - [ ] Implement API methods
-  - [ ] Extract data from response structure
-
-- [ ] Create hooks file in `hooks/`
-  - [ ] Create query hooks for reads
-  - [ ] Create mutation hooks for writes
-  - [ ] Add error logging
-
-- [ ] Create/Update component
-  - [ ] Import needed hooks
-  - [ ] Handle loading state
-  - [ ] Handle error state
-  - [ ] Render data
-  - [ ] Call mutations on user action
-
-- [ ] Test integration
-  - [ ] Mock API responses
-  - [ ] Test success paths
-  - [ ] Test error handling
-  - [ ] Test cache invalidation
-
----
-
-## File Structure Reference
-
-```
-src/
-├── services/
-│   ├── auth.service.ts
-│   ├── friends.service.ts
-│   ├── conversations.service.ts
-│   ├── messages.service.ts
-│   └── users.service.ts (planned)
-│
-├── hooks/
-│   ├── useAuth.ts
-│   ├── useFriends.ts
-│   ├── useConversations.ts
-│   ├── useMessages.ts
-│   └── useUsers.ts (planned)
-│
-├── components/
-│   ├── pages/
-│   │   ├── auth/
-│   │   └── main/
-│   │       ├── chats/
-│   │       ├── friends/
-│   │       ├── contacts/
-│   │       └── calls/
-│   ├── ui/
-│   │   ├── form/
-│   │   ├── buttons/
-│   │   └── navigation/
-│   └── layout/
-│
-├── lib/
-│   └── axios.ts (configured with interceptors)
-│
-└── types/
-    └── index.ts
-```
-
----
-
-## Next Steps
-
-1. **Update Chats Component**
-   - Replace mock data with `useConversations()` hook
-   - Use `useSendMessage()` for sending messages
-   - Remove hardcoded chat list
-
-2. **Create Friends Components**
-   - Friends List page using `useFriendsList()`
-   - Friend Requests page using `usePendingFriendRequests()`
-   - Add friend button using `useSendFriendRequest()`
-
-3. **Integrate Socket.IO**
-   - Create Socket.IO context provider
-   - Listen for real-time events
-   - Update query cache on socket events
-   - Implement typing indicators
-
-4. **Add Message Features**
-   - Message search using `useSearchMessages()`
-   - Message reactions using `useReactToMessage()`
-   - Message edit/delete using `useEditMessage()` and `useDeleteMessage()`
-
-5. **Implement Call System**
-   - Create calls.service.ts and useCall hooks
-   - Call initiation and management
-   - Call history viewing
-</file>
-
-<file path="client/MIDDLEWARE_GUIDE.md">
-# Middleware Authentication Guide
-
-## Overview
-
-The middleware handles all route protection on the **server-side** before the page renders. This is the **best practice** approach for Next.js 13+ with App Router.
-
-## How It Works
-
-### 1. **Request Flow**
-```
-User requests /chats
-   ↓
-Middleware intercepts request
-   ↓
-Reads accessToken from cookies
-   ↓
-Decodes JWT without verification (for basic checks)
-   ↓
-Validates token expiry
-   ↓
-Routes accordingly:
-   - Protected route + no token → Redirect to /signIn
-   - Protected route + valid token → Allow access
-   - Auth route + valid token → Redirect to /chats
-   - Other routes → Allow access
-```
-
-### 2. **Protected Routes**
-```typescript
-const protectedRoutes = ["/chats", "/calls", "/profile"];
-```
-These routes require a valid `accessToken` cookie.
-
-### 3. **Auth Routes**
-```typescript
-const authRoutes = ["/signIn", "/signUp", "/forgotPassword", "/resetPassword", "/verifyEmail"];
-```
-If user is authenticated, they're redirected away from these routes to `/chats`.
-
-## Token Validation
-
-### JWT Decoding (Client-side Safe)
-```typescript
-function decodeJWT(token: string): any | null {
-  const base64Payload = token.split(".")[1];
-  const jsonPayload = atob(base64Payload.replace(/-/g, "+").replace(/_/g, "/"));
-  return JSON.parse(jsonPayload);
-}
-```
-- **Does NOT verify** the token signature (server will do that on API calls)
-- Only checks if it can be decoded
-- Checks expiry time (`exp` claim)
-
-### Expiry Check
-```typescript
-const isExpired = decoded.exp && Date.now() >= decoded.exp * 1000;
-```
-- If expired → Redirect to `/signIn`
-- Server's axios interceptor will handle token refresh on API calls
-
-## Middleware Matcher
-
-```typescript
-export const config = {
-  matcher: [
-    "/chats/:path*",      // /chats and all subroutes
-    "/calls/:path*",      // /calls and all subroutes
-    "/profile/:path*",    // /profile and all subroutes
-    "/signIn",            // Auth routes
-    "/signUp",
-    "/forgotPassword",
-    "/resetPassword",
-    "/verifyEmail",
-  ],
-};
-```
-
-Routes NOT in the matcher won't run middleware (faster performance).
-
-## Authentication Flow
-
-### Login
-```
-1. User submits credentials
-   ↓
-2. Server validates and returns accessToken
-   ↓
-3. Server sets refreshToken as httpOnly cookie
-   ↓
-4. Client stores accessToken in cookie (via tokenManager.setAccessToken)
-   ↓
-5. Next navigation → Middleware checks accessToken
-   ↓
-6. Valid token → Access granted to protected routes
-```
-
-### Logout
-```
-1. User clicks logout button
-   ↓
-2. Client calls /auth/logout API
-   ↓
-3. Server clears refreshToken cookie
-   ↓
-4. Client clears accessToken cookie
-   ↓
-5. Next navigation → No accessToken found
-   ↓
-6. Middleware redirects to /signIn
-```
-
-### Token Refresh (Automatic)
-```
-1. Protected route accessed with expired accessToken
-   ↓
-2. Middleware allows request through (only checks expiry)
-   ↓
-3. API call made with expired token
-   ↓
-4. Server returns 401
-   ↓
-5. Axios interceptor detects 401
-   ↓
-6. Interceptor uses refreshToken (auto-sent in httpOnly cookie)
-   ↓
-7. Server returns new accessToken
-   ↓
-8. Axios retries original request with new token
-   ↓
-9. Request succeeds
-```
-
-## Key Differences from Client-Side Guards
-
-| Aspect | Middleware | Client-Side Guards |
-|--------|------------|-------------------|
-| **Timing** | Runs before page renders | Runs after page renders |
-| **Performance** | Faster (no client-side checks) | Slower (component renders first) |
-| **Flash** | No flash of wrong content | Potential flash of protected content |
-| **Security** | Better (server-controlled) | Weaker (client can be bypassed) |
-| **Token Validation** | Can check expiry server-side | Limited checks on client |
-| **Best Practice** | ✅ Recommended for Next.js | ❌ Not recommended |
-
-## Configuration
-
-### Adding New Protected Routes
-1. Add route to `protectedRoutes` array
-2. Add matcher pattern to `config.matcher`
-
-Example:
-```typescript
-const protectedRoutes = ["/chats", "/calls", "/profile", "/settings"];
-// Add to matcher:
-"/settings/:path*",
-```
-
-### Adding New Auth Routes
-1. Add route to `authRoutes` array
-2. Add matcher pattern to `config.matcher`
-
-Example:
-```typescript
-const authRoutes = [..., "/verify-email"];
-// Add to matcher:
-"/verify-email",
-```
-
-## Token Expiry Times
-
-- **Access Token**: 30 minutes (JWT_EXPIRE="30m")
-- **Refresh Token**: 7 days (JWT_REFRESH_EXPIRE="7d")
-
-When access token expires:
-- Middleware allows request (only warns about expiry)
-- API call fails with 401
-- Axios interceptor refreshes token automatically
-- Request retried with new token
-
-## Files Involved
-
-- **`middleware.ts`** - Route protection logic
-- **`src/lib/axios.ts`** - Token refresh interceptor
-- **`src/hooks/useAuth.ts`** - Login/logout hooks
-- **`.env`** - JWT configuration
-
-## Testing
-
-1. **Login** → accessToken cookie set → can access /chats
-2. **Go to /signIn** → already authenticated → redirected to /chats
-3. **Logout** → accessToken cookie cleared → redirected to /signIn
-4. **Access /chats without token** → redirected to /signIn
-5. **Wait for token expiry** → Next API call triggers refresh automatically
-
-## Security Notes
-
-✅ **httpOnly cookies** - refreshToken safe from XSS  
-✅ **Server validation** - All tokens validated on API calls  
-✅ **Middleware check** - Prevents unauthorized page access  
-✅ **Automatic refresh** - Users stay logged in seamlessly  
-✅ **Token expiry** - Limits exposure time of compromised tokens
-
-## Related Documentation
-
-- Next.js Middleware: https://nextjs.org/docs/advanced-features/middleware
-- JWT Best Practices: https://tools.ietf.org/html/rfc8725
-- Server-Side Rendering: https://nextjs.org/docs/basic-features/rendering
 </file>
 
 <file path="client/next.config.ts">
@@ -1436,6 +523,7 @@ export default nextConfig;
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
     "@tanstack/react-query": "^5.90.10",
+    "@tanstack/react-query-devtools": "^5.91.1",
     "axios": "^1.13.2",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
@@ -1447,6 +535,7 @@ export default nextConfig;
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "react-hook-form": "^7.66.1",
+    "react-hot-toast": "^2.6.0",
     "simple-peer": "^9.11.1",
     "socket.io-client": "^4.8.1",
     "tailwind-merge": "^3.4.0",
@@ -1521,499 +610,6 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 "# Chat-App-Client-"
 </file>
 
-<file path="client/SERVICES_HOOKS_REFERENCE.md">
-# Services & Hooks Quick Reference
-
-## Services Overview
-
-### Location & Structure
-```
-src/services/
-├── auth.service.ts          ✅ Complete - Auth, registration, OAuth
-├── friends.service.ts       ✅ NEW - Friend requests, friends list
-├── conversations.service.ts ✅ NEW - Conversations management
-├── messages.service.ts      ✅ NEW - Messages, reactions, search
-└── users.service.ts         📋 Planned
-```
-
-### Hooks Overview
-```
-src/hooks/
-├── useAuth.ts               ✅ Complete - Login, register, logout
-├── useGoogleAuth.ts         ✅ Complete - Google OAuth
-├── useFriends.ts            ✅ NEW - Friend operations
-├── useConversations.ts      ✅ NEW - Conversation operations
-└── useMessages.ts           ✅ NEW - Message operations
-```
-
----
-
-## Friends Service & Hook
-
-### Service: `friendsService`
-
-```typescript
-import { friendsService } from "@/services/friends.service";
-
-// Send friend request
-await friendsService.sendFriendRequest({ recipientId: "uuid" });
-
-// Get pending requests (incoming)
-const { friendRequests } = await friendsService.getPendingRequests();
-
-// Get sent requests (outgoing)
-const { friendRequests } = await friendsService.getSentRequests();
-
-// Accept request
-await friendsService.acceptFriendRequest(requestId);
-
-// Reject request
-await friendsService.rejectFriendRequest(requestId);
-
-// Cancel sent request
-await friendsService.cancelFriendRequest(requestId);
-
-// Get all friends
-const { friends } = await friendsService.getFriends();
-
-// Remove friend
-await friendsService.removeFriend(friendId);
-```
-
-### Hooks: `useFriends`
-
-```typescript
-import {
-  useSendFriendRequest,
-  usePendingFriendRequests,
-  useSentFriendRequests,
-  useFriendsList,
-  useAcceptFriendRequest,
-  useRejectFriendRequest,
-  useCancelFriendRequest,
-  useRemoveFriend,
-} from "@/hooks/useFriends";
-
-// Query: Get pending requests
-const { data: requests, isLoading } = usePendingFriendRequests();
-
-// Query: Get friends list
-const { data: friends } = useFriendsList();
-
-// Mutation: Send request
-const sendRequest = useSendFriendRequest();
-sendRequest.mutate({ recipientId: "uuid" });
-
-// Mutation: Accept request
-const acceptRequest = useAcceptFriendRequest();
-acceptRequest.mutate(requestId);
-
-// Mutation: Reject request
-const rejectRequest = useRejectFriendRequest();
-rejectRequest.mutate(requestId);
-
-// Mutation: Remove friend
-const removeFriend = useRemoveFriend();
-removeFriend.mutate(friendId);
-```
-
----
-
-## Conversations Service & Hook
-
-### Service: `conversationsService`
-
-```typescript
-import { conversationsService } from "@/services/conversations.service";
-
-// Get or create conversation
-const { conversation } = await conversationsService.getOrCreateConversation({
-  friendId: "uuid"
-});
-
-// Get all conversations
-const { conversations, total } = await conversationsService.getConversations(
-  limit = 50,
-  offset = 0
-);
-
-// Get single conversation
-const { conversation } = await conversationsService.getConversation(
-  conversationId
-);
-
-// Get other user in conversation
-const { user } = await conversationsService.getOtherUser(conversationId);
-
-// Archive conversation
-await conversationsService.archiveConversation({ conversationId });
-
-// Unarchive conversation
-await conversationsService.unarchiveConversation({ conversationId });
-
-// Delete conversation
-await conversationsService.deleteConversation({ conversationId });
-```
-
-### Hooks: `useConversations`
-
-```typescript
-import {
-  useGetOrCreateConversation,
-  useConversations,
-  useConversation,
-  useConversationOtherUser,
-  useArchiveConversation,
-  useUnarchiveConversation,
-  useDeleteConversation,
-} from "@/hooks/useConversations";
-
-// Query: Get all conversations
-const { data: conversations } = useConversations(limit, offset);
-
-// Query: Get single conversation
-const { data: conversation } = useConversation(conversationId);
-
-// Query: Get other user
-const { data: otherUser } = useConversationOtherUser(conversationId);
-
-// Mutation: Create/get conversation
-const createConversation = useGetOrCreateConversation();
-createConversation.mutate(
-  { friendId: "uuid" },
-  {
-    onSuccess: (data) => {
-      router.push(`/chats/${data.conversation.id}`);
-    },
-  }
-);
-
-// Mutation: Archive
-const archive = useArchiveConversation();
-archive.mutate(conversationId);
-
-// Mutation: Delete
-const deleteConv = useDeleteConversation();
-deleteConv.mutate(conversationId);
-```
-
----
-
-## Messages Service & Hook
-
-### Service: `messagesService`
-
-```typescript
-import { messagesService } from "@/services/messages.service";
-
-// Send message
-const { message } = await messagesService.sendMessage({
-  conversationId: "uuid",
-  content: "Hello!",
-});
-
-// Get messages in conversation
-const { messages, total } = await messagesService.getMessages(
-  conversationId,
-  limit = 50,
-  offset = 0
-);
-
-// Edit message
-await messagesService.editMessage({
-  messageId: "uuid",
-  content: "Updated message",
-});
-
-// Delete message (soft delete)
-await messagesService.deleteMessage({ messageId: "uuid" });
-
-// Mark as read
-const { markedCount } = await messagesService.markAsRead({
-  conversationId: "uuid",
-  messageIds: ["uuid1", "uuid2"],
-});
-
-// Get read receipts
-const readBy = await messagesService.getReadReceipts(messageId);
-
-// React to message
-const { reaction } = await messagesService.reactToMessage({
-  messageId: "uuid",
-  emoji: "👍",
-});
-
-// Remove reaction
-await messagesService.removeReaction({ reactionId: "uuid" });
-
-// Get reactions
-const reactions = await messagesService.getReactions(messageId);
-
-// Search messages
-const { messages: results } = await messagesService.searchMessages(
-  query = "hello",
-  conversationId,
-  limit = 20
-);
-```
-
-### Hooks: `useMessages`
-
-```typescript
-import {
-  useSendMessage,
-  useMessages,
-  useEditMessage,
-  useDeleteMessage,
-  useMarkAsRead,
-  useReadReceipts,
-  useReactToMessage,
-  useRemoveReaction,
-  useMessageReactions,
-  useSearchMessages,
-} from "@/hooks/useMessages";
-
-// Query: Get messages
-const { data: messages, isLoading } = useMessages(conversationId);
-
-// Query: Get read receipts
-const { data: readReceipts } = useReadReceipts(messageId);
-
-// Query: Get reactions
-const { data: reactions } = useMessageReactions(messageId);
-
-// Query: Search messages
-const { data: searchResults } = useSearchMessages(query, conversationId);
-
-// Mutation: Send message
-const sendMessage = useSendMessage();
-sendMessage.mutate({
-  conversationId: "uuid",
-  content: "Hello!",
-});
-
-// Mutation: Edit message
-const editMessage = useEditMessage();
-editMessage.mutate({
-  messageId: "uuid",
-  content: "Updated",
-});
-
-// Mutation: Delete message
-const deleteMessage = useDeleteMessage();
-deleteMessage.mutate({ messageId: "uuid" });
-
-// Mutation: Mark as read
-const markAsRead = useMarkAsRead();
-markAsRead.mutate({
-  conversationId: "uuid",
-  messageIds: ["uuid1", "uuid2"],
-});
-
-// Mutation: React
-const reactToMessage = useReactToMessage();
-reactToMessage.mutate({
-  messageId: "uuid",
-  emoji: "👍",
-});
-
-// Mutation: Remove reaction
-const removeReaction = useRemoveReaction();
-removeReaction.mutate({ reactionId: "uuid" });
-```
-
----
-
-## Common Usage Patterns
-
-### Pattern 1: List with Loading
-```typescript
-const MyComponent = () => {
-  const { data: items, isLoading, error } = useFriendsList();
-
-  if (isLoading) return <Skeleton />;
-  if (error) return <ErrorMessage />;
-
-  return (
-    <div>
-      {items?.map((item) => (
-        <ItemRow key={item.id} item={item} />
-      ))}
-    </div>
-  );
-};
-```
-
-### Pattern 2: Mutation with Callbacks
-```typescript
-const sendMessage = useSendMessage();
-
-const handleSend = (content: string) => {
-  sendMessage.mutate(
-    { conversationId, content },
-    {
-      onSuccess: () => {
-        // Refetch or update cache
-        queryClient.invalidateQueries({
-          queryKey: ["messages", conversationId],
-        });
-        // Reset form
-        setContent("");
-      },
-      onError: (error) => {
-        // Show error
-        toast.error(error.message);
-      },
-    }
-  );
-};
-```
-
-### Pattern 3: Dependent Queries
-```typescript
-// Only fetch conversation when ID is available
-const { data: conversation } = useConversation(conversationId);
-
-// Only fetch messages when conversation is selected
-const { data: messages } = useMessages(conversationId);
-```
-
-### Pattern 4: Pagination
-```typescript
-const [offset, setOffset] = useState(0);
-
-const { data: conversations } = useConversations(50, offset);
-
-const handleLoadMore = () => {
-  setOffset((prev) => prev + 50);
-};
-```
-
----
-
-## Error Handling
-
-### In Service
-Services throw errors naturally - no custom error handling needed.
-
-### In Hooks
-Hooks automatically pass errors to components via `error` property.
-
-### In Component
-```typescript
-const { data, error, isLoading } = useFriendsList();
-
-if (error) {
-  return (
-    <div className="text-red-500">
-      {error?.message || "Failed to load friends"}
-    </div>
-  );
-}
-```
-
----
-
-## Testing Patterns
-
-### Mock Service
-```typescript
-jest.mock("@/services/friends.service", () => ({
-  friendsService: {
-    getFriends: jest.fn(() =>
-      Promise.resolve({
-        friends: [{ id: "1", name: "John" }],
-      })
-    ),
-  },
-}));
-```
-
-### Test Hook
-```typescript
-import { renderHook, waitFor } from "@testing-library/react";
-
-test("useFriendsList loads friends", async () => {
-  const { result } = renderHook(() => useFriendsList());
-
-  await waitFor(() => {
-    expect(result.current.data).toBeDefined();
-  });
-});
-```
-
----
-
-## TypeScript Interfaces
-
-### Friends
-```typescript
-interface Friend {
-  id: string;
-  name: string;
-  email: string;
-  avatar?: string;
-  status: "online" | "offline" | "away";
-  bio?: string;
-}
-
-interface FriendRequest {
-  id: string;
-  senderId: string;
-  sender: Friend;
-  status: "pending" | "accepted" | "rejected";
-  createdAt: string;
-}
-```
-
-### Conversations
-```typescript
-interface Conversation {
-  id: string;
-  participants: ConversationUser[];
-  lastMessage?: Message;
-  unreadCount: number;
-  isArchived: boolean;
-  createdAt: string;
-}
-```
-
-### Messages
-```typescript
-interface Message {
-  id: string;
-  conversationId: string;
-  content: string;
-  sender: { id: string; name: string };
-  isRead: boolean;
-  isEdited?: boolean;
-  isDeleted?: boolean;
-  createdAt: string;
-}
-```
-
----
-
-## Troubleshooting
-
-### Query not updating after mutation
-**Solution:** Call `queryClient.invalidateQueries()` after successful mutation
-```typescript
-onSuccess: () => {
-  queryClient.invalidateQueries({ queryKey: ["friends"] });
-}
-```
-
-### Loading never resolves
-**Solution:** Check if query has `enabled: false` or is missing required parameters
-
-### Type errors on response
-**Solution:** Verify the service extracts correct data from API response structure
-
-### Stale data showing
-**Solution:** Manually invalidate cache or adjust staleTime in query options
-</file>
-
 <file path="client/src/app/(auth)/forgotPassword/page.tsx">
 import ForgotPassword from "@/components/pages/auth/forgotPassword";
 
@@ -2072,6 +668,13 @@ import VerifyEmail from "@/components/pages/auth/verifyEmail";
 export default function VerifyEmailPage() {
   return <VerifyEmail />;
 }
+</file>
+
+<file path="client/src/app/(main)/chats/[conversationId]/page.tsx">
+import Chats from "@/components/pages/main/chats";
+const ConversationPage = () => <Chats />;
+
+export default ConversationPage;
 </file>
 
 <file path="client/src/app/(main)/chats/page.tsx">
@@ -2208,25 +811,59 @@ export function AuthLayout({ children }: AuthLayoutProps) {
 </file>
 
 <file path="client/src/components/layout/mainLayout.tsx">
+"use client";
+
 import React from "react";
+import { usePathname } from "next/navigation";
 import { Sidebar } from "../ui/navigation/Sidebar";
 import { Panel } from "../ui/display/Panel";
+import Chat from "../pages/main/chat";
 
 interface MainLayoutProps {
   children: React.ReactNode;
 }
 
 export function MainLayout({ children }: MainLayoutProps) {
+  const pathname = usePathname();
+
+  // Check if we're on a conversation page (e.g., /chats/[conversationId])
+  const isConversationPage =
+    pathname?.startsWith("/chats/") && pathname !== "/chats";
+  const conversationId = isConversationPage
+    ? pathname.split("/chats/")[1]
+    : null;
+
   return (
     <div className="h-screen w-full flex overflow-hidden bg-main">
       <Sidebar />
-      <Panel>{children}</Panel>
-      <main className="flex-1 flex flex-col overflow-hidden bg-main">
-        <div className="flex-1 flex items-center justify-center">
-          <p className="text-sm text-secondary">
-            Select a chat to start messaging
-          </p>
-        </div>
+      {/* On small screens, when a conversationId exists we show the Chat inside the Panel (full-width).
+          On md+ screens we keep the Panel showing the children and render Chat in the right-side main area. */}
+      <Panel>
+        {/*
+          Always render the chats `children` for md+ screens.
+          When a conversationId exists we want to show the Chat full-width on small screens
+          and keep the chats list visible on md+ screens. To achieve that we:
+          - hide children on small screens when conversationId is present
+          - render Chat inside the panel only on small screens
+        */}
+        <div className={conversationId ? "hidden md:block" : "block"}>{children}</div>
+
+        {conversationId && (
+          <div className="md:hidden w-full h-[91%]">
+            <Chat conversationId={conversationId} />
+          </div>
+        )}
+      </Panel>
+      <main className="hidden md:flex flex-1 flex-col overflow-hidden bg-main">
+        {conversationId ? (
+          <Chat conversationId={conversationId} />
+        ) : (
+          <div className="flex-1 flex items-center justify-center">
+            <p className="text-sm text-secondary">
+              Select a chat to start messaging
+            </p>
+          </div>
+        )}
       </main>
     </div>
   );
@@ -2299,7 +936,7 @@ const ForgotPassword = () => {
           {isLoading ? "Sending..." : "Send Reset Link"}
         </Button>
 
-        <AuthSwitchLink mode="signin" />
+        <AuthSwitchLink mode="signIn" />
       </form>
     </AuthContainer>
   );
@@ -3230,168 +1867,299 @@ export const useVerifyEmailForm = () => {
 };
 </file>
 
-<file path="client/src/components/pages/main/chats/index.tsx">
+<file path="client/src/components/pages/main/chat/index.tsx">
 "use client";
 
-import { useState } from "react";
-import { Search } from "lucide-react";
-import { useConversations } from "@/hooks/useConversations";
-import { useRouter } from "next/navigation";
-import { AddButton } from "@/components/ui/buttons/AddButton";
-import type { ConversationListItem } from "@/services/conversations.service";
+import { useParams } from "next/navigation";
+import { useConversationOtherUser } from "@/hooks/useConversations";
+import { useMessages } from "@/hooks/useMessages";
+import { UserAvatar } from "@/components/ui/display/UserAvatar";
+import type { Message } from "@/services/messages.service";
+import { useEffect, useMemo, useRef } from "react";
 
-const Chats = () => {
-  const [searchQuery, setSearchQuery] = useState("");
-  const router = useRouter();
-  const { data: conversations = [], isLoading } = useConversations(50, 0);
+type ChatProps = {
+  conversationId?: string | null;
+};
 
-  // Filter conversations based on search
-  const filteredConversations = conversations.filter((conv: ConversationListItem) =>
-    conv.otherUser?.name
-      ?.toLowerCase()
-      .includes(searchQuery.toLowerCase())
+const Chat = ({ conversationId: propConversationId }: ChatProps) => {
+  const params = useParams();
+  const routeConversationId = params?.conversationId as string | undefined;
+  const conversationId = propConversationId ?? routeConversationId;
+
+  const {
+    data: otherUser,
+    isLoading: isLoadingUser,
+    isError: isUserError,
+  } = useConversationOtherUser(conversationId || null);
+
+  const { data: messages, isLoading: isLoadingMessages } = useMessages(
+    conversationId || "",
+    50,
+    0
   );
 
-  return (
-    <div className="h-full flex flex-col">
-      {/* Header */}
-      <div className="p-4 border-b border-border bg-panel">
-        <div className="flex items-center justify-between mb-3">
-          <h1 className="text-lg font-semibold text-primary">Chats</h1>
-          <AddButton size="md" title="Start new chat" />
-        </div>
+  const messagesRef = useRef<HTMLDivElement | null>(null);
 
-        {/* Search Bar */}
-        <div className="relative">
-          <Search
-            className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-secondary"
-            strokeWidth={2}
-          />
-          <input
-            type="text"
-            placeholder="Search here..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-8 pr-3 py-2 bg-search-bg border-0 rounded-md text-xs text-primary placeholder:text-secondary focus:outline-none focus:ring-1 focus:ring-primaryColor/30"
-          />
+  // Ensure messages are ordered oldest -> newest for display
+  const sortedMessages = useMemo(() => {
+    if (!messages) return [] as Message[];
+    return [...messages].sort(
+      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    );
+  }, [messages]);
+
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    const el = messagesRef.current;
+    if (el) {
+      // Scroll to bottom smoothly
+      el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+    }
+  }, [sortedMessages.length]);
+
+  if (!conversationId) {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <p className="text-sm text-secondary">
+          Select a chat to start messaging
+        </p>
+      </div>
+    );
+  }
+
+  if (isLoadingUser || isLoadingMessages) {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <p className="text-sm text-secondary">Loading messages...</p>
+      </div>
+    );
+  }
+
+  if (isUserError) {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <p className="text-sm text-red-500">Failed to load user information</p>
+      </div>
+    );
+  }
+
+  if (!otherUser) {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <p className="text-sm text-red-500">User not found</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-full flex flex-col bg-main">
+      {/* Chat Header */}
+      <div className="flex items-center gap-3 p-4 border-b border-border">
+        <UserAvatar user={otherUser} size="md" showStatus={true} />
+        <div className="flex-1">
+          <h3 className="text-sm font-medium text-primary">
+            {otherUser.name || otherUser.email}
+          </h3>
+          <p className="text-xs text-secondary">
+            {otherUser.status === "online" ? "Online" : "Offline"}
+          </p>
         </div>
       </div>
 
-      {/* Chat Lists */}
-      <div className="flex-1 overflow-y-auto bg-panel">
-        {isLoading ? (
-          <div className="flex items-center justify-center h-full">
-            <p className="text-xs text-secondary">Loading conversations...</p>
-          </div>
-        ) : filteredConversations.length === 0 ? (
-          <div className="flex items-center justify-center h-full">
-            <p className="text-xs text-secondary">
-              {conversations.length === 0
-                ? "No conversations yet"
-                : "No conversations match your search"}
+      {/* Messages Area */}
+      <div className="flex-1 overflow-y-auto p-4" ref={messagesRef}>
+        {!sortedMessages || sortedMessages.length === 0 ? (
+          <div className="h-full flex items-center justify-center">
+            <p className="text-sm text-secondary">
+              No messages yet. Start the conversation!
             </p>
           </div>
         ) : (
-          <div className="px-4 py-3">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-[10px] font-semibold text-secondary uppercase tracking-wider">
-                Conversations ({filteredConversations.length})
-              </h3>
-              <AddButton size="sm" title="New conversation" />
-            </div>
-            <div className="space-y-1">
-              {filteredConversations.map((conversation) => (
-                <ConversationItem
-                  key={conversation.id}
-                  conversation={conversation}
-                  onClick={() => router.push(`/chats/${conversation.id}`)}
-                />
-              ))}
-            </div>
+          <div className="flex flex-col gap-4">
+            {sortedMessages.map((message: Message) => {
+              const isOtherUserMessage = message.sender.id === otherUser.id;
+              return (
+                <div
+                  key={message.id}
+                  className={`flex items-end ${
+                    isOtherUserMessage ? "justify-start" : "justify-end"
+                  }`}
+                >
+                  {isOtherUserMessage && (
+                    <div className="mr-3">
+                      <UserAvatar
+                        user={{
+                          id: message.sender.id,
+                          name: message.sender.name,
+                          email: "",
+                          avatar: message.sender.avatar || null,
+                          status: "offline",
+                        }}
+                        size="sm"
+                        showStatus={false}
+                      />
+                    </div>
+                  )}
+
+                  <div
+                    className={`max-w-[70%] rounded-lg px-4 py-2 ${
+                      isOtherUserMessage
+                        ? "bg-muted text-primary"
+                        : "bg-primaryColor text-white"
+                    }`}
+                  >
+                    <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                    <p
+                      className={`text-xs mt-1 ${
+                        isOtherUserMessage ? "text-secondary" : "text-white/70"
+                      }`}
+                    >
+                      {new Date(message.createdAt).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </p>
+                  </div>
+
+                  {!isOtherUserMessage && (
+                    <div className="ml-3" />
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
 
+      {/* Message Input Area */}
+      <div className="p-4 border-t border-border">
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            placeholder="Type a message..."
+            className="flex-1 px-4 py-2 bg-search-bg border border-border rounded-lg text-sm text-primary placeholder:text-secondary focus:outline-none focus:ring-1 focus:ring-primaryColor/30"
+          />
+          <button className="px-4 py-2 bg-primaryColor text-white rounded-lg text-sm font-medium hover:opacity-90 transition-opacity">
+            Send
+          </button>
+        </div>
+      </div>
     </div>
   );
 };
 
-// Conversation Item Component
-function ConversationItem({
-  conversation,
-  onClick,
-}: {
-  conversation: ConversationListItem;
-  onClick: () => void;
-}) {
-  const otherUser = conversation.otherUser;
-  const lastMessage = conversation.lastMessage;
-  const unreadCount = conversation.unreadCount || 0;
+export default Chat;
+</file>
 
-  const getTimeString = (date: string) => {
-    const msgDate = new Date(date);
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
+<file path="client/src/components/pages/main/chats/index.tsx">
+"use client";
 
-    if (msgDate.toDateString() === today.toDateString()) {
-      return msgDate.toLocaleTimeString("en-US", {
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-    } else if (msgDate.toDateString() === yesterday.toDateString()) {
-      return "Yesterday";
-    } else {
-      return msgDate.toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-      });
+import { useRouter } from "next/navigation";
+import { useConversations } from "@/hooks/useConversations";
+import PathHeader from "@/components/ui/display/PathHeader";
+import { UserAvatar } from "@/components/ui/display/UserAvatar";
+import { ConversationListItem } from "@/services/conversations.service";
+import { formatDistanceToNow } from "date-fns";
+
+const Chats = () => {
+  const router = useRouter();
+  const {
+    data: conversations,
+    isLoading,
+    error,
+  } = useConversations(50, 1, false);
+
+  const handleConversationClick = (conversationId: string) => {
+    router.push(`/chats/${conversationId}`);
+  };
+
+  const formatLastMessageTime = (dateString: string) => {
+    try {
+      return formatDistanceToNow(new Date(dateString), { addSuffix: true });
+    } catch {
+      return "";
     }
   };
 
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="w-full flex items-center gap-2.5 p-2 rounded-md hover:bg-chat-hover transition-colors group"
-    >
-      {/* Avatar with online indicator */}
-      <div className="relative flex-shrink-0">
-        <div className="w-9 h-9 rounded-full bg-primaryColor/20 flex items-center justify-center text-primaryColor text-xs font-semibold">
-          {otherUser.name?.[0]?.toUpperCase() || "U"}
-        </div>
-      </div>
+    <section className="h-full flex flex-col items-start p-4">
+      <PathHeader PageName="Chats" />
 
-      {/* Chat Info */}
-      <div className="flex-1 min-w-0 text-left">
-        <div className="flex items-center justify-between mb-0.5">
-          <h4 className="text-sm font-medium text-primary truncate">
-            {otherUser.name}
-          </h4>
-          {lastMessage && (
-            <span className="text-[10px] text-secondary flex-shrink-0 ml-2">
-              {getTimeString(lastMessage.createdAt)}
-            </span>
-          )}
+      {isLoading && (
+        <div className="w-full flex items-center justify-center py-8">
+          <p className="text-sm text-secondary">Loading conversations...</p>
         </div>
-        <p className="text-xs text-secondary truncate">
-          {lastMessage?.content || "No messages yet"}
-        </p>
-      </div>
+      )}
 
-      {/* Unread Badge */}
-      <div className="flex items-center gap-1.5 flex-shrink-0">
-        {unreadCount > 0 && (
-          <div className="min-w-[18px] h-[18px] px-1.5 bg-primaryColor rounded-full flex items-center justify-center">
-            <span className="text-[10px] text-white font-semibold leading-none">
-              {unreadCount}
-            </span>
-          </div>
-        )}
-      </div>
-    </button>
+      {error && (
+        <div className="w-full flex items-center justify-center py-8">
+          <p className="text-sm text-red-500">Error loading conversations</p>
+        </div>
+      )}
+
+      {!isLoading && !error && conversations && conversations.length === 0 && (
+        <div className="w-full flex items-center justify-center py-8">
+          <p className="text-sm text-secondary">No conversations yet</p>
+        </div>
+      )}
+
+      {!isLoading && !error && conversations && conversations.length > 0 && (
+        <div className="w-full flex flex-col gap-2">
+          {conversations.map((conversation: ConversationListItem) => (
+            <div
+              key={conversation.id}
+              onClick={() => handleConversationClick(conversation.id)}
+              className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+            >
+              <UserAvatar
+                user={conversation.otherUser}
+                size="sm"
+                showStatus={true}
+              />
+
+              <div className="flex-1 flex flex-col min-w-0">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm text-primary truncate">
+                    {conversation.otherUser.name ||
+                      conversation.otherUser.email}
+                  </p>
+                  {conversation.lastMessage && (
+                    <span className="text-xs text-secondary flex-shrink-0">
+                      {formatLastMessageTime(
+                        conversation.lastMessage.createdAt
+                      )}
+                    </span>
+                  )}
+                </div>
+
+                {conversation.lastMessage ? (
+                  <div className="flex items-center gap-2 mt-1">
+                    <p className="text-xs text-secondary truncate">
+                      {conversation.lastMessage.senderId ===
+                      conversation.otherUser.id
+                        ? ""
+                        : "You: "}
+                      {conversation.lastMessage.content}
+                    </p>
+                    {conversation.unreadCount > 0 && (
+                      <span className="px-2 py-0.5 bg-primaryColor rounded-full text-white text-xs font-semibold flex-shrink-0">
+                        {conversation.unreadCount}
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-sm text-secondary italic">
+                    No messages yet
+                  </p>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
   );
-}
+};
 
 export default Chats;
 </file>
@@ -3409,6 +2177,7 @@ import {
   useCancelFriendRequest,
 } from "@/hooks/useFriends";
 import type { FriendRequest } from "@/services/friends.service";
+import PathHeader from "@/components/ui/display/PathHeader";
 
 const FriendsRequests = () => {
   const [activeTab, setActiveTab] = useState<"pending" | "sent">("pending");
@@ -3417,7 +2186,8 @@ const FriendsRequests = () => {
   // Queries
   const { data: pendingRequests = [], isLoading: pendingLoading } =
     usePendingFriendRequests();
-  const { data: sentRequests = [], isLoading: sentLoading } = useSentFriendRequests();
+  const { data: sentRequests = [], isLoading: sentLoading } =
+    useSentFriendRequests();
 
   // Mutations
   const acceptRequest = useAcceptFriendRequest();
@@ -3434,14 +2204,10 @@ const FriendsRequests = () => {
   );
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="px-4 h-full flex flex-col">
       {/* Header */}
-      <div className="p-4 border-b border-border bg-panel">
-        <div className="flex items-center justify-between mb-3">
-          <h1 className="text-lg font-semibold text-primary">
-            Friend Requests
-          </h1>
-        </div>
+      <div className="border-b border-border bg-panel">
+        <PathHeader PageName="Friends Requests" />
 
         {/* Search Bar */}
         <div className="relative">
@@ -3460,7 +2226,7 @@ const FriendsRequests = () => {
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-border bg-panel px-4 sticky top-0">
+      <div className="flex border-b border-border bg-panel sticky top-0">
         <button
           onClick={() => setActiveTab("pending")}
           className={`flex-1 py-3 text-xs font-semibold transition-colors ${
@@ -3684,6 +2450,42 @@ export { AddButton } from "./AddButton";
 export { LogoutButton } from "./LogoutButton";
 </file>
 
+<file path="client/src/components/ui/buttons/LogoutButton.tsx">
+"use client";
+
+import { LogOut } from "lucide-react";
+import { useLogout } from "@/hooks/useAuth";
+import { useRouter } from "next/navigation";
+
+export function LogoutButton() {
+  const router = useRouter();
+  const logout = useLogout();
+
+  const handleLogout = () => {
+    logout.mutate(undefined, {
+      onSuccess: () => {
+        router.replace("/signIn");
+      },
+      onError: (error) => {
+        console.error("Logout failed:", error);
+        router.replace("/signIn");
+      },
+    });
+  };
+
+  return (
+    <button
+      onClick={handleLogout}
+      disabled={logout.isPending}
+      className="w-full h-11 flex items-center justify-center text-gray-400 hover:text-red-400 transition-colors disabled:opacity-50"
+      title="Logout"
+    >
+      <LogOut className="w-5 h-5" strokeWidth={2} />
+    </button>
+  );
+}
+</file>
+
 <file path="client/src/components/ui/display/AuthContainer.tsx">
 import React from "react";
 import { MessageSquareText } from "lucide-react";
@@ -3732,9 +2534,143 @@ interface PanelProps {
 
 export function Panel({ children }: PanelProps) {
   return (
-    <section className="w-[320px] bg-panel flex flex-col overflow-hidden border-r border-border">
+    <section className="w-full md:w-[320px] bg-panel flex flex-col overflow-hidden border-r border-border">
       {children}
     </section>
+  );
+}
+</file>
+
+<file path="client/src/components/ui/display/PathHeader.tsx">
+const PathHeader = ({PageName}: {PageName: string}) => {
+  return (
+    <div className="w-full flex items-center justify-between mb-4 border-b border-border border-1 pb-3">
+      <h3 className="font-medium text-primary">{PageName}</h3>
+    </div>
+  );
+};
+
+export default PathHeader;
+</file>
+
+<file path="client/src/components/ui/display/UserAvatar.tsx">
+"use client";
+
+import Image from "next/image";
+import { ConversationUser } from "@/services/conversations.service";
+
+interface UserAvatarProps {
+  user: ConversationUser;
+  size?: "sm" | "md" | "lg";
+  showStatus?: boolean;
+  className?: string;
+}
+
+/**
+ * Choose a background class from a small palette based on user ID
+ * This avoids inline styles and maps the hashed ID to one of the
+ * predefined CSS classes (declared in globals.css).
+ */
+const getAvatarClass = (userId: string): string => {
+  let hash = 0;
+  for (let i = 0; i < userId.length; i++) {
+    hash = userId.charCodeAt(i) + ((hash << 5) - hash);
+  }
+
+  // Pick from 12 palette classes
+  const paletteSize = 12;
+  const index = Math.abs(hash) % paletteSize;
+  return `avatar-bg-${index}`;
+};
+
+/**
+ * Get initials from user name
+ */
+const getInitials = (name: string): string => {
+  const parts = name.trim().split(/\s+/);
+  if (parts.length >= 2) {
+    // First letter of first name + first letter of last name
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  } else if (parts.length === 1 && parts[0].length > 0) {
+    // Only one name, use first two letters
+    return parts[0].substring(0, 2).toUpperCase();
+  }
+  // Fallback: use first two characters of email or "U"
+  return "U";
+};
+
+/**
+ * Get size classes
+ */
+const getSizeClasses = (size: "sm" | "md" | "lg") => {
+  switch (size) {
+    case "sm":
+      return {
+        container: "w-10 h-10",
+        text: "text-xs",
+        status: "w-3 h-3",
+        statusPosition: "bottom-0 right-0",
+        imageSize: 32,
+      };
+    case "lg":
+      return {
+        container: "w-16 h-16",
+        text: "text-lg",
+        status: "w-3.5 h-3.5",
+        statusPosition: "bottom-1 right-1",
+        imageSize: 64,
+      };
+    case "md":
+    default:
+      return {
+        container: "w-10 h-10",
+        text: "text-sm",
+        status: "w-2.5 h-2.5",
+        statusPosition: "bottom-0 right-0",
+        imageSize: 40,
+      };
+  }
+};
+
+export function UserAvatar({
+  user,
+  size = "md",
+  showStatus = true,
+  className = "",
+}: UserAvatarProps) {
+  const sizeClasses = getSizeClasses(size);
+  const isActive = user.status === "online";
+  const avatarClass = getAvatarClass(user.id);
+  const initials = user.name ? getInitials(user.name) : "U";
+
+  return (
+    <div
+      className={`relative inline-flex items-center justify-center ${sizeClasses.container} ${className}`}
+    >
+      {user.avatar ? (
+        <Image
+          src={user.avatar}
+          alt={user.name || "User"}
+          width={sizeClasses.imageSize}
+          height={sizeClasses.imageSize}
+          className="rounded-full object-cover w-full h-full"
+        />
+      ) : (
+        <div
+          className={`rounded-full flex items-center justify-center ${sizeClasses.text} font-semibold text-white w-full h-full ${avatarClass}`}
+        >
+          {initials}
+        </div>
+      )}
+
+      {/* Active status indicator */}
+      {showStatus && isActive && (
+        <div
+          className={`absolute ${sizeClasses.statusPosition} ${sizeClasses.status} bg-green-500 rounded-full border-white border-2 border-sidebar`}
+          title="Online"
+        />
+      )}
+    </div>
   );
 }
 </file>
@@ -4080,42 +3016,6 @@ const Milestone = ({ title }: { title: string }) => {
 export default Milestone;
 </file>
 
-<file path="client/src/components/ui/navigation/LogoutButton.tsx">
-"use client";
-
-import { LogOut } from "lucide-react";
-import { useLogout } from "@/hooks/useAuth";
-import { useRouter } from "next/navigation";
-
-export function LogoutButton() {
-  const router = useRouter();
-  const logout = useLogout();
-
-  const handleLogout = () => {
-    logout.mutate(undefined, {
-      onSuccess: () => {
-        router.replace("/signIn");
-      },
-      onError: (error) => {
-        console.error("Logout failed:", error);
-        router.replace("/signIn");
-      },
-    });
-  };
-
-  return (
-    <button
-      onClick={handleLogout}
-      disabled={logout.isPending}
-      className="w-full h-11 flex items-center justify-center text-gray-400 hover:text-red-400 transition-colors disabled:opacity-50"
-      title="Logout"
-    >
-      <LogOut className="w-5 h-5" strokeWidth={2} />
-    </button>
-  );
-}
-</file>
-
 <file path="client/src/components/ui/navigation/Sidebar.tsx">
 "use client";
 
@@ -4128,11 +3028,14 @@ import {
   Settings,
   UserPlus,
 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { ThemeToggle } from "./ThemeToggle";
-import { LogoutButton } from "./LogoutButton";
+import { LogoutButton } from "../buttons";
 
 export function Sidebar() {
   const pathname = usePathname();
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const avatarRef = useRef<HTMLDivElement | null>(null);
 
   const navigation = [
     { name: "Chats", href: "/chats", icon: MessageSquare },
@@ -4142,16 +3045,91 @@ export function Sidebar() {
     { name: "Settings", href: "/settings", icon: Settings },
   ];
 
-  return (
-    <aside className="w-[60px] bg-sidebar flex flex-col items-center py-3 gap-2">
-      {/* Logo/Brand */}
-      <div className="w-9 h-9 bg-primaryColor rounded-lg flex items-center justify-center mb-2">
-        <MessageSquare className="w-5 h-5 text-white" strokeWidth={2} />
-      </div>
+  // Main navigation shown in the compact mobile bar (without Settings)
+  const mobileNavigation = navigation.filter(
+    (item) => item.name !== "Settings"
+  );
 
-      {/* Navigation Icons */}
-      <nav className="flex-1 flex flex-col gap-1 w-full">
-        {navigation.map((item) => {
+  // Close user menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        avatarRef.current &&
+        !avatarRef.current.contains(event.target as Node)
+      ) {
+        setIsUserMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  return (
+    <>
+      {/* Desktop / Tablet sidebar on the left */}
+      <aside className="hidden sm:flex w-[60px] bg-sidebar flex-col items-center py-3 gap-2">
+        {/* Logo/Brand */}
+        <div className="w-9 h-9 bg-primaryColor rounded-lg flex items-center justify-center mb-2">
+          <MessageSquare className="w-5 h-5 text-white" strokeWidth={2} />
+        </div>
+
+        {/* Navigation Icons */}
+        <nav className="flex-1 flex flex-col gap-1 w-full">
+          {navigation.map((item) => {
+            const isActive = pathname.startsWith(item.href);
+            const Icon = item.icon;
+
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
+                className={`
+                  relative w-full h-11 flex items-center justify-center
+                  transition-colors duration-200
+                  ${
+                    isActive
+                      ? "text-primaryColor"
+                      : "text-gray-400 hover:text-gray-300"
+                  }
+                `}
+                title={item.name}
+              >
+                {/* Active indicator - left border */}
+                {isActive && (
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-primaryColor rounded-r" />
+                )}
+                <Icon className="w-5 h-5" strokeWidth={2} />
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* Bottom Actions */}
+        <div className="flex flex-col gap-1 w-full mb-2">
+          {/* Theme Toggle */}
+          <ThemeToggle />
+          {/* Logout Button */}
+          <LogoutButton />
+          {/* User Avatar - Link to Profile on Desktop */}
+          <div className="w-full h-11 flex items-center justify-center">
+            <Link
+              href="/profile"
+              className="w-8 h-8 rounded-full bg-primaryColor flex items-center justify-center text-white text-xs font-semibold hover:opacity-80 transition-opacity"
+              title="Profile"
+            >
+              N
+            </Link>
+          </div>
+        </div>
+      </aside>
+
+      {/* Mobile bottom bar under the page content */}
+      <nav className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-sidebar border-t border-border py-2 flex items-center justify-center w-full">
+        {/* Main paths with percentage widths - 4 items × 20% = 80% */}
+        {mobileNavigation.map((item) => {
           const isActive = pathname.startsWith(item.href);
           const Icon = item.icon;
 
@@ -4160,40 +3138,73 @@ export function Sidebar() {
               key={item.name}
               href={item.href}
               className={`
-                relative w-full h-11 flex items-center justify-center
+                relative w-[20%] h-12 flex items-center justify-center
                 transition-colors duration-200
                 ${
                   isActive
-                    ? "text-primaryColor"
+                    ? "text-primaryColor bg-primaryColor/10"
                     : "text-gray-400 hover:text-gray-300"
                 }
               `}
               title={item.name}
             >
-              {/* Active indicator - left border */}
-              {isActive && (
-                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-primaryColor rounded-r" />
-              )}
               <Icon className="w-5 h-5" strokeWidth={2} />
             </Link>
           );
         })}
-      </nav>
 
-      {/* Bottom Actions */}
-      <div className="flex flex-col gap-1 w-full mb-2">
-        {/* Theme Toggle */}
-        <ThemeToggle />
-        {/* Logout Button */}
-        <LogoutButton />
-        {/* User Avatar */}
-        <div className="w-full h-11 flex items-center justify-center">
-          <div className="w-8 h-8 rounded-full bg-primaryColor flex items-center justify-center text-white text-xs font-semibold">
+        {/* User avatar with dropdown menu (Profile + Settings + Theme Toggle + Logout) - 20% width */}
+        <div ref={avatarRef} className="relative w-[20%] h-12 flex items-center justify-center">
+          <button
+            type="button"
+            onClick={() => setIsUserMenuOpen((open) => !open)}
+            className="w-9 h-9 rounded-full bg-primaryColor flex items-center justify-center text-white text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primaryColor/60"
+          >
             N
-          </div>
+          </button>
+
+          {isUserMenuOpen && (
+            <>
+              {/* Backdrop overlay */}
+              <div
+                className="fixed inset-0 bg-black/20 backdrop-blur-sm z-30"
+                onClick={() => setIsUserMenuOpen(false)}
+              />
+              
+              {/* Dropdown menu */}
+              <div className="absolute bottom-12 right-0 w-40 rounded-lg bg-popover shadow-lg border border-border py-2 flex flex-col gap-1 z-50">
+                <Link
+                  href="/profile"
+                  className="px-3 py-2 text-sm flex items-center gap-2 hover:bg-muted transition-colors"
+                  onClick={() => setIsUserMenuOpen(false)}
+                >
+                  <User className="w-4 h-4" />
+                  <span>Profile</span>
+                </Link>
+                
+                <Link
+                  href="/settings"
+                  className="px-3 py-2 text-sm flex items-center gap-2 hover:bg-muted transition-colors"
+                  onClick={() => setIsUserMenuOpen(false)}
+                >
+                  <Settings className="w-4 h-4" />
+                  <span>Settings</span>
+                </Link>
+
+                {/* Theme Toggle in dropdown */}
+                <div className="px-3 py-2">
+                  <ThemeToggle />
+                </div>
+
+                <div className="px-2">
+                  <LogoutButton />
+                </div>
+              </div>
+            </>
+          )}
         </div>
-      </div>
-    </aside>
+      </nav>
+    </>
   );
 }
 </file>
@@ -4227,6 +3238,7 @@ export function ThemeToggle() {
 import { useMutation } from "@tanstack/react-query";
 import { authService, LoginRequest, RegisterRequest, AuthResponse} from "@/services/auth.service";
 import { tokenManager } from "@/lib/axios";
+import { socketClient } from "@/socket/client";
 
 /**
  * Hook for user login
@@ -4262,10 +3274,14 @@ export const useLogout = () => {
   return useMutation({
     mutationFn: () => authService.logout(),
     onSuccess: () => {
+      // Disconnect socket (this will trigger offline status on server)
+      socketClient.destroy();
       tokenManager.clearTokens();
     },
     onError: (error) => {
       console.error("Logout failed:", error);
+      // Still disconnect socket even on error
+      socketClient.destroy();
       tokenManager.clearTokens();
     },
   });
@@ -4322,19 +3338,26 @@ export const useResetPassword = () => {
 </file>
 
 <file path="client/src/hooks/useConversations.ts">
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   conversationsService,
   GetOrCreateConversationRequest,
+  ConversationUser,
 } from "@/services/conversations.service";
 
 /**
  * Hook for getting or creating conversation with a friend
  */
 export const useGetOrCreateConversation = () => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: (data: GetOrCreateConversationRequest) =>
       conversationsService.getOrCreateConversation(data),
+    onSuccess: () => {
+      // Invalidate conversations list to refetch
+      queryClient.invalidateQueries({ queryKey: ["conversations"] });
+    },
     onError: (error) => {
       console.error("Get or create conversation failed:", error);
     },
@@ -4343,36 +3366,50 @@ export const useGetOrCreateConversation = () => {
 
 /**
  * Hook for getting all conversations
+ * @param limit - Maximum number of conversations to return (default: 50)
+ * @param page - Page number for pagination (default: 1)
+ * @param archived - Filter by archived status (optional)
+ * @param enabled - Whether the query should run (default: true)
  */
-export const useConversations = (limit: number = 50, offset: number = 0) => {
+export const useConversations = (
+  limit: number = 50,
+  page: number = 1,
+  archived?: boolean,
+  enabled: boolean = true
+) => {
   return useQuery({
-    queryKey: ["conversations", { limit, offset }],
-    queryFn: () => conversationsService.getConversations(limit, offset),
+    queryKey: ["conversations", { limit, page, archived }],
+    queryFn: () => conversationsService.getConversations(limit, page, archived),
     select: (data) => data.conversations,
+    staleTime: 1000 * 60, // 1 minute
+    enabled,
   });
 };
 
 /**
  * Hook for getting single conversation
+ * @param conversationId - ID of the conversation to fetch
  */
-export const useConversation = (conversationId: string) => {
+export const useConversation = (conversationId: string | null) => {
   return useQuery({
     queryKey: ["conversation", conversationId],
-    queryFn: () => conversationsService.getConversation(conversationId),
+    queryFn: () => conversationsService.getConversation(conversationId!),
     select: (data) => data.conversation,
     enabled: !!conversationId,
+    staleTime: 1000 * 30, // 30 seconds
   });
 };
 
 /**
  * Hook for getting other user in conversation
+ * @param conversationId - ID of the conversation
  */
-export const useConversationOtherUser = (conversationId: string) => {
-  return useQuery({
+export const useConversationOtherUser = (conversationId: string | null) => {
+  return useQuery<ConversationUser>({
     queryKey: ["conversation", conversationId, "otherUser"],
-    queryFn: () => conversationsService.getOtherUser(conversationId),
-    select: (data) => data.user,
+    queryFn: () => conversationsService.getOtherUser(conversationId!),
     enabled: !!conversationId,
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 };
 
@@ -4380,9 +3417,15 @@ export const useConversationOtherUser = (conversationId: string) => {
  * Hook for archiving conversation
  */
 export const useArchiveConversation = () => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: (conversationId: string) =>
       conversationsService.archiveConversation({ conversationId }),
+    onSuccess: () => {
+      // Refetch conversations list
+      queryClient.invalidateQueries({ queryKey: ["conversations"] });
+    },
     onError: (error) => {
       console.error("Archive conversation failed:", error);
     },
@@ -4393,11 +3436,52 @@ export const useArchiveConversation = () => {
  * Hook for unarchiving conversation
  */
 export const useUnarchiveConversation = () => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: (conversationId: string) =>
       conversationsService.unarchiveConversation({ conversationId }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["conversations"] });
+    },
     onError: (error) => {
       console.error("Unarchive conversation failed:", error);
+    },
+  });
+};
+
+/**
+ * Hook for muting conversation
+ */
+export const useMuteConversation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (conversationId: string) =>
+      conversationsService.muteConversation({ conversationId }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["conversations"] });
+    },
+    onError: (error) => {
+      console.error("Mute conversation failed:", error);
+    },
+  });
+};
+
+/**
+ * Hook for unmuting conversation
+ */
+export const useUnmuteConversation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (conversationId: string) =>
+      conversationsService.unmuteConversation({ conversationId }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["conversations"] });
+    },
+    onError: (error) => {
+      console.error("Unmute conversation failed:", error);
     },
   });
 };
@@ -4406,9 +3490,14 @@ export const useUnarchiveConversation = () => {
  * Hook for deleting conversation
  */
 export const useDeleteConversation = () => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: (conversationId: string) =>
       conversationsService.deleteConversation({ conversationId }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["conversations"] });
+    },
     onError: (error) => {
       console.error("Delete conversation failed:", error);
     },
@@ -4570,8 +3659,11 @@ export const useMessages = (
   limit: number = 50,
   offset: number = 0
 ) => {
+  // Server expects `page` param (1-based). Convert offset->page for request and cache key.
+  const page = Math.floor(offset / limit) + 1;
+
   return useQuery({
-    queryKey: ["messages", conversationId, { limit, offset }],
+    queryKey: ["messages", conversationId, { limit, page }],
     queryFn: () => messagesService.getMessages(conversationId, limit, offset),
     select: (data) => data.messages,
     enabled: !!conversationId,
@@ -4680,6 +3772,45 @@ export const useSearchMessages = (
     select: (data) => data.messages,
     enabled: !!query && !!conversationId,
   });
+};
+</file>
+
+<file path="client/src/hooks/useSocket.ts">
+"use client";
+
+import { useSyncExternalStore } from "react";
+import { socketClient } from "@/socket/client";
+import type { SocketState } from "@/types/socket.types";
+
+/**
+ * Hook to subscribe to socket connection state
+ * Uses React 18's useSyncExternalStore for optimal performance
+ */
+export const useSocketState = (): SocketState => {
+  return useSyncExternalStore(
+    (callback) => socketClient.subscribe(callback),
+    () => socketClient.getState(),
+    () => socketClient.getState()
+  );
+};
+
+/**
+ * Hook to get socket connection status
+ */
+export const useSocketStatus = () => {
+  const state = useSocketState();
+
+  return {
+    status: state.status,
+    isConnected: state.status === "connected",
+    isConnecting: state.status === "connecting",
+    isReconnecting: state.status === "reconnecting",
+    isDisconnected: state.status === "disconnected",
+    hasError: state.status === "error",
+    error: state.error,
+    reconnectAttempts: state.reconnectAttempts,
+    lastConnected: state.lastConnected,
+  };
 };
 </file>
 
@@ -4879,6 +4010,7 @@ function decodeJWT(token: string): JWTPayload | null {
 export function middleware(req: NextRequest) {
   const url = req.nextUrl.clone();
   const accessToken = req.cookies.get("accessToken")?.value;
+  const refreshToken = req.cookies.get("refreshToken")?.value;
   const pathname = url.pathname;
 
   // Route definitions
@@ -4892,6 +4024,11 @@ export function middleware(req: NextRequest) {
   // Root path (/) - redirect based on auth status
   if (isRootPath) {
     if (!accessToken) {
+      // If no access token but a refresh token exists, let the app load and refresh
+      if (refreshToken) {
+        url.pathname = "/chats";
+        return NextResponse.redirect(url);
+      }
       url.pathname = "/signIn";
       return NextResponse.redirect(url);
     } else {
@@ -4904,6 +4041,11 @@ export function middleware(req: NextRequest) {
       
       const isExpired = decoded.exp && Date.now() >= decoded.exp * 1000;
       if (isExpired) {
+        // Allow refresh path if refresh token exists
+        if (refreshToken) {
+          url.pathname = "/chats";
+          return NextResponse.redirect(url);
+        }
         url.pathname = "/signIn";
         return NextResponse.redirect(url);
       }
@@ -4916,6 +4058,10 @@ export function middleware(req: NextRequest) {
 
   // If accessing protected route without token
   if (isProtectedRoute && !accessToken) {
+    // Allow if refresh token exists (client will refresh)
+    if (refreshToken) {
+      return NextResponse.next();
+    }
     url.pathname = "/signIn";
     return NextResponse.redirect(url);
   }
@@ -4934,6 +4080,10 @@ export function middleware(req: NextRequest) {
     const isExpired = decoded.exp && Date.now() >= decoded.exp * 1000;
 
     if (isExpired) {
+      // Allow if refresh token exists; otherwise redirect to sign-in
+      if (refreshToken) {
+        return NextResponse.next();
+      }
       url.pathname = "/signIn";
       return NextResponse.redirect(url);
     }
@@ -4964,56 +4114,187 @@ export const config = {
 "use client";
 
 import React from "react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-<<<<<<< HEAD
 import { ThemeProvider } from "./ThemeProvider";
-=======
->>>>>>> c2c19e585e68dc55acb5007d7254e2c57657b098
-
-/**
- * Create a client side query client instance
- */
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes
-      gcTime: 1000 * 60 * 30, // 30 minutes
-      retry: 1,
-      refetchOnWindowFocus: false,
-    },
-    mutations: {
-      retry: 1,
-    },
-  },
-});
+import { SocketProvider } from "./SocketProvider";
+import { ReactQueryProvider } from "./ReactQueryProvider";
+import { Toaster } from "react-hot-toast"; // Or your toast library
 
 interface ProvidersProps {
   children: React.ReactNode;
 }
 
 /**
- * Providers wrapper component
-<<<<<<< HEAD
- * Wraps React Query QueryClientProvider and ThemeProvider for state management
+ * Main Providers wrapper component
+ * Wraps all global providers: Theme, React Query, Socket.IO
  */
 export function Providers({ children }: ProvidersProps) {
   return (
     <ThemeProvider>
-      <QueryClientProvider client={queryClient}>
-        {children}
-      </QueryClientProvider>
+      <ReactQueryProvider>
+        <SocketProvider>
+          {children}
+        </SocketProvider>
+        
+        {/* Toast notifications */}
+        <Toaster position="top-right" />
+      </ReactQueryProvider>
     </ThemeProvider>
-=======
- * Wraps React Query QueryClientProvider for state management
- */
-export function Providers({ children }: ProvidersProps) {
+  );
+}
+</file>
+
+<file path="client/src/providers/ReactQueryProvider.tsx">
+"use client";
+
+import React, { useState } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+
+export function ReactQueryProvider({ children }: { children: React.ReactNode }) {
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            staleTime: 1000 * 60 * 5, // 5 minutes
+            gcTime: 1000 * 60 * 30, // 30 minutes (formerly cacheTime)
+            retry: 1,
+            refetchOnWindowFocus: false,
+          },
+          mutations: {
+            retry: 1,
+          },
+        },
+      })
+  );
+
   return (
     <QueryClientProvider client={queryClient}>
       {children}
+      {/* React Query Devtools (only in development) */}
+      {process.env.NODE_ENV === "development" && (
+        <ReactQueryDevtools initialIsOpen={false} />
+      )}
     </QueryClientProvider>
->>>>>>> c2c19e585e68dc55acb5007d7254e2c57657b098
   );
 }
+</file>
+
+<file path="client/src/providers/SocketProvider.tsx">
+"use client";
+
+import { useEffect, useRef, useState, ReactNode } from "react";
+import Cookies from "js-cookie";
+import { socketClient } from "@/socket/client";
+import { registerSocketEvents } from "@/socket/events";
+import { socketEmitters } from "@/socket/emitters";
+import { useSocketHandlers } from "@/socket/react-query-handlers";
+
+interface SocketProviderProps {
+  children: ReactNode;
+}
+
+export const SocketProvider = ({ children }: SocketProviderProps) => {
+  const cleanupRef = useRef<(() => void) | null>(null);
+  // Initialize token from cookies
+  const [token, setToken] = useState<string | null>(() => {
+    if (typeof window !== "undefined") {
+      return Cookies.get("accessToken") || null;
+    }
+    return null;
+  });
+
+  // ✅ Get handlers (they're already stable because useQueryClient is stable)
+  const socketHandlers = useSocketHandlers();
+
+  // Monitor token changes in cookies
+  useEffect(() => {
+    // Listen for storage events (in case token is updated in another tab)
+    const handleStorageChange = () => {
+      const newToken = Cookies.get("accessToken");
+      setToken(newToken || null);
+    };
+
+    // Check for token changes periodically (cookies can be updated by server/axios interceptor)
+    const interval = setInterval(() => {
+      const currentToken = Cookies.get("accessToken");
+      setToken((prevToken) => {
+        if (currentToken !== prevToken) {
+          return currentToken || null;
+        }
+        return prevToken;
+      });
+    }, 1000); // Check every second
+
+    window.addEventListener("storage", handleStorageChange);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("storage", handleStorageChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    // Don't connect if no token
+    if (!token) {
+      // no token - skipping socket connection (log removed)
+      return;
+    }
+
+    // Create socket connection with JWT token
+    const socket = socketClient.create(token);
+
+    // Setup connection event handler
+    socket.on("connect", () => {
+      // socket connected (log removed)
+
+      // Emit user:online when connected
+      socketEmitters.userOnline();
+    });
+
+    // Register all event listeners with handlers
+    cleanupRef.current = registerSocketEvents(socket, socketHandlers);
+
+    // Handle page visibility (when user switches tabs/windows)
+    const handleVisibilityChange = () => {
+        if (document.hidden) {
+          // Page hidden (log removed)
+        } else {
+          // Page visible (log removed)
+          if (socket.connected) {
+            socketEmitters.userOnline();
+          }
+        }
+    };
+
+    // Handle beforeunload (when user closes tab/window)
+    const handleBeforeUnload = () => {
+      // Socket will automatically disconnect and emit offline status (log removed)
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    // Cleanup on unmount or token change
+    return () => {
+      // cleaning up socket connection (log removed)
+
+      // Remove event listeners
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+
+      // Remove all listeners
+      if (cleanupRef.current) {
+        cleanupRef.current();
+      }
+
+      // Destroy socket (this will trigger disconnect event on server)
+      socketClient.destroy();
+    };
+  }, [token, socketHandlers]);
+
+  return <>{children}</>;
+};
 </file>
 
 <file path="client/src/providers/ThemeProvider.tsx">
@@ -5201,56 +4482,63 @@ export const authService = {
 
 <file path="client/src/services/conversations.service.ts">
 import { axiosInstance } from "@/lib/axios";
+import Cookies from "js-cookie";
 
 /**
- * User DTO (for use in conversations)
+ * User Status Type
+ */
+export type UserStatus = "online" | "offline" | "away";
+
+/**
+ * User DTO (simplified for conversation list)
  */
 export interface ConversationUser {
   id: string;
   name: string;
   email: string;
-  avatar?: string;
-  status: "online" | "offline" | "away";
+  avatar?: string | null;
+  status: UserStatus;
+  bio?: string | null;
 }
 
 /**
- * Message DTO
+ * Last Message DTO (summary for conversation list)
  */
-export interface Message {
+export interface LastMessage {
   id: string;
-  conversationId: string;
   content: string;
-  sender: ConversationUser;
+  senderId: string;
+  senderName: string;
+  createdAt: string;
   isRead: boolean;
-  createdAt: string;
 }
 
 /**
- * Conversation DTO
- */
-export interface Conversation {
-  id: string;
-  participants: ConversationUser[];
-  lastMessage?: Message;
-  unreadCount: number;
-  isArchived: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-/**
- * Conversation with other user info (for list view)
+ * Conversation List Item DTO
+ * This is what we display in the conversations list
  */
 export interface ConversationListItem {
   id: string;
   otherUser: ConversationUser;
-  lastMessage?: {
-    content: string;
-    sender: string;
-    createdAt: string;
-  };
+  lastMessage?: LastMessage | null;
   unreadCount: number;
   isArchived: boolean;
+  isMuted: boolean;
+  lastReadAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+
+/**
+ * Full Conversation DTO (for detailed view)
+ */
+export interface Conversation {
+  id: string;
+  participants: ConversationUser[];
+  lastMessage?: LastMessage | null;
+  unreadCount: number;
+  isArchived: boolean;
+  createdAt: string;
   updatedAt: string;
 }
 
@@ -5280,7 +4568,21 @@ export interface GetOtherUserResponse {
   user: ConversationUser;
 }
 
+/**
+ * Generic API response wrapper used by the server
+ */
+export interface ApiResponse<T> {
+  success: boolean;
+  message: string;
+  data: T;
+  timestamp?: string;
+}
+
 export interface ArchiveConversationRequest {
+  conversationId: string;
+}
+
+export interface MuteConversationRequest {
   conversationId: string;
 }
 
@@ -5295,6 +4597,8 @@ export interface DeleteConversationRequest {
 export const conversationsService = {
   /**
    * Get or create conversation with a friend
+   * @param data - Friend ID to create conversation with
+   * @returns Conversation object
    */
   async getOrCreateConversation(
     data: GetOrCreateConversationRequest
@@ -5310,26 +4614,154 @@ export const conversationsService = {
 
   /**
    * Get all conversations for current user
+   * @param limit - Maximum number of conversations to return
+   * @param page - Page number (for pagination, starts at 1)
+   * @param archived - Filter by archived status (optional)
+   * @returns List of conversations with pagination info
    */
+  /**
+   * Decode JWT token to get user ID
+   */
+  getCurrentUserId(): string | null {
+    try {
+      const token = Cookies.get("accessToken");
+      if (!token) return null;
+
+      const base64Payload = token.split(".")[1];
+      const jsonPayload = atob(
+        base64Payload.replace(/-/g, "+").replace(/_/g, "/")
+      );
+      const payload = JSON.parse(jsonPayload);
+      return payload.userId || null;
+    } catch {
+      return null;
+    }
+  },
+
   async getConversations(
     limit: number = 50,
-    offset: number = 0
+    page: number = 1,
+    archived?: boolean
   ): Promise<GetConversationsResponse> {
+    const params: Record<string, string | number | boolean> = {
+      limit,
+      page,
+    };
+
+    if (archived !== undefined) {
+      params.archived = archived;
+    }
+
+    // Define the raw API response type
+    interface RawConversationParticipant {
+      userId: string;
+      user: {
+        id: string;
+        name: string | null;
+        email: string;
+        avatar: string | null;
+        status: string;
+      };
+    }
+
+    interface RawMessage {
+      id: string;
+      content: string;
+      senderId: string;
+      createdAt: string;
+      sender?: {
+        name: string | null;
+      };
+    }
+
+    interface RawConversation {
+      id: string;
+      participants: RawConversationParticipant[];
+      messages: RawMessage[];
+      isArchived?: boolean;
+      isMuted?: boolean;
+      updatedAt: string;
+      createdAt: string;
+    }
+
     const response = await axiosInstance.get<{
       success: boolean;
       message: string;
-      data: GetConversationsResponse;
-    }>("/conversations", {
-      params: { limit, offset },
-    });
+      data: RawConversation[];
+    }>("/conversations", { params });
 
-    return response.data.data;
+    // Get current user ID from token
+    const currentUserId = this.getCurrentUserId();
+
+    // Transform the API response to match our interface
+    const conversations: ConversationListItem[] = response.data.data.map(
+      (conv) => {
+        // Find the other user (not the current user)
+        const participants = conv.participants || [];
+        const otherParticipant = currentUserId
+          ? participants.find((p) => p.userId !== currentUserId && p.user)
+          : participants.find((p) => p.user) || participants[0];
+        const otherUser = otherParticipant?.user || null;
+
+        // Get last message
+        const lastMessage =
+          conv.messages && conv.messages.length > 0 ? conv.messages[0] : null;
+
+        return {
+          id: conv.id,
+          otherUser: otherUser
+            ? {
+                id: otherUser.id,
+                name: otherUser.name || "",
+                email: otherUser.email || "",
+                avatar: otherUser.avatar || null,
+                status: (otherUser.status || "offline") as UserStatus,
+                bio: null,
+              }
+            : {
+                id: "",
+                name: "Unknown",
+                email: "",
+                avatar: null,
+                status: "offline" as UserStatus,
+                bio: null,
+              },
+          lastMessage: lastMessage
+            ? {
+                id: lastMessage.id,
+                content: lastMessage.content || "",
+                senderId: lastMessage.senderId || "",
+                senderName: lastMessage.sender?.name || "",
+                createdAt: lastMessage.createdAt,
+                isRead: false, // TODO: Get from messageReads
+              }
+            : null,
+          unreadCount: 0, // TODO: Calculate from messageReads
+          isArchived: conv.isArchived || false,
+          isMuted: conv.isMuted || false,
+          lastReadAt: null, // TODO: Get from participant
+          updatedAt: conv.updatedAt || conv.createdAt,
+          createdAt: conv.createdAt,
+        };
+      }
+    );
+
+    return {
+      conversations,
+      total: conversations.length,
+      limit,
+      offset: (page - 1) * limit,
+    };
   },
 
   /**
    * Get single conversation by ID
+   * @param conversationId - ID of the conversation
+   * @returns Full conversation details
    */
-  async getConversation(conversationId: string): Promise<GetConversationResponse> {
+  async getConversation(
+    conversationId: string
+  ): Promise<GetConversationResponse> {
     const response = await axiosInstance.get<{
       success: boolean;
       message: string;
@@ -5341,23 +4773,31 @@ export const conversationsService = {
 
   /**
    * Get other user in conversation
+   * @param conversationId - ID of the conversation
+   * @returns Other user's information
    */
-  async getOtherUser(conversationId: string): Promise<GetOtherUserResponse> {
-    const response = await axiosInstance.get<{
-      success: boolean;
-      message: string;
-      data: GetOtherUserResponse;
-    }>(`/conversations/${conversationId}/user`);
+  async getOtherUser(conversationId: string): Promise<ConversationUser> {
+    const response = await axiosInstance.get<ApiResponse<ConversationUser | GetOtherUserResponse>>(
+      `/conversations/${conversationId}/user`
+    );
 
-    return response.data.data;
+    // Normalize server shape: some endpoints return { user: ConversationUser }
+    // while others return the ConversationUser directly in `data`.
+    const payload = response.data.data;
+
+    // If payload has `user` property, return that, otherwise treat payload as ConversationUser
+    if ((payload as GetOtherUserResponse).user) {
+      return (payload as GetOtherUserResponse).user;
+    }
+
+    return payload as ConversationUser;
   },
 
   /**
    * Archive conversation
+   * @param data - Conversation ID to archive
    */
-  async archiveConversation(
-    data: ArchiveConversationRequest
-  ): Promise<void> {
+  async archiveConversation(data: ArchiveConversationRequest): Promise<void> {
     await axiosInstance.patch<{
       success: boolean;
       message: string;
@@ -5366,10 +4806,9 @@ export const conversationsService = {
 
   /**
    * Unarchive conversation
+   * @param data - Conversation ID to unarchive
    */
-  async unarchiveConversation(
-    data: ArchiveConversationRequest
-  ): Promise<void> {
+  async unarchiveConversation(data: ArchiveConversationRequest): Promise<void> {
     await axiosInstance.patch<{
       success: boolean;
       message: string;
@@ -5377,7 +4816,30 @@ export const conversationsService = {
   },
 
   /**
+   * Mute conversation
+   * @param data - Conversation ID to mute
+   */
+  async muteConversation(data: MuteConversationRequest): Promise<void> {
+    await axiosInstance.patch<{
+      success: boolean;
+      message: string;
+    }>("/conversations/mute", data);
+  },
+
+  /**
+   * Unmute conversation
+   * @param data - Conversation ID to unmute
+   */
+  async unmuteConversation(data: MuteConversationRequest): Promise<void> {
+    await axiosInstance.patch<{
+      success: boolean;
+      message: string;
+    }>("/conversations/unmute", data);
+  },
+
+  /**
    * Delete conversation
+   * @param data - Conversation ID to delete
    */
   async deleteConversation(data: DeleteConversationRequest): Promise<void> {
     await axiosInstance.delete<{
@@ -5557,6 +5019,16 @@ export const friendsService = {
 import { axiosInstance } from "@/lib/axios";
 
 /**
+ * Generic API response wrapper matching server `sendResponse`
+ */
+export interface ApiResponse<T = any> {
+  success: boolean;
+  message: string;
+  data: T | null;
+  timestamp: string;
+}
+
+/**
  * Message DTO
  */
 export interface Message {
@@ -5690,15 +5162,33 @@ export const messagesService = {
     limit: number = 50,
     offset: number = 0
   ): Promise<GetMessagesResponse> {
-    const response = await axiosInstance.get<{
-      success: boolean;
-      message: string;
-      data: GetMessagesResponse;
-    }>(`/messages/${conversationId}`, {
-      params: { limit, offset },
+    // Server expects `limit` and `page` query params. Convert offset -> page
+    const page = Math.floor(offset / limit) + 1;
+
+    const response = await axiosInstance.get<
+      ApiResponse<GetMessagesResponse | Message[]>
+    >(`/messages/${conversationId}`, {
+      params: { limit, page },
     });
 
-    return response.data.data;
+    const payload = response.data.data;
+
+    // Server may return an array of messages directly or an object
+    // shaped as { messages, total, limit, offset }.
+    if (!payload) {
+      return { messages: [], total: 0, limit, offset };
+    }
+
+    if (Array.isArray(payload)) {
+      return {
+        messages: payload,
+        total: payload.length,
+        limit,
+        offset,
+      };
+    }
+
+    return payload as GetMessagesResponse;
   },
 
   /**
@@ -5775,14 +5265,18 @@ export const messagesService = {
   /**
    * Get reactions for message
    */
-  async getReactions(messageId: string): Promise<any[]> {
-    const response = await axiosInstance.get<{
-      success: boolean;
-      message: string;
-      data: { reactions: any[] };
-    }>(`/messages/${messageId}/reactions`);
+  /**
+   * Reactions are returned grouped by emoji as
+   * Record<emoji, Array<{ userId, userName, userAvatar }>>
+   */
+  async getReactions(
+    messageId: string
+  ): Promise<Record<string, Array<{ userId: string; userName: string | null; userAvatar: string | null }>>> {
+    const response = await axiosInstance.get<
+      ApiResponse<Record<string, Array<{ userId: string; userName: string | null; userAvatar: string | null }>>>
+    >(`/messages/${messageId}/reactions`);
 
-    return response.data.data.reactions;
+    return response.data.data || {};
   },
 
   /**
@@ -5803,6 +5297,690 @@ export const messagesService = {
 
     return response.data.data;
   },
+};
+</file>
+
+<file path="client/src/socket/client.ts">
+import { io } from "socket.io-client";
+import type { TypedSocket, SocketState } from "@/types/socket.types";
+
+class SocketClient {
+  private socket: TypedSocket | null = null;
+  private state: SocketState = {
+    status: "disconnected",
+    error: null,
+    lastConnected: null,
+    reconnectAttempts: 0,
+  };
+  private listeners = new Set<(state: SocketState) => void>();
+
+  /**
+   * Create and connect socket
+   */
+  create(token: string): TypedSocket {
+    // If already connected, return existing socket
+    if (this.socket?.connected) {
+      return this.socket;
+    }
+
+    // Get API URL - Socket.IO connects to the root, not a path
+    // If API_URL includes /api, we need to remove it for socket connection
+    const apiUrl = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:5000";
+    // Socket.IO connects to the server root, not /api path
+    const socketUrl = apiUrl.replace(/\/api\/?$/, "").replace(/\/$/, "");
+
+    // connecting to socket (log removed)
+
+    // Create new socket instance
+    this.socket = io(socketUrl, {
+      auth: { token }, // Send JWT token in auth object
+      transports: ["websocket"], // Use WebSocket only (faster)
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      reconnectionAttempts: 5,
+    }) as TypedSocket;
+
+    this.setupConnectionHandlers();
+    return this.socket;
+  }
+
+  /**
+   * Setup connection event handlers
+   */
+  private setupConnectionHandlers() {
+    if (!this.socket) return;
+
+    // ✅ Connected successfully
+    this.socket.on("connect", () => {
+      // socket connected (log removed)
+      this.updateState({
+        status: "connected",
+        error: null,
+        lastConnected: new Date(),
+        reconnectAttempts: 0,
+      });
+    });
+
+    // ❌ Disconnected
+    this.socket.on("disconnect", (reason) => {
+      // socket disconnected (log removed)
+      this.updateState({
+        status:
+          reason === "io server disconnect" ? "disconnected" : "reconnecting",
+        error: reason,
+      });
+    });
+
+    // ⚠️ Connection error
+    this.socket.on("connect_error", (error) => {
+      console.error("❌ Socket connection error:", error.message);
+      this.updateState({
+        status: "error",
+        error: error.message,
+        reconnectAttempts: this.state.reconnectAttempts + 1,
+      });
+    });
+
+    // 🔄 Reconnecting
+    this.socket.io.on("reconnect_attempt", (attempt) => {
+      // reconnection attempt (log removed)
+      this.updateState({
+        status: "reconnecting",
+        reconnectAttempts: attempt,
+      });
+    });
+
+    // ❌ Reconnection failed
+    this.socket.io.on("reconnect_failed", () => {
+      console.error("❌ Reconnection failed after maximum attempts");
+      this.updateState({
+        status: "error",
+        error: "Failed to reconnect after maximum attempts",
+      });
+    });
+
+    // ✅ Reconnected successfully
+    this.socket.io.on("reconnect", (attemptNumber) => {
+      // reconnected (log removed)
+      this.updateState({
+        status: "connected",
+        error: null,
+        lastConnected: new Date(),
+        reconnectAttempts: 0,
+      });
+    });
+  }
+
+  /**
+   * Update state and notify listeners
+   */
+  private updateState(partial: Partial<SocketState>) {
+    this.state = { ...this.state, ...partial };
+    this.notifyListeners();
+  }
+
+  /**
+   * Notify all state listeners
+   */
+  private notifyListeners() {
+    this.listeners.forEach((listener) => listener(this.state));
+  }
+
+  /**
+   * Subscribe to state changes (for React hooks)
+   */
+  subscribe(listener: (state: SocketState) => void): () => void {
+    this.listeners.add(listener);
+    listener(this.state); // Send current state immediately
+    return () => this.listeners.delete(listener);
+  }
+
+  /**
+   * Get current socket instance
+   */
+  getSocket(): TypedSocket | null {
+    return this.socket;
+  }
+
+  /**
+   * Get current connection state
+   */
+  getState(): SocketState {
+    return this.state;
+  }
+
+  /**
+   * Check if socket is connected
+   */
+  isConnected(): boolean {
+    return this.socket?.connected ?? false;
+  }
+
+  /**
+   * Manually disconnect socket
+   */
+  disconnect() {
+    if (this.socket) {
+      this.socket.disconnect();
+    }
+  }
+
+  /**
+   * Destroy socket and cleanup
+   */
+  destroy() {
+    if (this.socket) {
+      this.socket.removeAllListeners();
+      this.socket.disconnect();
+      this.socket = null;
+    }
+    this.listeners.clear();
+    this.updateState({
+      status: "disconnected",
+      error: null,
+      reconnectAttempts: 0,
+    });
+  }
+}
+
+// Export singleton instance
+export const socketClient = new SocketClient();
+</file>
+
+<file path="client/src/socket/emitters.ts">
+import { socketClient } from "./client";
+import type {
+  ClientToServerEvents,
+  SendMessageData,
+  EditMessageData,
+  DeleteMessageData,
+  ReadMessageData,
+  ReactMessageData,
+} from "@/types/socket.types";
+
+type EmitKey = keyof ClientToServerEvents;
+type EmitParams<K extends EmitKey> = Parameters<ClientToServerEvents[K]>;
+
+class SocketEmitters {
+  /**
+   * Generic emit function with connection check
+   */
+  private emit<K extends EmitKey>(event: K, ...args: EmitParams<K>): boolean {
+    const socket = socketClient.getSocket();
+
+    // ❌ Not connected - don't send
+    if (!socket || !socketClient.isConnected()) {
+      console.warn(`Cannot emit ${event}: socket not connected`);
+      return false;
+    }
+
+    try {
+      socket.emit(event, ...args);
+      return true;
+    } catch (error) {
+      console.error(`Emit error for ${event}:`, error);
+      return false;
+    }
+  }
+
+  // ============================================
+  // CONVERSATION MANAGEMENT
+  // ============================================
+
+  openConversation(conversationId: string): boolean {
+    return this.emit("conversation:open", conversationId);
+  }
+
+  closeConversation(conversationId: string): boolean {
+    return this.emit("conversation:close", conversationId);
+  }
+
+  // ============================================
+  // MESSAGES
+  // ============================================
+
+  sendMessage(data: SendMessageData): boolean {
+    return this.emit("message:send", data);
+  }
+
+  editMessage(data: EditMessageData): boolean {
+    return this.emit("message:edit", data);
+  }
+
+  deleteMessage(data: DeleteMessageData): boolean {
+    return this.emit("message:delete", data);
+  }
+
+  readMessage(data: ReadMessageData): boolean {
+    return this.emit("message:read", data);
+  }
+
+  // ============================================
+  // REACTIONS
+  // ============================================
+
+  reactToMessage(data: ReactMessageData): boolean {
+    return this.emit("message:react", data);
+  }
+
+  // ============================================
+  // TYPING INDICATORS
+  // ============================================
+
+  typingStart(conversationId: string): boolean {
+    return this.emit("typing:start", conversationId);
+  }
+
+  typingStop(conversationId: string): boolean {
+    return this.emit("typing:stop", conversationId);
+  }
+
+  // ============================================
+  // USER STATUS
+  // ============================================
+
+  userOnline(): boolean {
+    return this.emit("user:online");
+  }
+}
+
+// Export singleton instance
+export const socketEmitters = new SocketEmitters();
+</file>
+
+<file path="client/src/socket/events.ts">
+import type { TypedSocket, SocketEventHandlers } from "@/types/socket.types";
+
+/**
+ * Register all socket event listeners
+ * Uses dependency injection - handlers are passed in from provider
+ * This makes testing easier and keeps socket logic separate from UI logic
+ */
+export const registerSocketEvents = (
+  socket: TypedSocket,
+  handlers: SocketEventHandlers
+): (() => void) => {
+  // ============================================
+  // REGISTER ALL LISTENERS
+  // ============================================
+
+  socket.on("message:received", handlers.onMessageReceived);
+  socket.on("message:edited", handlers.onMessageEdited);
+  socket.on("message:deleted", handlers.onMessageDeleted);
+  socket.on("messages:read", handlers.onMessagesRead);
+  socket.on("message:reaction", handlers.onReaction);
+  socket.on("user:typing", handlers.onTyping);
+  socket.on("user:status", handlers.onUserStatus);
+  socket.on("user:read-receipt", handlers.onReadReceipt);
+  socket.on("error", handlers.onError);
+
+  // ============================================
+  // RETURN CLEANUP FUNCTION
+  // ============================================
+
+  return () => {
+    socket.off("message:received", handlers.onMessageReceived);
+    socket.off("message:edited", handlers.onMessageEdited);
+    socket.off("message:deleted", handlers.onMessageDeleted);
+    socket.off("messages:read", handlers.onMessagesRead);
+    socket.off("message:reaction", handlers.onReaction);
+    socket.off("user:typing", handlers.onTyping);
+    socket.off("user:status", handlers.onUserStatus);
+    socket.off("user:read-receipt", handlers.onReadReceipt);
+    socket.off("error", handlers.onError);
+  };
+};
+</file>
+
+<file path="client/src/socket/react-query-handlers.ts">
+"use client";
+
+import { useQueryClient } from "@tanstack/react-query";
+import type { SocketEventHandlers } from "@/types/socket.types";
+import type {
+  Message,
+  InfiniteMessagesData,
+  ConversationsResponse,
+  MessageRead,
+  MessageReaction,
+} from "@/types/chat.types";
+import type { GetConversationsResponse } from "@/services/conversations.service";
+import toast from "react-hot-toast";
+
+export const useSocketHandlers = (): SocketEventHandlers => {
+  const queryClient = useQueryClient();
+
+  return {
+    // ============================================
+    // NEW MESSAGE RECEIVED
+    // ============================================
+    onMessageReceived: (data) => {
+      // new message received (log removed)
+
+      // Convert socket data to Message type
+      const newMessage: Message = {
+        id: data.id,
+        conversationId: data.conversationId,
+        senderId: data.senderId,
+        content: data.content,
+        type: data.type,
+        mediaUrls: [],
+        status: data.status,
+        isEdited: false,
+        editedAt: null,
+        editedContent: null,
+        createdAt: data.createdAt,
+        updatedAt: data.createdAt,
+        sender: data.sender,
+        readBy: [],
+        reactions: [],
+      };
+
+      // 1️⃣ Update messages list (infinite query)
+      queryClient.setQueryData<InfiniteMessagesData>(
+        ["messages", data.conversationId],
+        (oldData) => {
+          if (!oldData?.pages) return oldData;
+
+          const newPages = [...oldData.pages];
+          if (newPages[0]) {
+            newPages[0] = [newMessage, ...newPages[0]];
+          }
+
+          return {
+            ...oldData,
+            pages: newPages,
+          };
+        }
+      );
+
+      // 2️⃣ Update conversations list
+      queryClient.setQueryData<ConversationsResponse>(
+        ["conversations", { limit: 50, offset: 0 }],
+        (oldData) => {
+          if (!oldData) return oldData;
+
+          const conversations = oldData.conversations || [];
+
+          // Find conversation index
+          const conversationIndex = conversations.findIndex(
+            (conv) => conv.id === data.conversationId
+          );
+
+          if (conversationIndex === -1) return oldData;
+
+          // Create updated conversations array
+          const updatedConversations = [...conversations];
+          const conversation = updatedConversations[conversationIndex];
+
+          // Update conversation with new message
+          updatedConversations[conversationIndex] = {
+            ...conversation,
+            lastMessageAt: data.createdAt,
+            messages: [newMessage],
+          };
+
+          // Move to top
+          const [updated] = updatedConversations.splice(conversationIndex, 1);
+          updatedConversations.unshift(updated);
+
+          return {
+            ...oldData,
+            conversations: updatedConversations,
+          };
+        }
+      );
+
+      // 3️⃣ Invalidate single conversation
+      queryClient.invalidateQueries({
+        queryKey: ["conversation", data.conversationId],
+      });
+    },
+
+    // ============================================
+    // MESSAGE EDITED
+    // ============================================
+    onMessageEdited: (data) => {
+      // message edited (log removed)
+
+      queryClient.setQueryData<InfiniteMessagesData>(
+        ["messages", data.conversationId],
+        (oldData) => {
+          if (!oldData?.pages) return oldData;
+
+          const newPages = oldData.pages.map((page) =>
+            page.map((msg) =>
+              msg.id === data.messageId
+                ? {
+                    ...msg,
+                    content: data.newContent,
+                    isEdited: data.isEdited,
+                    editedAt: data.editedAt,
+                  }
+                : msg
+            )
+          );
+
+          return {
+            ...oldData,
+            pages: newPages,
+          };
+        }
+      );
+    },
+
+    // ============================================
+    // MESSAGE DELETED
+    // ============================================
+    onMessageDeleted: (data) => {
+      // message deleted (log removed)
+
+      queryClient.setQueryData<InfiniteMessagesData>(
+        ["messages", data.conversationId],
+        (oldData) => {
+          if (!oldData?.pages) return oldData;
+
+          const newPages = oldData.pages.map((page) =>
+            page.filter((msg) => msg.id !== data.messageId)
+          );
+
+          return {
+            ...oldData,
+            pages: newPages,
+          };
+        }
+      );
+    },
+
+    // ============================================
+    // MESSAGES READ
+    // ============================================
+    onMessagesRead: (data) => {
+      // messages marked as read (log removed)
+
+      queryClient.setQueryData<InfiniteMessagesData>(
+        ["messages", data.conversationId],
+        (oldData) => {
+          if (!oldData?.pages) return oldData;
+
+          const newReadReceipt: MessageRead = {
+            userId: data.userId,
+            readAt: data.readAt,
+          };
+
+          const newPages = oldData.pages.map((page) =>
+            page.map((msg) => ({
+              ...msg,
+              status: "READ" as const,
+              readBy: [...(msg.readBy || []), newReadReceipt],
+            }))
+          );
+
+          return {
+            ...oldData,
+            pages: newPages,
+          };
+        }
+      );
+    },
+
+    // ============================================
+    // MESSAGE REACTION
+    // ============================================
+    onReaction: (data) => {
+      // reaction received (log removed)
+
+      queryClient.setQueryData<InfiniteMessagesData>(
+        ["messages", data.conversationId],
+        (oldData) => {
+          if (!oldData?.pages) return oldData;
+
+          const newPages = oldData.pages.map((page) =>
+            page.map((msg) => {
+              if (msg.id === data.messageId) {
+                let reactions = msg.reactions || [];
+
+                if (data.removed) {
+                  // Remove reaction
+                  reactions = reactions.filter(
+                    (r) => !(r.userId === data.userId && r.emoji === data.emoji)
+                  );
+                } else {
+                  // Add reaction
+                  const newReaction: MessageReaction = {
+                    id: `${data.messageId}-${data.userId}-${data.emoji}`,
+                    messageId: data.messageId,
+                    userId: data.userId,
+                    emoji: data.emoji,
+                    createdAt: new Date().toISOString(),
+                  };
+                  reactions = [...reactions, newReaction];
+                }
+
+                return { ...msg, reactions };
+              }
+              return msg;
+            })
+          );
+
+          return {
+            ...oldData,
+            pages: newPages,
+          };
+        }
+      );
+    },
+
+    // ============================================
+    // TYPING INDICATOR
+    // ============================================
+    onTyping: (data) => {
+      // typing event received (log removed)
+
+      queryClient.setQueryData<string[]>(
+        ["typing", data.conversationId],
+        (oldData) => {
+          const typingUsers = oldData || [];
+
+          if (data.isTyping) {
+            // Add user to typing list
+            if (!typingUsers.includes(data.userId)) {
+              return [...typingUsers, data.userId];
+            }
+            return typingUsers;
+          } else {
+            // Remove user from typing list
+            return typingUsers.filter((id) => id !== data.userId);
+          }
+        }
+      );
+    },
+
+    // ============================================
+    // USER STATUS
+    // ============================================
+    onUserStatus: (data) => {
+      // user status event received (log removed)
+
+      // Update in conversations list - need to update all possible query keys
+      queryClient.setQueriesData<GetConversationsResponse>(
+        { queryKey: ["conversations"] },
+        (oldData) => {
+          if (!oldData?.conversations) return oldData;
+
+          const updatedConversations = oldData.conversations.map((conv) => {
+            // Check if the otherUser matches the userId
+            if (conv.otherUser?.id === data.userId) {
+              return {
+                ...conv,
+                otherUser: {
+                  ...conv.otherUser,
+                  status: data.status,
+                },
+              };
+            }
+            return conv;
+          });
+
+          return {
+            ...oldData,
+            conversations: updatedConversations,
+          };
+        }
+      );
+
+      // Invalidate other user queries
+      queryClient.invalidateQueries({
+        queryKey: ["conversation"],
+        predicate: (query) => query.queryKey[2] === "otherUser",
+      });
+    },
+
+    // ============================================
+    // READ RECEIPT
+    // ============================================
+    onReadReceipt: (data) => {
+      // read receipt received (log removed)
+
+      queryClient.setQueryData<InfiniteMessagesData>(
+        ["messages", data.conversationId],
+        (oldData) => {
+          if (!oldData?.pages) return oldData;
+
+          const newReadReceipt: MessageRead = {
+            userId: data.userId,
+            readAt: data.readAt,
+          };
+
+          const newPages = oldData.pages.map((page) =>
+            page.map((msg) => {
+              if (data.messageIds.includes(msg.id)) {
+                return {
+                  ...msg,
+                  readBy: [...(msg.readBy || []), newReadReceipt],
+                };
+              }
+              return msg;
+            })
+          );
+
+          return {
+            ...oldData,
+            pages: newPages,
+          };
+        }
+      );
+    },
+
+    // ============================================
+    // ERROR
+    // ============================================
+    onError: (error) => {
+      console.error("❌ Socket error:", error);
+      toast.error(error.message || "Something went wrong");
+    },
+  };
 };
 </file>
 
@@ -5941,6 +6119,334 @@ export const useThemeStore = create<ThemeStore>((set) => ({
   h6 {
     @apply font-display text-base font-normal;
   }
+}
+
+/* Avatar background palette (used by UserAvatar component) */
+.avatar-bg-0 { background-color: hsl(10, 65%, 50%); }
+.avatar-bg-1 { background-color: hsl(30, 65%, 50%); }
+.avatar-bg-2 { background-color: hsl(50, 65%, 50%); }
+.avatar-bg-3 { background-color: hsl(80, 65%, 45%); }
+.avatar-bg-4 { background-color: hsl(120, 65%, 45%); }
+.avatar-bg-5 { background-color: hsl(160, 65%, 45%); }
+.avatar-bg-6 { background-color: hsl(200, 65%, 50%); }
+.avatar-bg-7 { background-color: hsl(230, 65%, 50%); }
+.avatar-bg-8 { background-color: hsl(260, 60%, 55%); }
+.avatar-bg-9 { background-color: hsl(290, 60%, 55%); }
+.avatar-bg-10 { background-color: hsl(320, 60%, 55%); }
+.avatar-bg-11 { background-color: hsl(350, 60%, 50%); }
+</file>
+
+<file path="client/src/types/chat.types.ts">
+// ============================================
+// USER TYPES
+// ============================================
+
+export interface User {
+  id: string;
+  name: string | null;
+  email: string;
+  avatar: string | null;
+  bio?: string | null;
+  status: "online" | "offline" | "away";
+  role?: "ADMIN" | "USER";
+  createdAt: string | Date;
+}
+
+// ============================================
+// MESSAGE TYPES
+// ============================================
+
+export type MessageType =
+  | "TEXT"
+  | "IMAGE"
+  | "VIDEO"
+  | "FILE"
+  | "SYSTEM_MESSAGE";
+export type MessageStatus = "SENT" | "DELIVERED" | "READ" | "FAILED";
+
+export interface MessageSender {
+  id: string;
+  name: string | null;
+  avatar: string | null;
+}
+
+export interface MessageRead {
+  userId: string;
+  readAt: string | Date;
+  user?: User;
+}
+
+export interface MessageReaction {
+  id: string;
+  messageId: string;
+  userId: string;
+  emoji: string;
+  createdAt: string | Date;
+  user?: User;
+}
+
+export interface Message {
+  id: string;
+  conversationId: string;
+  senderId: string;
+  content: string;
+  type: MessageType;
+  mediaUrls: string[];
+  status: MessageStatus;
+  isEdited: boolean;
+  editedAt: string | Date | null;
+  editedContent: string | null;
+  createdAt: string | Date;
+  updatedAt: string | Date;
+  sender: MessageSender;
+  readBy?: MessageRead[];
+  reactions?: MessageReaction[];
+}
+
+// ============================================
+// CONVERSATION TYPES
+// ============================================
+
+export interface ConversationParticipant {
+  id: string;
+  conversationId: string;
+  userId: string;
+  isArchived: boolean;
+  isMuted: boolean;
+  lastReadAt: string | Date | null;
+  joinedAt: string | Date;
+  user: User;
+}
+
+export interface Conversation {
+  id: string;
+  isArchived: boolean;
+  lastMessageAt: string | Date | null;
+  createdAt: string | Date;
+  updatedAt: string | Date;
+  participants: ConversationParticipant[];
+  messages: Message[];
+}
+
+// ============================================
+// REACT QUERY RESPONSE TYPES
+// ============================================
+
+export interface ConversationsResponse {
+  conversations: Conversation[];
+  pagination?: {
+    total: number;
+    page: number;
+    limit: number;
+    pages: number;
+  };
+}
+
+export interface MessagesPageResponse {
+  messages: Message[];
+  nextCursor?: string;
+}
+
+export interface InfiniteMessagesData {
+  pages: Message[][];
+  pageParams: unknown[];
+}
+
+export interface InfiniteConversationsData {
+  pages: Conversation[][];
+  pageParams: unknown[];
+}
+</file>
+
+<file path="client/src/types/socket.types.ts">
+import type { Socket } from "socket.io-client";
+
+// ============================================
+// SERVER → CLIENT EVENTS (What we receive)
+// ============================================
+export interface ServerToClientEvents {
+  // Messages
+  "message:received": (data: MessageReceivedData) => void;
+  "message:edited": (data: MessageEditedData) => void;
+  "message:deleted": (data: MessageDeletedData) => void;
+  "messages:read": (data: MessagesReadData) => void;
+
+  // Reactions
+  "message:reaction": (data: MessageReactionData) => void;
+
+  // Typing indicators
+  "user:typing": (data: TypingData) => void;
+
+  // User status
+  "user:status": (data: UserStatusData) => void;
+
+  // Read receipts
+  "user:read-receipt": (data: ReadReceiptData) => void;
+
+  // Errors
+  error: (error: { message: string }) => void;
+}
+
+// ============================================
+// CLIENT → SERVER EVENTS (What we send)
+// ============================================
+export interface ClientToServerEvents {
+  // Conversation management
+  "conversation:open": (conversationId: string) => void;
+  "conversation:close": (conversationId: string) => void;
+
+  // Messages
+  "message:send": (data: SendMessageData) => void;
+  "message:edit": (data: EditMessageData) => void;
+  "message:delete": (data: DeleteMessageData) => void;
+  "message:read": (data: ReadMessageData) => void;
+
+  // Reactions
+  "message:react": (data: ReactMessageData) => void;
+
+  // Typing indicators
+  "typing:start": (conversationId: string) => void;
+  "typing:stop": (conversationId: string) => void;
+
+  // User status
+  "user:online": () => void;
+}
+
+// ============================================
+// DATA TYPES
+// ============================================
+
+export interface MessageReceivedData {
+  id: string;
+  conversationId: string;
+  senderId: string;
+  content: string;
+  type: "TEXT" | "IMAGE" | "VIDEO" | "FILE" | "SYSTEM_MESSAGE";
+  status: "SENT" | "DELIVERED" | "READ" | "FAILED";
+  createdAt: Date | string;
+  sender: {
+    id: string;
+    name: string | null;
+    avatar: string | null;
+  };
+}
+
+export interface MessageEditedData {
+  messageId: string;
+  conversationId: string;
+  newContent: string;
+  isEdited: boolean;
+  editedAt: Date | string;
+}
+
+export interface MessageDeletedData {
+  messageId: string;
+  conversationId: string;
+}
+
+export interface MessagesReadData {
+  conversationId: string;
+  userId: string;
+  readAt: Date | string;
+}
+
+export interface MessageReactionData {
+  messageId: string;
+  conversationId: string;
+  userId: string;
+  emoji: string;
+  removed: boolean;
+}
+
+export interface TypingData {
+  conversationId: string;
+  userId: string;
+  isTyping: boolean;
+}
+
+export interface UserStatusData {
+  userId: string;
+  status: "online" | "offline" | "away";
+}
+
+export interface ReadReceiptData {
+  conversationId: string;
+  userId: string;
+  messageIds: string[];
+  readAt: Date | string;
+}
+
+// ============================================
+// EMIT DATA TYPES
+// ============================================
+
+export interface SendMessageData {
+  conversationId: string;
+  content: string;
+  type?: "TEXT" | "IMAGE" | "VIDEO" | "FILE";
+  mediaUrls?: string[];
+}
+
+export interface EditMessageData {
+  messageId: string;
+  conversationId: string;
+  newContent: string;
+}
+
+export interface DeleteMessageData {
+  messageId: string;
+  conversationId: string;
+}
+
+export interface ReadMessageData {
+  conversationId: string;
+  messageIds: string[];
+}
+
+export interface ReactMessageData {
+  messageId: string;
+  conversationId: string;
+  emoji: string;
+}
+
+// ============================================
+// TYPED SOCKET
+// ============================================
+
+export type TypedSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
+
+// ============================================
+// CONNECTION STATE
+// ============================================
+
+export type ConnectionStatus =
+  | "connecting"
+  | "connected"
+  | "disconnected"
+  | "reconnecting"
+  | "error";
+
+export interface SocketState {
+  status: ConnectionStatus;
+  error: string | null;
+  lastConnected: Date | null;
+  reconnectAttempts: number;
+}
+
+// ============================================
+// EVENT HANDLERS (for dependency injection)
+// ============================================
+
+export interface SocketEventHandlers {
+  onMessageReceived: (data: MessageReceivedData) => void;
+  onMessageEdited: (data: MessageEditedData) => void;
+  onMessageDeleted: (data: MessageDeletedData) => void;
+  onMessagesRead: (data: MessagesReadData) => void;
+  onReaction: (data: MessageReactionData) => void;
+  onTyping: (data: TypingData) => void;
+  onUserStatus: (data: UserStatusData) => void;
+  onReadReceipt: (data: ReadReceiptData) => void;
+  onError: (error: { message: string }) => void;
 }
 </file>
 
@@ -6158,165 +6664,6 @@ module.exports = {
 }
 </file>
 
-<file path="DARK_MODE_GUIDE.md">
-# Dark Mode Transition - Implementation Guide
-
-## ✅ Changes Made
-
-### 1. **Global CSS Transitions** (`src/styles/globals.css`)
-- Added `transition-colors duration-300` to `html` and `*` elements
-- Applied to all color-changing properties:
-  - `background-color`
-  - `border-color`
-  - `color`
-  - `box-shadow`
-- Transition duration: 300ms with ease-in-out timing
-
-### 2. **Enhanced Sidebar Toggle** (`src/components/ui/navigation/Sidebar.tsx`)
-- Added localStorage persistence for theme preference
-- Added proper initialization with `useEffect`
-- Added mount state to prevent hydration mismatch
-- Button now has:
-  - Scale animation on hover (hover:scale-110)
-  - Smooth color transition (300ms)
-  - Icon transition animation
-
-### 3. **CSS Variable Transitions** 
-- All elements automatically inherit `transition-colors`
-- CSS variables used for theming:
-  - `--sidebar-bg`
-  - `--panel-bg`
-  - `--main-bg`
-  - `--text-primary`
-  - `--text-secondary`
-  - And others...
-
-## 🚀 How to Test
-
-### Step 1: Clear Browser Cache
-1. Open DevTools (F12)
-2. Right-click the reload button
-3. Select "Empty cache and hard reload"
-4. Or: Settings → Privacy → Clear cookies/cache
-
-### Step 2: Open the Application
-- Navigate to http://localhost:3000
-- Login to your account
-
-### Step 3: Test Dark Mode Toggle
-1. Look for the **Moon icon** in the sidebar (bottom section)
-2. Click it to toggle dark mode
-3. **Watch for the smooth transition** - all colors should fade smoothly over 300ms
-4. Click again to switch back to light mode
-
-## 🎨 What You Should See
-
-### Light Mode → Dark Mode
-```
-Before click:
-- Light gray backgrounds
-- Dark text
-
-[Click Moon Icon]
-
-Smooth 300ms transition...
-
-After click:
-- Dark backgrounds
-- Light text
-- All colors fade smoothly
-```
-
-### Visual Cues
-- ✅ Button scales up slightly when you hover over it
-- ✅ Icon transitions smoothly
-- ✅ All colors in the interface fade together
-- ✅ No jarring color changes
-- ✅ Theme preference saved to localStorage
-
-## 🔍 Debugging
-
-If dark mode still doesn't change:
-
-### Check 1: Browser Console
-```javascript
-// In DevTools Console:
-console.log(localStorage.getItem("theme"))
-console.log(document.documentElement.classList.contains("dark"))
-```
-
-### Check 2: Force Reload
-```powershell
-# In terminal, restart Next.js dev server
-cd client
-npm run dev
-```
-
-### Check 3: Check CSS Variables
-```javascript
-// In console:
-getComputedStyle(document.documentElement).getPropertyValue('--main-bg')
-```
-
-### Check 4: Verify CSS is Compiled
-1. Open DevTools → Sources tab
-2. Look for `globals.css` in the compiled files
-3. Search for `transition-colors duration-300`
-4. Should find it in both `html` and `*` selectors
-
-## 🎯 Expected Behavior
-
-| Action | Expected Result |
-|--------|-----------------|
-| Click theme button | All colors fade smoothly over 300ms |
-| Hover theme button | Button scales up 110% |
-| Reload page | Same theme persists (from localStorage) |
-| Open DevTools | `localStorage.theme` = "dark" or "light" |
-
-## 📝 Files Modified
-
-1. ✅ `client/src/styles/globals.css`
-   - Added transition utilities
-   - Applied to html and all elements
-
-2. ✅ `client/src/components/ui/navigation/Sidebar.tsx`
-   - Added theme persistence
-   - Added proper initialization
-   - Enhanced toggle button
-
-3. ✅ `client/src/styles/dark-mode-transitions.css`
-   - Transition configuration (optional, can be removed)
-
-## 🔧 Troubleshooting
-
-### Transitions not smooth?
-→ Clear cache and hard reload (Ctrl+Shift+R)
-
-### Theme not persisting?
-→ Check localStorage is enabled in browser settings
-→ Check DevTools: Application → Storage → Cookies/LocalStorage
-
-### Colors not changing at all?
-→ Ensure dark mode class is added to `<html>` element
-→ Check CSS variables in DevTools Computed Styles
-
-### Icons not showing?
-→ Ensure `lucide-react` is installed
-→ Check `Moon` and `Sun` icons are imported
-
-## ✨ Enhancement Ideas
-
-Want even smoother transitions?
-- Add transition delay for staggered effect
-- Add Framer Motion for advanced animations
-- Use CSS custom properties for timing function
-
-Want more theme options?
-- Add system dark mode detection (prefers-color-scheme)
-- Add multiple color schemes (purple, blue, etc.)
-- Add theme selector component
-</file>
-
 <file path="README.md">
 "# WebSocket-Project"
 </file>
@@ -6511,7 +6858,7 @@ if (process.env.NODE_ENV !== "production") {
 const connectDB = async () => {
     try {
         await prisma.$connect();
-        console.log("✅ Database connected successfully");
+        // database connected (log removed)
     }
     catch (error) {
         console.error("❌ Database connection failed:", error);
@@ -6522,7 +6869,7 @@ exports.connectDB = connectDB;
 const disconnectDB = async () => {
     try {
         await prisma.$disconnect();
-        console.log("✅ Database disconnected successfully");
+        // database disconnected (log removed)
     }
     catch (error) {
         console.error("❌ Database disconnection failed:", error);
@@ -6620,7 +6967,7 @@ const validateEnv = () => {
     if (missing.length > 0) {
         throw new Error(`Missing required environment variables: ${missing.join(", ")}`);
     }
-    console.log("✅ Environment variables validated");
+    // environment variables validated (log removed)
 };
 exports.validateEnv = validateEnv;
 //# sourceMappingURL=env.config.js.map
@@ -8121,14 +8468,14 @@ const error_types_1 = require("../types/error.types");
 const authenticate = (req, res, next) => {
     try {
         const authHeader = req.headers.authorization;
-        console.log("🔍 Auth Header:", authHeader);
+        // auth header debug log removed
         if (!authHeader || !authHeader.startsWith("Bearer ")) {
             throw new error_types_1.AuthenticationError("No token provided");
         }
         const token = authHeader.slice(7);
-        console.log("🔍 Token:", token);
+        // token debug log removed
         const decoded = (0, jwt_util_1.verifyAccessToken)(token);
-        console.log("🔍 Decoded:", decoded);
+        // decoded token debug log removed
         req.user = {
             userId: decoded.userId,
             email: decoded.email,
@@ -8798,7 +9145,7 @@ exports.io.use((socket, next) => {
 const connectDatabase = async () => {
     try {
         await prisma.$connect();
-        console.log("✅ Database connected successfully");
+        // database connected (log removed)
         return true;
     }
     catch (error) {
@@ -8808,13 +9155,13 @@ const connectDatabase = async () => {
     }
 };
 const gracefulShutdown = async () => {
-    console.log("\n🛑 Shutting down gracefully...");
+    // shutting down gracefully (log removed)
     exports.io.close();
     server.close(() => {
-        console.log("✅ HTTP server closed");
+        // HTTP server closed (log removed)
     });
     await prisma.$disconnect();
-    console.log("✅ Database disconnected");
+    // database disconnected (log removed)
     process.exit(0);
 };
 process.on("SIGINT", gracefulShutdown);
@@ -8826,14 +9173,7 @@ const startServer = async () => {
     try {
         const dbConnected = await connectDatabase();
         server.listen(env_config_1.config.PORT, () => {
-            console.log(`🚀 Server running on http://localhost:${env_config_1.config.PORT} in ${env_config_1.config.NODE_ENV} mode`);
-            console.log(`📡 WebSocket server initialized with Socket.IO`);
-            if (dbConnected) {
-                console.log("✅ Database is connected");
-            }
-            else {
-                console.log("⚠️  Running without database (offline mode)");
-            }
+            // server started (logs removed)
         });
     }
     catch (error) {
@@ -9902,7 +10242,7 @@ const initializeEmailService = () => {
                 pass: env_config_1.config.EMAIL_PASSWORD,
             },
         });
-        console.log("✅ Email service initialized successfully");
+        // email service initialized (log removed)
     }
     catch (error) {
         console.error("❌ Failed to initialize email service:", error);
@@ -9923,7 +10263,7 @@ const sendEmail = async (options) => {
             text: options.text || options.html,
         };
         const info = await transporter.sendMail(mailOptions);
-        console.log(`✅ Email sent: ${info.messageId}`);
+        // email sent (log removed)
     }
     catch (error) {
         console.error("❌ Failed to send email:", error);
@@ -10009,7 +10349,7 @@ const verifyEmailService = async () => {
             (0, exports.initializeEmailService)();
         }
         await transporter.verify();
-        console.log("✅ Email service verified");
+        // email service verified (log removed)
         return true;
     }
     catch (error) {
@@ -11103,10 +11443,10 @@ function setupChatSocket(io) {
             socket.disconnect();
             return;
         }
-        console.log(`✅ User ${userId} connected - Socket: ${socket.id}`);
+        // connection log removed
         socket.on("conversation:open", async (conversationId) => {
             try {
-                console.log(`📖 ${userId} opened conversation ${conversationId}`);
+                // conversation open log removed
                 socket.join(conversationId);
                 await message_service_1.messageService.markMessagesAsRead(conversationId, userId);
                 socket.to(conversationId).emit("messages:read", {
@@ -11114,7 +11454,7 @@ function setupChatSocket(io) {
                     userId,
                     readAt: new Date(),
                 });
-                console.log(`✅ Auto-marked messages as read for ${userId}`);
+                // auto-mark log removed
             }
             catch (error) {
                 console.error("Error in conversation:open:", error);
@@ -11122,13 +11462,13 @@ function setupChatSocket(io) {
             }
         });
         socket.on("conversation:close", (conversationId) => {
-            console.log(`👋 ${userId} closed conversation ${conversationId}`);
+            // conversation close log removed
             socket.leave(conversationId);
         });
         socket.on("message:send", async (data) => {
             try {
                 const { conversationId, content, type = "TEXT", mediaUrls = [] } = data;
-                console.log(`📨 Message from ${userId} in ${conversationId}`);
+                // incoming message log removed
                 const message = await message_service_1.messageService.sendMessage(conversationId, userId, content, type, mediaUrls);
                 io.to(conversationId).emit("message:received", {
                     id: message.id,
@@ -11144,7 +11484,7 @@ function setupChatSocket(io) {
                         avatar: message.sender?.avatar,
                     },
                 });
-                console.log(`📤 Message broadcasted to ${conversationId}`);
+                // message broadcast log removed
             }
             catch (error) {
                 console.error("Error sending message:", error);
@@ -11154,7 +11494,7 @@ function setupChatSocket(io) {
         socket.on("message:edit", async (data) => {
             try {
                 const { messageId, conversationId, newContent } = data;
-                console.log(`✏️ User ${userId} editing message ${messageId}`);
+                // edit message log removed
                 const updatedMessage = await message_service_1.messageService.editMessage(messageId, userId, newContent);
                 io.to(conversationId).emit("message:edited", {
                     messageId,
@@ -11163,7 +11503,7 @@ function setupChatSocket(io) {
                     isEdited: true,
                     editedAt: updatedMessage.editedAt,
                 });
-                console.log(`✅ Message edit broadcasted to ${conversationId}`);
+                // message edit broadcast log removed
             }
             catch (error) {
                 console.error("Error editing message:", error);
@@ -11173,13 +11513,13 @@ function setupChatSocket(io) {
         socket.on("message:delete", async (data) => {
             try {
                 const { messageId, conversationId } = data;
-                console.log(`🗑️ User ${userId} deleting message ${messageId}`);
+                // delete message log removed
                 await message_service_1.messageService.deleteMessage(messageId, userId);
                 io.to(conversationId).emit("message:deleted", {
                     messageId,
                     conversationId,
                 });
-                console.log(`✅ Message deletion broadcasted to ${conversationId}`);
+                // message deletion broadcast log removed
             }
             catch (error) {
                 console.error("Error deleting message:", error);
@@ -11187,7 +11527,7 @@ function setupChatSocket(io) {
             }
         });
         socket.on("typing:start", (conversationId) => {
-            console.log(`⌨️ ${userId} is typing in ${conversationId}`);
+            // typing start log removed
             socket.to(conversationId).emit("user:typing", {
                 conversationId,
                 userId,
@@ -11195,7 +11535,7 @@ function setupChatSocket(io) {
             });
         });
         socket.on("typing:stop", (conversationId) => {
-            console.log(`⌨️ ${userId} stopped typing in ${conversationId}`);
+            // typing stop log removed
             socket.to(conversationId).emit("user:typing", {
                 conversationId,
                 userId,
@@ -11205,14 +11545,14 @@ function setupChatSocket(io) {
         socket.on("message:read", (data) => {
             try {
                 const { conversationId, messageIds } = data;
-                console.log(`👁️ ${userId} read messages in ${conversationId}`);
+                // read receipt log removed
                 socket.to(conversationId).emit("user:read-receipt", {
                     conversationId,
                     userId,
                     messageIds,
                     readAt: new Date(),
                 });
-                console.log(`✅ Read receipt broadcasted to ${conversationId}`);
+                // read receipt broadcast log removed
             }
             catch (error) {
                 console.error("Error broadcasting read receipt:", error);
@@ -11221,7 +11561,7 @@ function setupChatSocket(io) {
         socket.on("message:react", async (data) => {
             try {
                 const { messageId, conversationId, emoji } = data;
-                console.log(`😊 ${userId} reacted with ${emoji} to message ${messageId}`);
+                // reaction log removed
                 const reaction = await message_service_1.messageService.reactToMessage(messageId, userId, emoji);
                 io.to(conversationId).emit("message:reaction", {
                     messageId,
@@ -11230,7 +11570,7 @@ function setupChatSocket(io) {
                     emoji,
                     removed: reaction.removed || false,
                 });
-                console.log(`✅ Reaction broadcasted to ${conversationId}`);
+                // reaction broadcast log removed
             }
             catch (error) {
                 console.error("Error reacting to message:", error);
@@ -11238,11 +11578,11 @@ function setupChatSocket(io) {
             }
         });
         socket.on("user:online", () => {
-            console.log(`🟢 ${userId} is online`);
+            // user online log removed
             io.emit("user:status", { userId, status: "online" });
         });
         socket.on("disconnect", () => {
-            console.log(`🔴 ${userId} disconnected`);
+            // user disconnected log removed
             io.emit("user:status", { userId, status: "offline" });
         });
     });
@@ -11444,7 +11784,7 @@ const initializeEmailService = () => {
                 pass: env_config_1.config.EMAIL_PASSWORD,
             },
         });
-        console.log("✅ Email service initialized successfully");
+        // email service initialized (log removed)
     }
     catch (error) {
         console.error("❌ Failed to initialize email service:", error);
@@ -11465,7 +11805,7 @@ const sendEmail = async (options) => {
             text: options.text || "",
         };
         await transporter.sendMail(mailOptions);
-        console.log(`✅ Email sent to ${options.to}`);
+        // email sent (log removed)
     }
     catch (error) {
         console.error("❌ Failed to send email:", error);
@@ -12133,7 +12473,7 @@ exports.emailTemplates = {
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "dev": "ts-node src/server.ts",
+    "dev": "nodemon src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
     "watch": "tsc -w",
@@ -13425,7 +13765,7 @@ if (process.env.NODE_ENV !== "production") {
 export const connectDB = async () => {
   try {
     await prisma.$connect();
-    console.log("✅ Database connected successfully");
+    // database connected (log removed)
   } catch (error) {
     console.error("❌ Database connection failed:", error);
     process.exit(1);
@@ -13438,7 +13778,7 @@ export const connectDB = async () => {
 export const disconnectDB = async () => {
   try {
     await prisma.$disconnect();
-    console.log("✅ Database disconnected successfully");
+    // database disconnected (log removed)
   } catch (error) {
     console.error("❌ Database disconnection failed:", error);
   }
@@ -13521,7 +13861,7 @@ export const validateEnv = () => {
     );
   }
 
-  console.log("✅ Environment variables validated");
+  // environment variables validated (log removed)
 };
 </file>
 
@@ -15192,17 +15532,17 @@ export const authenticate = (
 ): void => {
   try {
     const authHeader = req.headers.authorization;
-    console.log("🔍 Auth Header:", authHeader); // Debug log
+    // auth header debug log removed
 
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       throw new AuthenticationError("No token provided");
     }
 
     const token = authHeader.slice(7);
-    console.log("🔍 Token:", token); // Debug log
+    // token debug log removed
 
     const decoded = verifyAccessToken(token);
-    console.log("🔍 Decoded:", decoded); // Debug log
+    // decoded token debug log removed
 
     req.user = {
       userId: decoded.userId,
@@ -16025,9 +16365,10 @@ io.use((socket, next) => {
     socket.data.role = decoded.role;
 
     next();
-  } catch (error: any) {
-    console.error("❌ Socket.IO Auth Error:", error.message);
-    return next(new Error(`Authentication failed: ${error.message}`));
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    console.error("❌ Socket.IO Auth Error:", errorMessage);
+    return next(new Error(`Authentication failed: ${errorMessage}`));
   }
 });
 
@@ -16042,7 +16383,7 @@ setupChatSocket(io);
 const connectDatabase = async () => {
   try {
     await prisma.$connect();
-    console.log("✅ Database connected successfully");
+    // database connected (log removed)
     return true;
   } catch (error) {
     console.warn("⚠️  Database connection failed. Running in offline mode.");
@@ -16055,19 +16396,19 @@ const connectDatabase = async () => {
  * Graceful Shutdown
  */
 const gracefulShutdown = async () => {
-  console.log("\n🛑 Shutting down gracefully...");
+  // shutting down gracefully (log removed)
 
   // Close Socket.IO connections
   io.close();
 
   // Close HTTP server
   server.close(() => {
-    console.log("✅ HTTP server closed");
+    // HTTP server closed (log removed)
   });
 
   // Disconnect Prisma
   await prisma.$disconnect();
-  console.log("✅ Database disconnected");
+  // database disconnected (log removed)
 
   process.exit(0);
 };
@@ -16095,15 +16436,8 @@ const startServer = async () => {
 
     // Start listening
     server.listen(config.PORT, () => {
-      console.log(
-        `🚀 Server running on http://localhost:${config.PORT} in ${config.NODE_ENV} mode`
-      );
-      console.log(`📡 WebSocket server initialized with Socket.IO`);
-      if (dbConnected) {
-        console.log("✅ Database is connected");
-      } else {
-        console.log("⚠️  Running without database (offline mode)");
-      }
+      // server started (logs removed)
+      // WebSocket server initialized
     });
   } catch (error) {
     console.error("❌ Failed to start server:", error);
@@ -16121,10 +16455,24 @@ export { server, prisma };
 import bcrypt from "bcrypt";
 import prisma from "../config/db";
 import { RegisterDTO, LoginDTO } from "../dto/auth.dto";
-import { generateAccessToken, generateRefreshToken, verifyRefreshToken, generateAuthTokens } from "../utils/jwt.util";
-import { ConflictError, AuthenticationError, BadRequestError, NotFoundError } from "../types/error.types";
+import {
+  generateAccessToken,
+  generateRefreshToken,
+  verifyRefreshToken,
+  generateAuthTokens,
+} from "../utils/jwt.util";
+import {
+  ConflictError,
+  AuthenticationError,
+  BadRequestError,
+  NotFoundError,
+} from "../types/error.types";
 import crypto from "crypto";
-import { sendVerificationEmail, sendPasswordResetEmail, sendWelcomeEmail } from "../utils/email.util";
+import {
+  sendVerificationEmail,
+  sendPasswordResetEmail,
+  sendWelcomeEmail,
+} from "../utils/email.util";
 
 export class AuthService {
   async register(data: RegisterDTO) {
@@ -16177,7 +16525,12 @@ export class AuthService {
 
     // Send verification email
     const verificationLink = `${process.env.CLIENT_URL}/verify-email?token=${verificationToken}`;
-    await sendVerificationEmail(user.email, verificationToken, verificationLink, user.name || undefined);
+    await sendVerificationEmail(
+      user.email,
+      verificationToken,
+      verificationLink,
+      user.name || undefined
+    );
 
     return {
       user,
@@ -16295,7 +16648,10 @@ export class AuthService {
 
     // Create new verification token
     const verificationToken = crypto.randomBytes(32).toString("hex");
-    const verificationTokenHash = crypto.createHash("sha256").update(verificationToken).digest("hex");
+    const verificationTokenHash = crypto
+      .createHash("sha256")
+      .update(verificationToken)
+      .digest("hex");
 
     await prisma.emailVerification.create({
       data: {
@@ -16306,7 +16662,12 @@ export class AuthService {
     });
 
     const verificationLink = `${process.env.CLIENT_URL}/verify-email?token=${verificationToken}`;
-    await sendVerificationEmail(user.email, verificationToken, verificationLink, user.name || undefined);
+    await sendVerificationEmail(
+      user.email,
+      verificationToken,
+      verificationLink,
+      user.name || undefined
+    );
 
     return { success: true, message: "Verification email resent" };
   }
@@ -16314,14 +16675,21 @@ export class AuthService {
   async forgotPassword(email: string) {
     const user = await prisma.user.findUnique({ where: { email } });
     // Do not reveal whether user exists
-    if (!user) return { success: true, message: "If that email exists, a reset link has been sent" };
+    if (!user)
+      return {
+        success: true,
+        message: "If that email exists, a reset link has been sent",
+      };
     if (!user.emailVerified) throw new BadRequestError("Email is not verified");
 
     // Delete existing resets
     await prisma.passwordReset.deleteMany({ where: { userId: user.id } });
 
     const resetToken = crypto.randomBytes(32).toString("hex");
-    const resetTokenHash = crypto.createHash("sha256").update(resetToken).digest("hex");
+    const resetTokenHash = crypto
+      .createHash("sha256")
+      .update(resetToken)
+      .digest("hex");
 
     await prisma.passwordReset.create({
       data: {
@@ -16332,19 +16700,33 @@ export class AuthService {
     });
 
     const resetLink = `${process.env.CLIENT_URL}/reset-password?token=${resetToken}`;
-    await sendPasswordResetEmail(user.email, resetToken, resetLink, user.name || undefined);
+    await sendPasswordResetEmail(
+      user.email,
+      resetToken,
+      resetLink,
+      user.name || undefined
+    );
 
-    return { success: true, message: "If that email exists, a reset link has been sent" };
+    return {
+      success: true,
+      message: "If that email exists, a reset link has been sent",
+    };
   }
 
   async resetPassword(token: string, newPassword: string) {
     const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
 
-    const reset = await prisma.passwordReset.findUnique({ where: { token: tokenHash } });
+    const reset = await prisma.passwordReset.findUnique({
+      where: { token: tokenHash },
+    });
     if (!reset) throw new BadRequestError("Invalid or expired reset token");
-    if (reset.expiresAt < new Date()) throw new BadRequestError("Reset token has expired");
+    if (reset.expiresAt < new Date())
+      throw new BadRequestError("Reset token has expired");
 
-    const hashed = await bcrypt.hash(newPassword, parseInt(process.env.BCRYPT_ROUNDS || "10"));
+    const hashed = await bcrypt.hash(
+      newPassword,
+      parseInt(process.env.BCRYPT_ROUNDS || "10")
+    );
 
     // Update user password and clear refresh token
     const user = await prisma.user.update({
@@ -16359,7 +16741,11 @@ export class AuthService {
     // Optionally send welcome/confirmation email
     await sendWelcomeEmail(user.email, user.name || user.email.split("@")[0]);
 
-    return { success: true, message: "Password has been reset. Please login with your new password.", data: { user } };
+    return {
+      success: true,
+      message: "Password has been reset. Please login with your new password.",
+      data: { user },
+    };
   }
 
   async refreshTokens(refreshToken: string) {
@@ -16368,22 +16754,38 @@ export class AuthService {
     const decoded = verifyRefreshToken(refreshToken);
 
     // Make sure token matches what we have stored for the user
-    const dbUser = await prisma.user.findUnique({ where: { id: decoded.userId } });
-    if (!dbUser || !dbUser.refreshToken) throw new AuthenticationError("Invalid session");
-    if (dbUser.refreshToken !== refreshToken) throw new AuthenticationError("Invalid refresh token");
+    const dbUser = await prisma.user.findUnique({
+      where: { id: decoded.userId },
+    });
+    if (!dbUser || !dbUser.refreshToken)
+      throw new AuthenticationError("Invalid session");
+    if (dbUser.refreshToken !== refreshToken)
+      throw new AuthenticationError("Invalid refresh token");
 
     // Generate new tokens
-    const tokens = generateAuthTokens({ userId: decoded.userId, email: decoded.email });
+    const tokens = generateAuthTokens({
+      userId: decoded.userId,
+      email: decoded.email,
+    });
 
     // Update stored refresh token
-    await prisma.user.update({ where: { id: decoded.userId }, data: { refreshToken: tokens.refreshToken } });
+    await prisma.user.update({
+      where: { id: decoded.userId },
+      data: { refreshToken: tokens.refreshToken },
+    });
 
     return { success: true, tokens };
   }
 
   async logout(userId: string) {
-    // Remove stored refresh token
-    await prisma.user.update({ where: { id: userId }, data: { refreshToken: null } });
+    // Remove stored refresh token and set status to offline
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        refreshToken: null,
+        status: "offline",
+      },
+    });
     return { success: true, message: "Logged out" };
   }
 }
@@ -16443,7 +16845,9 @@ export class CallService {
     });
 
     if (activeCall) {
-      throw new BadRequestError("There is already an active call in this conversation");
+      throw new BadRequestError(
+        "There is already an active call in this conversation"
+      );
     }
 
     // Create new call
@@ -16638,7 +17042,9 @@ export class CallService {
       throw new NotFoundError("Conversation not found");
     }
 
-    const isParticipant = conversation.participants.some((p) => p.userId === userId);
+    const isParticipant = conversation.participants.some(
+      (p) => p.userId === userId
+    );
     if (!isParticipant) {
       throw new AuthorizationError("You are not a member of this conversation");
     }
@@ -16710,7 +17116,9 @@ export class ConversationService {
       include: {
         participants: {
           include: {
-            user: { select: { id: true, name: true, email: true, avatar: true } },
+            user: {
+              select: { id: true, name: true, email: true, avatar: true },
+            },
           },
         },
         messages: { take: 1, orderBy: { createdAt: "desc" } },
@@ -16726,17 +17134,16 @@ export class ConversationService {
       data: {
         participants: {
           createMany: {
-            data: [
-              { userId },
-              { userId: friendId },
-            ],
+            data: [{ userId }, { userId: friendId }],
           },
         },
       },
       include: {
         participants: {
           include: {
-            user: { select: { id: true, name: true, email: true, avatar: true } },
+            user: {
+              select: { id: true, name: true, email: true, avatar: true },
+            },
           },
         },
         messages: { take: 1, orderBy: { createdAt: "desc" } },
@@ -16775,7 +17182,15 @@ export class ConversationService {
       include: {
         participants: {
           include: {
-            user: { select: { id: true, name: true, email: true, avatar: true, status: true } },
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                avatar: true,
+                status: true,
+              },
+            },
           },
         },
         messages: { take: 1, orderBy: { createdAt: "desc" } },
@@ -16799,13 +17214,23 @@ export class ConversationService {
       include: {
         participants: {
           include: {
-            user: { select: { id: true, name: true, email: true, avatar: true, status: true } },
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                avatar: true,
+                status: true,
+              },
+            },
           },
         },
         messages: {
           take: 50,
           orderBy: { createdAt: "desc" },
-          include: { sender: { select: { id: true, name: true, avatar: true } } },
+          include: {
+            sender: { select: { id: true, name: true, avatar: true } },
+          },
         },
       },
     });
@@ -16815,7 +17240,9 @@ export class ConversationService {
     }
 
     // Check if user is part of conversation
-    const isParticipant = conversation.participants.some((p) => p.userId === userId);
+    const isParticipant = conversation.participants.some(
+      (p) => p.userId === userId
+    );
     if (!isParticipant) {
       throw new AuthorizationError("You are not part of this conversation");
     }
@@ -16832,7 +17259,15 @@ export class ConversationService {
       include: {
         participants: {
           include: {
-            user: { select: { id: true, name: true, email: true, avatar: true, status: true } },
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                avatar: true,
+                status: true,
+              },
+            },
           },
         },
       },
@@ -16842,12 +17277,16 @@ export class ConversationService {
       throw new NotFoundError("Conversation not found");
     }
 
-    const participant = conversation.participants.find((p) => p.userId === userId);
+    const participant = conversation.participants.find(
+      (p) => p.userId === userId
+    );
     if (!participant) {
       throw new AuthorizationError("You are not part of this conversation");
     }
 
-    const otherParticipant = conversation.participants.find((p) => p.userId !== userId);
+    const otherParticipant = conversation.participants.find(
+      (p) => p.userId !== userId
+    );
     if (!otherParticipant) {
       throw new NotFoundError("Other user not found in conversation");
     }
@@ -16870,7 +17309,9 @@ export class ConversationService {
       throw new NotFoundError("Conversation not found");
     }
 
-    const isParticipant = conversation.participants.some((p) => p.userId === userId);
+    const isParticipant = conversation.participants.some(
+      (p) => p.userId === userId
+    );
     if (!isParticipant) {
       throw new AuthorizationError("You are not part of this conversation");
     }
@@ -16904,7 +17345,9 @@ export class ConversationService {
       throw new NotFoundError("Conversation not found");
     }
 
-    const isParticipant = conversation.participants.some((p) => p.userId === userId);
+    const isParticipant = conversation.participants.some(
+      (p) => p.userId === userId
+    );
     if (!isParticipant) {
       throw new AuthorizationError("You are not part of this conversation");
     }
@@ -16938,7 +17381,9 @@ export class ConversationService {
       throw new NotFoundError("Conversation not found");
     }
 
-    const isParticipant = conversation.participants.some((p) => p.userId === userId);
+    const isParticipant = conversation.participants.some(
+      (p) => p.userId === userId
+    );
     if (!isParticipant) {
       throw new AuthorizationError("You are not part of this conversation");
     }
@@ -17014,7 +17459,7 @@ export const initializeEmailService = (): void => {
       },
     });
 
-    console.log("✅ Email service initialized successfully");
+    // email service initialized (log removed)
   } catch (error) {
     console.error("❌ Failed to initialize email service:", error);
     throw new Error("Email service initialization failed");
@@ -17049,7 +17494,7 @@ export const sendEmail = async (options: EmailOptions): Promise<void> => {
     };
 
     const info = await transporter.sendMail(mailOptions);
-    console.log(`✅ Email sent: ${info.messageId}`);
+    // email sent (log removed)
   } catch (error) {
     console.error("❌ Failed to send email:", error);
     throw new Error("Failed to send email");
@@ -17160,7 +17605,7 @@ export const verifyEmailService = async (): Promise<boolean> => {
       initializeEmailService();
     }
     await transporter.verify();
-    console.log("✅ Email service verified");
+    // email service verified (log removed)
     return true;
   } catch (error) {
     console.error("❌ Email service verification failed:", error);
@@ -18181,6 +18626,7 @@ export const getTotalUsersCount = async () => {
 <file path="server/src/socket/chat.socket.ts">
 import { Server, Socket } from "socket.io";
 import { messageService } from "../services/message.service";
+import * as userService from "../services/user.service";
 
 export function setupChatSocket(io: Server) {
   io.on("connection", (socket: Socket) => {
@@ -18191,7 +18637,7 @@ export function setupChatSocket(io: Server) {
       return;
     }
 
-    console.log(`✅ User ${userId} connected - Socket: ${socket.id}`);
+    // connection log removed
 
     /**
      * When user OPENS a conversation (joins the room)
@@ -18199,7 +18645,7 @@ export function setupChatSocket(io: Server) {
      */
     socket.on("conversation:open", async (conversationId: string) => {
       try {
-        console.log(`📖 ${userId} opened conversation ${conversationId}`);
+        // conversation open log removed
 
         // Join Socket.io room for this conversation
         socket.join(conversationId);
@@ -18214,7 +18660,7 @@ export function setupChatSocket(io: Server) {
           readAt: new Date(),
         });
 
-        console.log(`✅ Auto-marked messages as read for ${userId}`);
+        // auto-mark log removed
       } catch (error) {
         console.error("Error in conversation:open:", error);
         socket.emit("error", { message: "Failed to mark messages as read" });
@@ -18225,7 +18671,7 @@ export function setupChatSocket(io: Server) {
      * When user LEAVES/CLOSES a conversation
      */
     socket.on("conversation:close", (conversationId: string) => {
-      console.log(`👋 ${userId} closed conversation ${conversationId}`);
+      // conversation close log removed
       socket.leave(conversationId);
     });
 
@@ -18239,7 +18685,7 @@ export function setupChatSocket(io: Server) {
       try {
         const { conversationId, content, type = "TEXT", mediaUrls = [] } = data;
 
-        console.log(`📨 Message from ${userId} in ${conversationId}`);
+        // incoming message log removed
 
         // Save message to database
         const message = await messageService.sendMessage(
@@ -18266,7 +18712,7 @@ export function setupChatSocket(io: Server) {
           },
         });
 
-        console.log(`📤 Message broadcasted to ${conversationId}`);
+        // message broadcast log removed
       } catch (error) {
         console.error("Error sending message:", error);
         socket.emit("error", { message: "Failed to send message" });
@@ -18288,7 +18734,7 @@ export function setupChatSocket(io: Server) {
       try {
         const { messageId, conversationId, newContent } = data;
 
-        console.log(`✏️ User ${userId} editing message ${messageId}`);
+        // edit message log removed
 
         // Update in database via service
         const updatedMessage = await messageService.editMessage(messageId, userId, newContent);
@@ -18302,7 +18748,7 @@ export function setupChatSocket(io: Server) {
           editedAt: updatedMessage.editedAt,
         });
 
-        console.log(`✅ Message edit broadcasted to ${conversationId}`);
+        // message edit broadcast log removed
       } catch (error) {
         console.error("Error editing message:", error);
         socket.emit("error", { message: "Failed to edit message" });
@@ -18317,7 +18763,7 @@ export function setupChatSocket(io: Server) {
       try {
         const { messageId, conversationId } = data;
 
-        console.log(`🗑️ User ${userId} deleting message ${messageId}`);
+        // delete message log removed
 
         // Delete from database via service
         await messageService.deleteMessage(messageId, userId);
@@ -18328,7 +18774,7 @@ export function setupChatSocket(io: Server) {
           conversationId,
         });
 
-        console.log(`✅ Message deletion broadcasted to ${conversationId}`);
+        // message deletion broadcast log removed
       } catch (error) {
         console.error("Error deleting message:", error);
         socket.emit("error", { message: "Failed to delete message" });
@@ -18339,7 +18785,7 @@ export function setupChatSocket(io: Server) {
      * Typing indicator - REAL-TIME ONLY (no database)
      */
     socket.on("typing:start", (conversationId: string) => {
-      console.log(`⌨️ ${userId} is typing in ${conversationId}`);
+      // typing start log removed
       socket.to(conversationId).emit("user:typing", {
         conversationId,
         userId,
@@ -18348,7 +18794,7 @@ export function setupChatSocket(io: Server) {
     });
 
     socket.on("typing:stop", (conversationId: string) => {
-      console.log(`⌨️ ${userId} stopped typing in ${conversationId}`);
+      // typing stop log removed
       socket.to(conversationId).emit("user:typing", {
         conversationId,
         userId,
@@ -18364,7 +18810,7 @@ export function setupChatSocket(io: Server) {
       try {
         const { conversationId, messageIds } = data;
 
-        console.log(`👁️ ${userId} read messages in ${conversationId}`);
+        // read receipt log removed
 
         // Broadcast read receipt to other users
         socket.to(conversationId).emit("user:read-receipt", {
@@ -18374,7 +18820,7 @@ export function setupChatSocket(io: Server) {
           readAt: new Date(),
         });
 
-        console.log(`✅ Read receipt broadcasted to ${conversationId}`);
+        // read receipt broadcast log removed
       } catch (error) {
         console.error("Error broadcasting read receipt:", error);
       }
@@ -18388,7 +18834,7 @@ export function setupChatSocket(io: Server) {
       try {
         const { messageId, conversationId, emoji } = data;
 
-        console.log(`😊 ${userId} reacted with ${emoji} to message ${messageId}`);
+        // reaction log removed
 
         // Save/toggle reaction in database
         const reaction = await messageService.reactToMessage(messageId, userId, emoji);
@@ -18402,7 +18848,7 @@ export function setupChatSocket(io: Server) {
           removed: (reaction as any).removed || false,
         });
 
-        console.log(`✅ Reaction broadcasted to ${conversationId}`);
+        // reaction broadcast log removed
       } catch (error) {
         console.error("Error reacting to message:", error);
         socket.emit("error", { message: "Failed to react to message" });
@@ -18412,17 +18858,31 @@ export function setupChatSocket(io: Server) {
     /**
      * User comes online
      */
-    socket.on("user:online", () => {
-      console.log(`🟢 ${userId} is online`);
-      io.emit("user:status", { userId, status: "online" });
+    socket.on("user:online", async () => {
+      // user online log removed
+      try {
+        // Update status in database
+        await userService.updateUserStatus(userId, "online");
+        // Broadcast to all clients
+        io.emit("user:status", { userId, status: "online" });
+      } catch (error) {
+        console.error("Error updating user status to online:", error);
+      }
     });
 
     /**
      * User goes offline
      */
-    socket.on("disconnect", () => {
-      console.log(`🔴 ${userId} disconnected`);
-      io.emit("user:status", { userId, status: "offline" });
+    socket.on("disconnect", async () => {
+      // user disconnected log removed
+      try {
+        // Update status in database
+        await userService.updateUserStatus(userId, "offline");
+        // Broadcast to all clients
+        io.emit("user:status", { userId, status: "offline" });
+      } catch (error) {
+        console.error("Error updating user status to offline:", error);
+      }
     });
   });
 }
@@ -18557,7 +19017,7 @@ export const initializeEmailService = (): void => {
       },
     });
 
-    console.log("✅ Email service initialized successfully");
+    // email service initialized (log removed)
   } catch (error) {
     console.error("❌ Failed to initialize email service:", error);
     throw new Error("Email service initialization failed");
@@ -18592,7 +19052,7 @@ export const sendEmail = async (options: EmailOptions): Promise<void> => {
     };
 
     await transporter.sendMail(mailOptions);
-    console.log(`✅ Email sent to ${options.to}`);
+    // email sent (log removed)
   } catch (error) {
     console.error("❌ Failed to send email:", error);
     throw new Error("Failed to send email");

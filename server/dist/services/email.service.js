@@ -16,7 +16,6 @@ const initializeEmailService = () => {
                 pass: env_config_1.config.EMAIL_PASSWORD,
             },
         });
-        // email service initialized (log removed)
     }
     catch (error) {
         console.error("❌ Failed to initialize email service:", error);
@@ -37,7 +36,6 @@ const sendEmail = async (options) => {
             text: options.text || options.html,
         };
         const info = await transporter.sendMail(mailOptions);
-        // email sent (log removed)
     }
     catch (error) {
         console.error("❌ Failed to send email:", error);
@@ -123,7 +121,6 @@ const verifyEmailService = async () => {
             (0, exports.initializeEmailService)();
         }
         await transporter.verify();
-        // email service verified (log removed)
         return true;
     }
     catch (error) {

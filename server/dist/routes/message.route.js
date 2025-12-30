@@ -5,7 +5,6 @@ const auth_middleware_1 = require("../middleware/auth.middleware");
 const message_controller_1 = require("../controllers/message.controller");
 const router = (0, express_1.Router)();
 router.post("/mark-as-read", auth_middleware_1.authenticate, message_controller_1.markAsRead);
-router.patch("/mark-read", auth_middleware_1.authenticate, message_controller_1.markAsRead);
 router.get("/search", auth_middleware_1.authenticate, message_controller_1.searchMessages);
 router.post("/react", auth_middleware_1.authenticate, message_controller_1.reactToMessage);
 router.delete("/react", auth_middleware_1.authenticate, message_controller_1.removeReaction);

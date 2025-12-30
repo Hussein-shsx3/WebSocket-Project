@@ -36,7 +36,6 @@ const validateEnv = () => {
     if (missing.length > 0) {
         throw new Error(`Missing required environment variables: ${missing.join(", ")}`);
     }
-    // environment variables validated (log removed)
 };
 exports.validateEnv = validateEnv;
 //# sourceMappingURL=env.config.js.map

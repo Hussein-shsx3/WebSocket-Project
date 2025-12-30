@@ -15,8 +15,11 @@ exports.register = (0, error_middleware_1.asyncHandler)(async (req, res) => {
     const result = await authService.register(parse.data);
     return res.status(201).json({
         success: true,
-        message: result.message,
-        data: result.data,
+        message: "User registered successfully. Please verify your email.",
+        data: {
+            user: result.user,
+            verificationToken: result.verificationToken,
+        },
     });
 });
 exports.login = (0, error_middleware_1.asyncHandler)(async (req, res) => {
@@ -34,8 +37,11 @@ exports.login = (0, error_middleware_1.asyncHandler)(async (req, res) => {
     });
     return res.status(200).json({
         success: true,
-        message: result.message,
-        data: result.data,
+        message: "Login successful",
+        data: {
+            user: result.user,
+            accessToken: result.accessToken,
+        },
     });
 });
 exports.verifyEmail = (0, error_middleware_1.asyncHandler)(async (req, res) => {

@@ -28,10 +28,13 @@ class SocketClient {
 
     // connecting to socket (log removed)
 
+    console.log("🔌 Connecting to Socket.IO server at:", socketUrl);
+    console.log("🔑 Token provided:", !!token);
+
     // Create new socket instance
     this.socket = io(socketUrl, {
       auth: { token }, // Send JWT token in auth object
-      transports: ["websocket"], // Use WebSocket only (faster)
+      transports: ["websocket", "polling"], // Allow both websocket and polling
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,

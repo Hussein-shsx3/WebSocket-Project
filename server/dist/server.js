@@ -42,15 +42,15 @@ exports.io.use((socket, next) => {
         next();
     }
     catch (error) {
-        console.error("❌ Socket.IO Auth Error:", error.message);
-        return next(new Error(`Authentication failed: ${error.message}`));
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        console.error("❌ Socket.IO Auth Error:", errorMessage);
+        return next(new Error(`Authentication failed: ${errorMessage}`));
     }
 });
 (0, chat_socket_1.setupChatSocket)(exports.io);
 const connectDatabase = async () => {
     try {
         await prisma.$connect();
-        // database connected (log removed)
         return true;
     }
     catch (error) {
@@ -60,13 +60,10 @@ const connectDatabase = async () => {
     }
 };
 const gracefulShutdown = async () => {
-    // shutting down gracefully (log removed)
     exports.io.close();
     server.close(() => {
-        // HTTP server closed (log removed)
     });
     await prisma.$disconnect();
-    // database disconnected (log removed)
     process.exit(0);
 };
 process.on("SIGINT", gracefulShutdown);
@@ -78,7 +75,6 @@ const startServer = async () => {
     try {
         const dbConnected = await connectDatabase();
         server.listen(env_config_1.config.PORT, () => {
-            // server started (logs removed)
         });
     }
     catch (error) {

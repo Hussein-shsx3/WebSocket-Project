@@ -29,7 +29,7 @@ export const useSocketHandlers = (): SocketEventHandlers => {
         senderId: data.senderId,
         content: data.content,
         type: data.type,
-        mediaUrls: [],
+        mediaUrls: data.mediaUrls || [],
         status: data.status,
         isEdited: false,
         editedAt: null,
