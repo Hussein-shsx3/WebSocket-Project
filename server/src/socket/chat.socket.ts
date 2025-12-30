@@ -1,5 +1,6 @@
 import { Server, Socket } from "socket.io";
 import { messageService } from "../services/message.service";
+import * as userService from "../services/user.service";
 
 export function setupChatSocket(io: Server) {
   io.on("connection", (socket: Socket) => {
@@ -10,7 +11,7 @@ export function setupChatSocket(io: Server) {
       return;
     }
 
-    console.log(`✅ User ${userId} connected - Socket: ${socket.id}`);
+    // connection log removed
 
     /**
      * When user OPENS a conversation (joins the room)
@@ -18,7 +19,7 @@ export function setupChatSocket(io: Server) {
      */
     socket.on("conversation:open", async (conversationId: string) => {
       try {
-        console.log(`📖 ${userId} opened conversation ${conversationId}`);
+        // conversation open log removed
 
         // Join Socket.io room for this conversation
         socket.join(conversationId);
@@ -33,7 +34,7 @@ export function setupChatSocket(io: Server) {
           readAt: new Date(),
         });
 
-        console.log(`✅ Auto-marked messages as read for ${userId}`);
+        // auto-mark log removed
       } catch (error) {
         console.error("Error in conversation:open:", error);
         socket.emit("error", { message: "Failed to mark messages as read" });
@@ -44,7 +45,7 @@ export function setupChatSocket(io: Server) {
      * When user LEAVES/CLOSES a conversation
      */
     socket.on("conversation:close", (conversationId: string) => {
-      console.log(`👋 ${userId} closed conversation ${conversationId}`);
+      // conversation close log removed
       socket.leave(conversationId);
     });
 
@@ -58,7 +59,7 @@ export function setupChatSocket(io: Server) {
       try {
         const { conversationId, content, type = "TEXT", mediaUrls = [] } = data;
 
-        console.log(`📨 Message from ${userId} in ${conversationId}`);
+        // incoming message log removed
 
         // Save message to database
         const message = await messageService.sendMessage(
@@ -85,7 +86,7 @@ export function setupChatSocket(io: Server) {
           },
         });
 
-        console.log(`📤 Message broadcasted to ${conversationId}`);
+        // message broadcast log removed
       } catch (error) {
         console.error("Error sending message:", error);
         socket.emit("error", { message: "Failed to send message" });
@@ -107,7 +108,7 @@ export function setupChatSocket(io: Server) {
       try {
         const { messageId, conversationId, newContent } = data;
 
-        console.log(`✏️ User ${userId} editing message ${messageId}`);
+        // edit message log removed
 
         // Update in database via service
         const updatedMessage = await messageService.editMessage(messageId, userId, newContent);
@@ -121,7 +122,7 @@ export function setupChatSocket(io: Server) {
           editedAt: updatedMessage.editedAt,
         });
 
-        console.log(`✅ Message edit broadcasted to ${conversationId}`);
+        // message edit broadcast log removed
       } catch (error) {
         console.error("Error editing message:", error);
         socket.emit("error", { message: "Failed to edit message" });
@@ -136,7 +137,7 @@ export function setupChatSocket(io: Server) {
       try {
         const { messageId, conversationId } = data;
 
-        console.log(`🗑️ User ${userId} deleting message ${messageId}`);
+        // delete message log removed
 
         // Delete from database via service
         await messageService.deleteMessage(messageId, userId);
@@ -147,7 +148,7 @@ export function setupChatSocket(io: Server) {
           conversationId,
         });
 
-        console.log(`✅ Message deletion broadcasted to ${conversationId}`);
+        // message deletion broadcast log removed
       } catch (error) {
         console.error("Error deleting message:", error);
         socket.emit("error", { message: "Failed to delete message" });
@@ -158,7 +159,7 @@ export function setupChatSocket(io: Server) {
      * Typing indicator - REAL-TIME ONLY (no database)
      */
     socket.on("typing:start", (conversationId: string) => {
-      console.log(`⌨️ ${userId} is typing in ${conversationId}`);
+      // typing start log removed
       socket.to(conversationId).emit("user:typing", {
         conversationId,
         userId,
@@ -167,7 +168,7 @@ export function setupChatSocket(io: Server) {
     });
 
     socket.on("typing:stop", (conversationId: string) => {
-      console.log(`⌨️ ${userId} stopped typing in ${conversationId}`);
+      // typing stop log removed
       socket.to(conversationId).emit("user:typing", {
         conversationId,
         userId,
@@ -183,7 +184,7 @@ export function setupChatSocket(io: Server) {
       try {
         const { conversationId, messageIds } = data;
 
-        console.log(`👁️ ${userId} read messages in ${conversationId}`);
+        // read receipt log removed
 
         // Broadcast read receipt to other users
         socket.to(conversationId).emit("user:read-receipt", {
@@ -193,7 +194,7 @@ export function setupChatSocket(io: Server) {
           readAt: new Date(),
         });
 
-        console.log(`✅ Read receipt broadcasted to ${conversationId}`);
+        // read receipt broadcast log removed
       } catch (error) {
         console.error("Error broadcasting read receipt:", error);
       }
@@ -207,7 +208,7 @@ export function setupChatSocket(io: Server) {
       try {
         const { messageId, conversationId, emoji } = data;
 
-        console.log(`😊 ${userId} reacted with ${emoji} to message ${messageId}`);
+        // reaction log removed
 
         // Save/toggle reaction in database
         const reaction = await messageService.reactToMessage(messageId, userId, emoji);
@@ -221,7 +222,7 @@ export function setupChatSocket(io: Server) {
           removed: (reaction as any).removed || false,
         });
 
-        console.log(`✅ Reaction broadcasted to ${conversationId}`);
+        // reaction broadcast log removed
       } catch (error) {
         console.error("Error reacting to message:", error);
         socket.emit("error", { message: "Failed to react to message" });
@@ -231,17 +232,31 @@ export function setupChatSocket(io: Server) {
     /**
      * User comes online
      */
-    socket.on("user:online", () => {
-      console.log(`🟢 ${userId} is online`);
-      io.emit("user:status", { userId, status: "online" });
+    socket.on("user:online", async () => {
+      // user online log removed
+      try {
+        // Update status in database
+        await userService.updateUserStatus(userId, "online");
+        // Broadcast to all clients
+        io.emit("user:status", { userId, status: "online" });
+      } catch (error) {
+        console.error("Error updating user status to online:", error);
+      }
     });
 
     /**
      * User goes offline
      */
-    socket.on("disconnect", () => {
-      console.log(`🔴 ${userId} disconnected`);
-      io.emit("user:status", { userId, status: "offline" });
+    socket.on("disconnect", async () => {
+      // user disconnected log removed
+      try {
+        // Update status in database
+        await userService.updateUserStatus(userId, "offline");
+        // Broadcast to all clients
+        io.emit("user:status", { userId, status: "offline" });
+      } catch (error) {
+        console.error("Error updating user status to offline:", error);
+      }
     });
   });
 }

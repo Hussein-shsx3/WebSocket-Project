@@ -45,7 +45,9 @@ export class ConversationService {
       include: {
         participants: {
           include: {
-            user: { select: { id: true, name: true, email: true, avatar: true } },
+            user: {
+              select: { id: true, name: true, email: true, avatar: true },
+            },
           },
         },
         messages: { take: 1, orderBy: { createdAt: "desc" } },
@@ -61,17 +63,16 @@ export class ConversationService {
       data: {
         participants: {
           createMany: {
-            data: [
-              { userId },
-              { userId: friendId },
-            ],
+            data: [{ userId }, { userId: friendId }],
           },
         },
       },
       include: {
         participants: {
           include: {
-            user: { select: { id: true, name: true, email: true, avatar: true } },
+            user: {
+              select: { id: true, name: true, email: true, avatar: true },
+            },
           },
         },
         messages: { take: 1, orderBy: { createdAt: "desc" } },
@@ -110,7 +111,15 @@ export class ConversationService {
       include: {
         participants: {
           include: {
-            user: { select: { id: true, name: true, email: true, avatar: true, status: true } },
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                avatar: true,
+                status: true,
+              },
+            },
           },
         },
         messages: { take: 1, orderBy: { createdAt: "desc" } },
@@ -134,13 +143,23 @@ export class ConversationService {
       include: {
         participants: {
           include: {
-            user: { select: { id: true, name: true, email: true, avatar: true, status: true } },
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                avatar: true,
+                status: true,
+              },
+            },
           },
         },
         messages: {
           take: 50,
           orderBy: { createdAt: "desc" },
-          include: { sender: { select: { id: true, name: true, avatar: true } } },
+          include: {
+            sender: { select: { id: true, name: true, avatar: true } },
+          },
         },
       },
     });
@@ -150,7 +169,9 @@ export class ConversationService {
     }
 
     // Check if user is part of conversation
-    const isParticipant = conversation.participants.some((p) => p.userId === userId);
+    const isParticipant = conversation.participants.some(
+      (p) => p.userId === userId
+    );
     if (!isParticipant) {
       throw new AuthorizationError("You are not part of this conversation");
     }
@@ -167,7 +188,15 @@ export class ConversationService {
       include: {
         participants: {
           include: {
-            user: { select: { id: true, name: true, email: true, avatar: true, status: true } },
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                avatar: true,
+                status: true,
+              },
+            },
           },
         },
       },
@@ -177,12 +206,16 @@ export class ConversationService {
       throw new NotFoundError("Conversation not found");
     }
 
-    const participant = conversation.participants.find((p) => p.userId === userId);
+    const participant = conversation.participants.find(
+      (p) => p.userId === userId
+    );
     if (!participant) {
       throw new AuthorizationError("You are not part of this conversation");
     }
 
-    const otherParticipant = conversation.participants.find((p) => p.userId !== userId);
+    const otherParticipant = conversation.participants.find(
+      (p) => p.userId !== userId
+    );
     if (!otherParticipant) {
       throw new NotFoundError("Other user not found in conversation");
     }
@@ -205,7 +238,9 @@ export class ConversationService {
       throw new NotFoundError("Conversation not found");
     }
 
-    const isParticipant = conversation.participants.some((p) => p.userId === userId);
+    const isParticipant = conversation.participants.some(
+      (p) => p.userId === userId
+    );
     if (!isParticipant) {
       throw new AuthorizationError("You are not part of this conversation");
     }
@@ -239,7 +274,9 @@ export class ConversationService {
       throw new NotFoundError("Conversation not found");
     }
 
-    const isParticipant = conversation.participants.some((p) => p.userId === userId);
+    const isParticipant = conversation.participants.some(
+      (p) => p.userId === userId
+    );
     if (!isParticipant) {
       throw new AuthorizationError("You are not part of this conversation");
     }
@@ -273,7 +310,9 @@ export class ConversationService {
       throw new NotFoundError("Conversation not found");
     }
 
-    const isParticipant = conversation.participants.some((p) => p.userId === userId);
+    const isParticipant = conversation.participants.some(
+      (p) => p.userId === userId
+    );
     if (!isParticipant) {
       throw new AuthorizationError("You are not part of this conversation");
     }

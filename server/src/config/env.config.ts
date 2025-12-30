@@ -58,5 +58,5 @@ export const validateEnv = () => {
     );
   }
 
-  console.log("✅ Environment variables validated");
+  // environment variables validated (log removed)
 };

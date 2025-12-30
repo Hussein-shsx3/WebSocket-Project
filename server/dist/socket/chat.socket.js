@@ -9,10 +9,10 @@ function setupChatSocket(io) {
             socket.disconnect();
             return;
         }
-        console.log(`✅ User ${userId} connected - Socket: ${socket.id}`);
+        // connection log removed
         socket.on("conversation:open", async (conversationId) => {
             try {
-                console.log(`📖 ${userId} opened conversation ${conversationId}`);
+                // conversation open log removed
                 socket.join(conversationId);
                 await message_service_1.messageService.markMessagesAsRead(conversationId, userId);
                 socket.to(conversationId).emit("messages:read", {
@@ -20,7 +20,7 @@ function setupChatSocket(io) {
                     userId,
                     readAt: new Date(),
                 });
-                console.log(`✅ Auto-marked messages as read for ${userId}`);
+                // auto-mark log removed
             }
             catch (error) {
                 console.error("Error in conversation:open:", error);
@@ -28,13 +28,13 @@ function setupChatSocket(io) {
             }
         });
         socket.on("conversation:close", (conversationId) => {
-            console.log(`👋 ${userId} closed conversation ${conversationId}`);
+            // conversation close log removed
             socket.leave(conversationId);
         });
         socket.on("message:send", async (data) => {
             try {
                 const { conversationId, content, type = "TEXT", mediaUrls = [] } = data;
-                console.log(`📨 Message from ${userId} in ${conversationId}`);
+                // incoming message log removed
                 const message = await message_service_1.messageService.sendMessage(conversationId, userId, content, type, mediaUrls);
                 io.to(conversationId).emit("message:received", {
                     id: message.id,
@@ -50,7 +50,7 @@ function setupChatSocket(io) {
                         avatar: message.sender?.avatar,
                     },
                 });
-                console.log(`📤 Message broadcasted to ${conversationId}`);
+                // message broadcast log removed
             }
             catch (error) {
                 console.error("Error sending message:", error);
@@ -60,7 +60,7 @@ function setupChatSocket(io) {
         socket.on("message:edit", async (data) => {
             try {
                 const { messageId, conversationId, newContent } = data;
-                console.log(`✏️ User ${userId} editing message ${messageId}`);
+                // edit message log removed
                 const updatedMessage = await message_service_1.messageService.editMessage(messageId, userId, newContent);
                 io.to(conversationId).emit("message:edited", {
                     messageId,
@@ -69,7 +69,7 @@ function setupChatSocket(io) {
                     isEdited: true,
                     editedAt: updatedMessage.editedAt,
                 });
-                console.log(`✅ Message edit broadcasted to ${conversationId}`);
+                // message edit broadcast log removed
             }
             catch (error) {
                 console.error("Error editing message:", error);
@@ -79,13 +79,13 @@ function setupChatSocket(io) {
         socket.on("message:delete", async (data) => {
             try {
                 const { messageId, conversationId } = data;
-                console.log(`🗑️ User ${userId} deleting message ${messageId}`);
+                // delete message log removed
                 await message_service_1.messageService.deleteMessage(messageId, userId);
                 io.to(conversationId).emit("message:deleted", {
                     messageId,
                     conversationId,
                 });
-                console.log(`✅ Message deletion broadcasted to ${conversationId}`);
+                // message deletion broadcast log removed
             }
             catch (error) {
                 console.error("Error deleting message:", error);
@@ -93,7 +93,7 @@ function setupChatSocket(io) {
             }
         });
         socket.on("typing:start", (conversationId) => {
-            console.log(`⌨️ ${userId} is typing in ${conversationId}`);
+            // typing start log removed
             socket.to(conversationId).emit("user:typing", {
                 conversationId,
                 userId,
@@ -101,7 +101,7 @@ function setupChatSocket(io) {
             });
         });
         socket.on("typing:stop", (conversationId) => {
-            console.log(`⌨️ ${userId} stopped typing in ${conversationId}`);
+            // typing stop log removed
             socket.to(conversationId).emit("user:typing", {
                 conversationId,
                 userId,
@@ -111,14 +111,14 @@ function setupChatSocket(io) {
         socket.on("message:read", (data) => {
             try {
                 const { conversationId, messageIds } = data;
-                console.log(`👁️ ${userId} read messages in ${conversationId}`);
+                // read receipt log removed
                 socket.to(conversationId).emit("user:read-receipt", {
                     conversationId,
                     userId,
                     messageIds,
                     readAt: new Date(),
                 });
-                console.log(`✅ Read receipt broadcasted to ${conversationId}`);
+                // read receipt broadcast log removed
             }
             catch (error) {
                 console.error("Error broadcasting read receipt:", error);
@@ -127,7 +127,7 @@ function setupChatSocket(io) {
         socket.on("message:react", async (data) => {
             try {
                 const { messageId, conversationId, emoji } = data;
-                console.log(`😊 ${userId} reacted with ${emoji} to message ${messageId}`);
+                // reaction log removed
                 const reaction = await message_service_1.messageService.reactToMessage(messageId, userId, emoji);
                 io.to(conversationId).emit("message:reaction", {
                     messageId,
@@ -136,7 +136,7 @@ function setupChatSocket(io) {
                     emoji,
                     removed: reaction.removed || false,
                 });
-                console.log(`✅ Reaction broadcasted to ${conversationId}`);
+                // reaction broadcast log removed
             }
             catch (error) {
                 console.error("Error reacting to message:", error);
@@ -144,11 +144,11 @@ function setupChatSocket(io) {
             }
         });
         socket.on("user:online", () => {
-            console.log(`🟢 ${userId} is online`);
+            // user online log removed
             io.emit("user:status", { userId, status: "online" });
         });
         socket.on("disconnect", () => {
-            console.log(`🔴 ${userId} disconnected`);
+            // user disconnected log removed
             io.emit("user:status", { userId, status: "offline" });
         });
     });

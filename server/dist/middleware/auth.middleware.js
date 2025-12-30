@@ -6,14 +6,14 @@ const error_types_1 = require("../types/error.types");
 const authenticate = (req, res, next) => {
     try {
         const authHeader = req.headers.authorization;
-        console.log("🔍 Auth Header:", authHeader);
+        // auth header debug log removed
         if (!authHeader || !authHeader.startsWith("Bearer ")) {
             throw new error_types_1.AuthenticationError("No token provided");
         }
         const token = authHeader.slice(7);
-        console.log("🔍 Token:", token);
+        // token debug log removed
         const decoded = (0, jwt_util_1.verifyAccessToken)(token);
-        console.log("🔍 Decoded:", decoded);
+        // decoded token debug log removed
         req.user = {
             userId: decoded.userId,
             email: decoded.email,

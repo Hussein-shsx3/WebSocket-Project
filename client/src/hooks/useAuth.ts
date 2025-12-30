@@ -1,6 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { authService, LoginRequest, RegisterRequest, AuthResponse} from "@/services/auth.service";
 import { tokenManager } from "@/lib/axios";
+import { socketClient } from "@/socket/client";
 
 /**
  * Hook for user login
@@ -36,10 +37,14 @@ export const useLogout = () => {
   return useMutation({
     mutationFn: () => authService.logout(),
     onSuccess: () => {
+      // Disconnect socket (this will trigger offline status on server)
+      socketClient.destroy();
       tokenManager.clearTokens();
     },
     onError: (error) => {
       console.error("Logout failed:", error);
+      // Still disconnect socket even on error
+      socketClient.destroy();
       tokenManager.clearTokens();
     },
   });

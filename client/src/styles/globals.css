@@ -76,3 +76,17 @@
     @apply font-display text-base font-normal;
   }
 }
+
+/* Avatar background palette (used by UserAvatar component) */
+.avatar-bg-0 { background-color: hsl(10, 65%, 50%); }
+.avatar-bg-1 { background-color: hsl(30, 65%, 50%); }
+.avatar-bg-2 { background-color: hsl(50, 65%, 50%); }
+.avatar-bg-3 { background-color: hsl(80, 65%, 45%); }
+.avatar-bg-4 { background-color: hsl(120, 65%, 45%); }
+.avatar-bg-5 { background-color: hsl(160, 65%, 45%); }
+.avatar-bg-6 { background-color: hsl(200, 65%, 50%); }
+.avatar-bg-7 { background-color: hsl(230, 65%, 50%); }
+.avatar-bg-8 { background-color: hsl(260, 60%, 55%); }
+.avatar-bg-9 { background-color: hsl(290, 60%, 55%); }
+.avatar-bg-10 { background-color: hsl(320, 60%, 55%); }
+.avatar-bg-11 { background-color: hsl(350, 60%, 50%); }

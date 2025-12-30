@@ -14,7 +14,7 @@ if (process.env.NODE_ENV !== "production") {
 const connectDB = async () => {
     try {
         await prisma.$connect();
-        console.log("✅ Database connected successfully");
+        // database connected (log removed)
     }
     catch (error) {
         console.error("❌ Database connection failed:", error);
@@ -25,7 +25,7 @@ exports.connectDB = connectDB;
 const disconnectDB = async () => {
     try {
         await prisma.$disconnect();
-        console.log("✅ Database disconnected successfully");
+        // database disconnected (log removed)
     }
     catch (error) {
         console.error("❌ Database disconnection failed:", error);

@@ -58,9 +58,10 @@ io.use((socket, next) => {
     socket.data.role = decoded.role;
 
     next();
-  } catch (error: any) {
-    console.error("❌ Socket.IO Auth Error:", error.message);
-    return next(new Error(`Authentication failed: ${error.message}`));
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    console.error("❌ Socket.IO Auth Error:", errorMessage);
+    return next(new Error(`Authentication failed: ${errorMessage}`));
   }
 });
 
@@ -75,7 +76,7 @@ setupChatSocket(io);
 const connectDatabase = async () => {
   try {
     await prisma.$connect();
-    console.log("✅ Database connected successfully");
+    // database connected (log removed)
     return true;
   } catch (error) {
     console.warn("⚠️  Database connection failed. Running in offline mode.");
@@ -88,19 +89,19 @@ const connectDatabase = async () => {
  * Graceful Shutdown
  */
 const gracefulShutdown = async () => {
-  console.log("\n🛑 Shutting down gracefully...");
+  // shutting down gracefully (log removed)
 
   // Close Socket.IO connections
   io.close();
 
   // Close HTTP server
   server.close(() => {
-    console.log("✅ HTTP server closed");
+    // HTTP server closed (log removed)
   });
 
   // Disconnect Prisma
   await prisma.$disconnect();
-  console.log("✅ Database disconnected");
+  // database disconnected (log removed)
 
   process.exit(0);
 };
@@ -128,15 +129,8 @@ const startServer = async () => {
 
     // Start listening
     server.listen(config.PORT, () => {
-      console.log(
-        `🚀 Server running on http://localhost:${config.PORT} in ${config.NODE_ENV} mode`
-      );
-      console.log(`📡 WebSocket server initialized with Socket.IO`);
-      if (dbConnected) {
-        console.log("✅ Database is connected");
-      } else {
-        console.log("⚠️  Running without database (offline mode)");
-      }
+      // server started (logs removed)
+      // WebSocket server initialized
     });
   } catch (error) {
     console.error("❌ Failed to start server:", error);

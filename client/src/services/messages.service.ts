@@ -1,6 +1,16 @@
 import { axiosInstance } from "@/lib/axios";
 
 /**
+ * Generic API response wrapper matching server `sendResponse`
+ */
+export interface ApiResponse<T = any> {
+  success: boolean;
+  message: string;
+  data: T | null;
+  timestamp: string;
+}
+
+/**
  * Message DTO
  */
 export interface Message {
@@ -134,15 +144,33 @@ export const messagesService = {
     limit: number = 50,
     offset: number = 0
   ): Promise<GetMessagesResponse> {
-    const response = await axiosInstance.get<{
-      success: boolean;
-      message: string;
-      data: GetMessagesResponse;
-    }>(`/messages/${conversationId}`, {
-      params: { limit, offset },
+    // Server expects `limit` and `page` query params. Convert offset -> page
+    const page = Math.floor(offset / limit) + 1;
+
+    const response = await axiosInstance.get<
+      ApiResponse<GetMessagesResponse | Message[]>
+    >(`/messages/${conversationId}`, {
+      params: { limit, page },
     });
 
-    return response.data.data;
+    const payload = response.data.data;
+
+    // Server may return an array of messages directly or an object
+    // shaped as { messages, total, limit, offset }.
+    if (!payload) {
+      return { messages: [], total: 0, limit, offset };
+    }
+
+    if (Array.isArray(payload)) {
+      return {
+        messages: payload,
+        total: payload.length,
+        limit,
+        offset,
+      };
+    }
+
+    return payload as GetMessagesResponse;
   },
 
   /**
@@ -219,14 +247,18 @@ export const messagesService = {
   /**
    * Get reactions for message
    */
-  async getReactions(messageId: string): Promise<any[]> {
-    const response = await axiosInstance.get<{
-      success: boolean;
-      message: string;
-      data: { reactions: any[] };
-    }>(`/messages/${messageId}/reactions`);
+  /**
+   * Reactions are returned grouped by emoji as
+   * Record<emoji, Array<{ userId, userName, userAvatar }>>
+   */
+  async getReactions(
+    messageId: string
+  ): Promise<Record<string, Array<{ userId: string; userName: string | null; userAvatar: string | null }>>> {
+    const response = await axiosInstance.get<
+      ApiResponse<Record<string, Array<{ userId: string; userName: string | null; userAvatar: string | null }>>>
+    >(`/messages/${messageId}/reactions`);
 
-    return response.data.data.reactions;
+    return response.data.data || {};
   },
 
   /**

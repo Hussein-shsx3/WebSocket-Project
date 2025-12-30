@@ -25,17 +25,17 @@ export const authenticate = (
 ): void => {
   try {
     const authHeader = req.headers.authorization;
-    console.log("🔍 Auth Header:", authHeader); // Debug log
+    // auth header debug log removed
 
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       throw new AuthenticationError("No token provided");
     }
 
     const token = authHeader.slice(7);
-    console.log("🔍 Token:", token); // Debug log
+    // token debug log removed
 
     const decoded = verifyAccessToken(token);
-    console.log("🔍 Decoded:", decoded); // Debug log
+    // decoded token debug log removed
 
     req.user = {
       userId: decoded.userId,

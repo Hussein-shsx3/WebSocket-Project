@@ -30,8 +30,11 @@ export const useMessages = (
   limit: number = 50,
   offset: number = 0
 ) => {
+  // Server expects `page` param (1-based). Convert offset->page for request and cache key.
+  const page = Math.floor(offset / limit) + 1;
+
   return useQuery({
-    queryKey: ["messages", conversationId, { limit, offset }],
+    queryKey: ["messages", conversationId, { limit, page }],
     queryFn: () => messagesService.getMessages(conversationId, limit, offset),
     select: (data) => data.messages,
     enabled: !!conversationId,

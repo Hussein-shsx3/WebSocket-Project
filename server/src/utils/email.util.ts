@@ -20,7 +20,7 @@ export const initializeEmailService = (): void => {
       },
     });
 
-    console.log("✅ Email service initialized successfully");
+    // email service initialized (log removed)
   } catch (error) {
     console.error("❌ Failed to initialize email service:", error);
     throw new Error("Email service initialization failed");
@@ -55,7 +55,7 @@ export const sendEmail = async (options: EmailOptions): Promise<void> => {
     };
 
     await transporter.sendMail(mailOptions);
-    console.log(`✅ Email sent to ${options.to}`);
+    // email sent (log removed)
   } catch (error) {
     console.error("❌ Failed to send email:", error);
     throw new Error("Failed to send email");

@@ -51,7 +51,9 @@ export class CallService {
     });
 
     if (activeCall) {
-      throw new BadRequestError("There is already an active call in this conversation");
+      throw new BadRequestError(
+        "There is already an active call in this conversation"
+      );
     }
 
     // Create new call
@@ -246,7 +248,9 @@ export class CallService {
       throw new NotFoundError("Conversation not found");
     }
 
-    const isParticipant = conversation.participants.some((p) => p.userId === userId);
+    const isParticipant = conversation.participants.some(
+      (p) => p.userId === userId
+    );
     if (!isParticipant) {
       throw new AuthorizationError("You are not a member of this conversation");
     }

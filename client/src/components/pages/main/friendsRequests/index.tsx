@@ -10,6 +10,7 @@ import {
   useCancelFriendRequest,
 } from "@/hooks/useFriends";
 import type { FriendRequest } from "@/services/friends.service";
+import PathHeader from "@/components/ui/display/PathHeader";
 
 const FriendsRequests = () => {
   const [activeTab, setActiveTab] = useState<"pending" | "sent">("pending");
@@ -18,7 +19,8 @@ const FriendsRequests = () => {
   // Queries
   const { data: pendingRequests = [], isLoading: pendingLoading } =
     usePendingFriendRequests();
-  const { data: sentRequests = [], isLoading: sentLoading } = useSentFriendRequests();
+  const { data: sentRequests = [], isLoading: sentLoading } =
+    useSentFriendRequests();
 
   // Mutations
   const acceptRequest = useAcceptFriendRequest();
@@ -35,14 +37,10 @@ const FriendsRequests = () => {
   );
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="px-4 h-full flex flex-col">
       {/* Header */}
-      <div className="p-4 border-b border-border bg-panel">
-        <div className="flex items-center justify-between mb-3">
-          <h1 className="text-lg font-semibold text-primary">
-            Friend Requests
-          </h1>
-        </div>
+      <div className="border-b border-border bg-panel">
+        <PathHeader PageName="Friends Requests" />
 
         {/* Search Bar */}
         <div className="relative">
@@ -61,7 +59,7 @@ const FriendsRequests = () => {
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-border bg-panel px-4 sticky top-0">
+      <div className="flex border-b border-border bg-panel sticky top-0">
         <button
           onClick={() => setActiveTab("pending")}
           className={`flex-1 py-3 text-xs font-semibold transition-colors ${

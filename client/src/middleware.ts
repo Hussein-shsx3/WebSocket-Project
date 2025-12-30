@@ -37,6 +37,7 @@ function decodeJWT(token: string): JWTPayload | null {
 export function middleware(req: NextRequest) {
   const url = req.nextUrl.clone();
   const accessToken = req.cookies.get("accessToken")?.value;
+  const refreshToken = req.cookies.get("refreshToken")?.value;
   const pathname = url.pathname;
 
   // Route definitions
@@ -50,6 +51,11 @@ export function middleware(req: NextRequest) {
   // Root path (/) - redirect based on auth status
   if (isRootPath) {
     if (!accessToken) {
+      // If no access token but a refresh token exists, let the app load and refresh
+      if (refreshToken) {
+        url.pathname = "/chats";
+        return NextResponse.redirect(url);
+      }
       url.pathname = "/signIn";
       return NextResponse.redirect(url);
     } else {
@@ -62,6 +68,11 @@ export function middleware(req: NextRequest) {
       
       const isExpired = decoded.exp && Date.now() >= decoded.exp * 1000;
       if (isExpired) {
+        // Allow refresh path if refresh token exists
+        if (refreshToken) {
+          url.pathname = "/chats";
+          return NextResponse.redirect(url);
+        }
         url.pathname = "/signIn";
         return NextResponse.redirect(url);
       }
@@ -74,6 +85,10 @@ export function middleware(req: NextRequest) {
 
   // If accessing protected route without token
   if (isProtectedRoute && !accessToken) {
+    // Allow if refresh token exists (client will refresh)
+    if (refreshToken) {
+      return NextResponse.next();
+    }
     url.pathname = "/signIn";
     return NextResponse.redirect(url);
   }
@@ -92,6 +107,10 @@ export function middleware(req: NextRequest) {
     const isExpired = decoded.exp && Date.now() >= decoded.exp * 1000;
 
     if (isExpired) {
+      // Allow if refresh token exists; otherwise redirect to sign-in
+      if (refreshToken) {
+        return NextResponse.next();
+      }
       url.pathname = "/signIn";
       return NextResponse.redirect(url);
     }

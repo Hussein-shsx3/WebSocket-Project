@@ -50,7 +50,7 @@ exports.io.use((socket, next) => {
 const connectDatabase = async () => {
     try {
         await prisma.$connect();
-        console.log("✅ Database connected successfully");
+        // database connected (log removed)
         return true;
     }
     catch (error) {
@@ -60,13 +60,13 @@ const connectDatabase = async () => {
     }
 };
 const gracefulShutdown = async () => {
-    console.log("\n🛑 Shutting down gracefully...");
+    // shutting down gracefully (log removed)
     exports.io.close();
     server.close(() => {
-        console.log("✅ HTTP server closed");
+        // HTTP server closed (log removed)
     });
     await prisma.$disconnect();
-    console.log("✅ Database disconnected");
+    // database disconnected (log removed)
     process.exit(0);
 };
 process.on("SIGINT", gracefulShutdown);
@@ -78,14 +78,7 @@ const startServer = async () => {
     try {
         const dbConnected = await connectDatabase();
         server.listen(env_config_1.config.PORT, () => {
-            console.log(`🚀 Server running on http://localhost:${env_config_1.config.PORT} in ${env_config_1.config.NODE_ENV} mode`);
-            console.log(`📡 WebSocket server initialized with Socket.IO`);
-            if (dbConnected) {
-                console.log("✅ Database is connected");
-            }
-            else {
-                console.log("⚠️  Running without database (offline mode)");
-            }
+            // server started (logs removed)
         });
     }
     catch (error) {

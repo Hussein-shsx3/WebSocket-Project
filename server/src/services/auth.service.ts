@@ -1,10 +1,24 @@
 import bcrypt from "bcrypt";
 import prisma from "../config/db";
 import { RegisterDTO, LoginDTO } from "../dto/auth.dto";
-import { generateAccessToken, generateRefreshToken, verifyRefreshToken, generateAuthTokens } from "../utils/jwt.util";
-import { ConflictError, AuthenticationError, BadRequestError, NotFoundError } from "../types/error.types";
+import {
+  generateAccessToken,
+  generateRefreshToken,
+  verifyRefreshToken,
+  generateAuthTokens,
+} from "../utils/jwt.util";
+import {
+  ConflictError,
+  AuthenticationError,
+  BadRequestError,
+  NotFoundError,
+} from "../types/error.types";
 import crypto from "crypto";
-import { sendVerificationEmail, sendPasswordResetEmail, sendWelcomeEmail } from "../utils/email.util";
+import {
+  sendVerificationEmail,
+  sendPasswordResetEmail,
+  sendWelcomeEmail,
+} from "../utils/email.util";
 
 export class AuthService {
   async register(data: RegisterDTO) {
@@ -57,7 +71,12 @@ export class AuthService {
 
     // Send verification email
     const verificationLink = `${process.env.CLIENT_URL}/verify-email?token=${verificationToken}`;
-    await sendVerificationEmail(user.email, verificationToken, verificationLink, user.name || undefined);
+    await sendVerificationEmail(
+      user.email,
+      verificationToken,
+      verificationLink,
+      user.name || undefined
+    );
 
     return {
       user,
@@ -175,7 +194,10 @@ export class AuthService {
 
     // Create new verification token
     const verificationToken = crypto.randomBytes(32).toString("hex");
-    const verificationTokenHash = crypto.createHash("sha256").update(verificationToken).digest("hex");
+    const verificationTokenHash = crypto
+      .createHash("sha256")
+      .update(verificationToken)
+      .digest("hex");
 
     await prisma.emailVerification.create({
       data: {
@@ -186,7 +208,12 @@ export class AuthService {
     });
 
     const verificationLink = `${process.env.CLIENT_URL}/verify-email?token=${verificationToken}`;
-    await sendVerificationEmail(user.email, verificationToken, verificationLink, user.name || undefined);
+    await sendVerificationEmail(
+      user.email,
+      verificationToken,
+      verificationLink,
+      user.name || undefined
+    );
 
     return { success: true, message: "Verification email resent" };
   }
@@ -194,14 +221,21 @@ export class AuthService {
   async forgotPassword(email: string) {
     const user = await prisma.user.findUnique({ where: { email } });
     // Do not reveal whether user exists
-    if (!user) return { success: true, message: "If that email exists, a reset link has been sent" };
+    if (!user)
+      return {
+        success: true,
+        message: "If that email exists, a reset link has been sent",
+      };
     if (!user.emailVerified) throw new BadRequestError("Email is not verified");
 
     // Delete existing resets
     await prisma.passwordReset.deleteMany({ where: { userId: user.id } });
 
     const resetToken = crypto.randomBytes(32).toString("hex");
-    const resetTokenHash = crypto.createHash("sha256").update(resetToken).digest("hex");
+    const resetTokenHash = crypto
+      .createHash("sha256")
+      .update(resetToken)
+      .digest("hex");
 
     await prisma.passwordReset.create({
       data: {
@@ -212,19 +246,33 @@ export class AuthService {
     });
 
     const resetLink = `${process.env.CLIENT_URL}/reset-password?token=${resetToken}`;
-    await sendPasswordResetEmail(user.email, resetToken, resetLink, user.name || undefined);
+    await sendPasswordResetEmail(
+      user.email,
+      resetToken,
+      resetLink,
+      user.name || undefined
+    );
 
-    return { success: true, message: "If that email exists, a reset link has been sent" };
+    return {
+      success: true,
+      message: "If that email exists, a reset link has been sent",
+    };
   }
 
   async resetPassword(token: string, newPassword: string) {
     const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
 
-    const reset = await prisma.passwordReset.findUnique({ where: { token: tokenHash } });
+    const reset = await prisma.passwordReset.findUnique({
+      where: { token: tokenHash },
+    });
     if (!reset) throw new BadRequestError("Invalid or expired reset token");
-    if (reset.expiresAt < new Date()) throw new BadRequestError("Reset token has expired");
+    if (reset.expiresAt < new Date())
+      throw new BadRequestError("Reset token has expired");
 
-    const hashed = await bcrypt.hash(newPassword, parseInt(process.env.BCRYPT_ROUNDS || "10"));
+    const hashed = await bcrypt.hash(
+      newPassword,
+      parseInt(process.env.BCRYPT_ROUNDS || "10")
+    );
 
     // Update user password and clear refresh token
     const user = await prisma.user.update({
@@ -239,7 +287,11 @@ export class AuthService {
     // Optionally send welcome/confirmation email
     await sendWelcomeEmail(user.email, user.name || user.email.split("@")[0]);
 
-    return { success: true, message: "Password has been reset. Please login with your new password.", data: { user } };
+    return {
+      success: true,
+      message: "Password has been reset. Please login with your new password.",
+      data: { user },
+    };
   }
 
   async refreshTokens(refreshToken: string) {
@@ -248,22 +300,38 @@ export class AuthService {
     const decoded = verifyRefreshToken(refreshToken);
 
     // Make sure token matches what we have stored for the user
-    const dbUser = await prisma.user.findUnique({ where: { id: decoded.userId } });
-    if (!dbUser || !dbUser.refreshToken) throw new AuthenticationError("Invalid session");
-    if (dbUser.refreshToken !== refreshToken) throw new AuthenticationError("Invalid refresh token");
+    const dbUser = await prisma.user.findUnique({
+      where: { id: decoded.userId },
+    });
+    if (!dbUser || !dbUser.refreshToken)
+      throw new AuthenticationError("Invalid session");
+    if (dbUser.refreshToken !== refreshToken)
+      throw new AuthenticationError("Invalid refresh token");
 
     // Generate new tokens
-    const tokens = generateAuthTokens({ userId: decoded.userId, email: decoded.email });
+    const tokens = generateAuthTokens({
+      userId: decoded.userId,
+      email: decoded.email,
+    });
 
     // Update stored refresh token
-    await prisma.user.update({ where: { id: decoded.userId }, data: { refreshToken: tokens.refreshToken } });
+    await prisma.user.update({
+      where: { id: decoded.userId },
+      data: { refreshToken: tokens.refreshToken },
+    });
 
     return { success: true, tokens };
   }
 
   async logout(userId: string) {
-    // Remove stored refresh token
-    await prisma.user.update({ where: { id: userId }, data: { refreshToken: null } });
+    // Remove stored refresh token and set status to offline
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        refreshToken: null,
+        status: "offline",
+      },
+    });
     return { success: true, message: "Logged out" };
   }
 }

@@ -63,7 +63,7 @@ const ForgotPassword = () => {
           {isLoading ? "Sending..." : "Send Reset Link"}
         </Button>
 
-        <AuthSwitchLink mode="signin" />
+        <AuthSwitchLink mode="signIn" />
       </form>
     </AuthContainer>
   );
