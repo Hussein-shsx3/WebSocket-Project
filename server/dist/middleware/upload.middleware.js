@@ -7,7 +7,15 @@ exports.upload = void 0;
 const multer_1 = __importDefault(require("multer"));
 const storage = multer_1.default.memoryStorage();
 const fileFilter = (req, file, cb) => {
-    if (file.mimetype.startsWith("image/")) {
+    const allowedTypes = [
+        "image/",
+        "video/",
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "text/plain",
+    ];
+    if (allowedTypes.some(type => file.mimetype.startsWith(type))) {
         cb(null, true);
     }
     else {

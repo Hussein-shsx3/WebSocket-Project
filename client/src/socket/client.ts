@@ -101,7 +101,7 @@ class SocketClient {
     });
 
     // ✅ Reconnected successfully
-    this.socket.io.on("reconnect", (attemptNumber) => {
+    this.socket.io.on("reconnect", () => {
       // reconnected (log removed)
       this.updateState({
         status: "connected",

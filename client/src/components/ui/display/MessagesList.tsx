@@ -5,13 +5,16 @@
 import { useEffect, useRef } from "react";
 import { DateSeparator } from "./DateSeparator";
 import { MessageGroup } from "./MessageGroup";
+import { TypingIndicator } from "./TypingIndicator";
 import { groupMessagesByDate } from "@/utils/message.utils";
 import type { Message } from "@/types/chat.types";
+import type { ConversationUser } from "@/services/conversations.service";
 
 interface MessagesListProps {
   messages: Message[];
   currentUserId: string;
   isLoading?: boolean;
+  typingUser?: ConversationUser | null; // User who is currently typing
 }
 
 /**
@@ -29,6 +32,7 @@ export const MessagesList = ({
   messages,
   currentUserId,
   isLoading = false,
+  typingUser = null,
 }: MessagesListProps) => {
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -99,15 +103,15 @@ export const MessagesList = ({
   return (
     <div
       ref={containerRef}
-      className="flex-1 overflow-y-auto px-4 py-6 space-y-4"
+      className="flex-1 overflow-y-auto px-4 py-6 space-y-6 bg-main scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent"
     >
       {messageGroups.map((dateGroup) => (
-        <div key={dateGroup.date}>
+        <div key={dateGroup.date} className="animate-fade-in">
           {/* Date Separator */}
           <DateSeparator label={dateGroup.dateLabel} />
 
           {/* Messages grouped by sender */}
-          <div className="space-y-4">
+          <div className="space-y-4 mt-4">
             {groupBySender(dateGroup.messages).map((senderGroup, index) => (
               <MessageGroup
                 key={`${dateGroup.date}-${index}`}
@@ -118,6 +122,13 @@ export const MessagesList = ({
           </div>
         </div>
       ))}
+
+      {/* Typing Indicator */}
+      {typingUser && (
+        <div className="mt-4 animate-fade-in">
+          <TypingIndicator user={typingUser} />
+        </div>
+      )}
 
       {/* Scroll anchor */}
       <div ref={messagesEndRef} />

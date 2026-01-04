@@ -42,16 +42,30 @@ export const useSocketHandlers = (): SocketEventHandlers => {
       };
 
       // 1️⃣ Update messages list
-      // The useMessages hook uses select: data.messages, so cache contains just the messages array
+      // Update all messages queries for this conversation
       console.log("🔄 Updating cache for conversation:", data.conversationId);
-      queryClient.setQueryData(
-        ["messages", data.conversationId, { limit: 50, page: 1 }],
-        (oldData: Message[] | undefined) => {
-          // Remove any optimistic messages with temp IDs
-          const currentMessages = Array.isArray(oldData) ? oldData.filter(msg => !msg.id.startsWith('temp-')) : [];
-          const newMessages = [newMessage, ...currentMessages];
-          console.log("📝 Cache updated with messages:", newMessages.length);
-          return newMessages;
+      queryClient.setQueriesData(
+        { predicate: (query) => query.queryKey[0] === "messages" && query.queryKey[1] === data.conversationId },
+        (oldData: unknown) => {
+          if (!oldData) return oldData;
+
+          // If it's an array of messages (selected data)
+          if (Array.isArray(oldData)) {
+            const currentMessages = oldData.filter(msg => !msg.id.startsWith('temp-'));
+            const newMessages = [newMessage, ...currentMessages];
+            console.log("📝 Cache updated with messages:", newMessages.length);
+            return newMessages;
+          }
+
+          // If it's the full response object
+          const objData = oldData as Record<string, unknown>;
+          if (objData.messages && Array.isArray(objData.messages)) {
+            const currentMessages = objData.messages.filter((msg: any) => !msg.id.startsWith('temp-'));
+            const newMessages = [newMessage, ...currentMessages];
+            return { ...objData, messages: newMessages };
+          }
+
+          return oldData;
         }
       );
 

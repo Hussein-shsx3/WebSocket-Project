@@ -6,14 +6,13 @@ interface DateSeparatorProps {
 
 /**
  * Date Separator for Messages
- * Displays date label between message groups
- * Similar to WhatsApp/Messenger style
+ * Modern sticky header design
  */
 export const DateSeparator = ({ label }: DateSeparatorProps) => {
   return (
-    <div className="flex items-center justify-center my-4">
-      <div className="px-3 py-1 bg-muted/50 dark:bg-muted/30 rounded-full">
-        <span className="text-xs font-medium text-secondary uppercase tracking-wide">
+    <div className="flex items-center justify-center sticky top-0 z-10 py-3">
+      <div className="px-4 py-1.5 bg-panel/90 dark:bg-header/90 backdrop-blur-sm rounded-full shadow-sm border border-border/30">
+        <span className="text-xs font-semibold text-secondary">
           {label}
         </span>
       </div>

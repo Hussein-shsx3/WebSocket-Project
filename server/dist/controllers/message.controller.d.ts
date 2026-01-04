@@ -9,4 +9,5 @@ export declare const reactToMessage: (req: Request, res: Response, next: import(
 export declare const removeReaction: (req: Request, res: Response, next: import("express").NextFunction) => void;
 export declare const getReactions: (req: Request, res: Response, next: import("express").NextFunction) => void;
 export declare const searchMessages: (req: Request, res: Response, next: import("express").NextFunction) => void;
+export declare const uploadMessageMedia: (req: Request, res: Response, next: import("express").NextFunction) => void;
 //# sourceMappingURL=message.controller.d.ts.map

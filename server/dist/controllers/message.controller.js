@@ -1,11 +1,15 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.searchMessages = exports.getReactions = exports.removeReaction = exports.reactToMessage = exports.getReadReceipts = exports.markAsRead = exports.deleteMessage = exports.editMessage = exports.getMessages = exports.sendMessage = void 0;
+exports.uploadMessageMedia = exports.searchMessages = exports.getReactions = exports.removeReaction = exports.reactToMessage = exports.getReadReceipts = exports.markAsRead = exports.deleteMessage = exports.editMessage = exports.getMessages = exports.sendMessage = void 0;
 const message_service_1 = require("../services/message.service");
 const message_dto_1 = require("../dto/message.dto");
 const response_util_1 = require("../utils/response.util");
 const error_types_1 = require("../types/error.types");
 const error_middleware_1 = require("../middleware/error.middleware");
+const cloudinary_config_1 = __importDefault(require("../config/cloudinary.config"));
 exports.sendMessage = (0, error_middleware_1.asyncHandler)(async (req, res) => {
     const userId = req.user?.userId;
     if (!userId) {
@@ -100,5 +104,27 @@ exports.searchMessages = (0, error_middleware_1.asyncHandler)(async (req, res) =
     }
     const messages = await message_service_1.messageService.searchMessages(conversationId, q);
     (0, response_util_1.sendResponse)(res, 200, "Messages found", messages);
+});
+exports.uploadMessageMedia = (0, error_middleware_1.asyncHandler)(async (req, res) => {
+    const userId = req.user?.userId;
+    if (!userId) {
+        throw new error_types_1.AuthorizationError("Unauthorized");
+    }
+    if (!req.file) {
+        throw new error_types_1.BadRequestError("No file uploaded");
+    }
+    const result = await new Promise((resolve, reject) => {
+        const stream = cloudinary_config_1.default.uploader.upload_stream({
+            folder: "messages",
+            resource_type: "auto",
+        }, (error, result) => {
+            if (error)
+                reject(error);
+            else
+                resolve(result);
+        });
+        stream.end(req.file.buffer);
+    });
+    (0, response_util_1.sendResponse)(res, 200, "File uploaded", { url: result.secure_url });
 });
 //# sourceMappingURL=message.controller.js.map

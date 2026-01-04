@@ -11,6 +11,9 @@ export function setupChatSocket(io: Server) {
       return;
     }
 
+    // Join a room with the user's ID for direct notifications (calls, etc.)
+    socket.join(userId);
+
     // connection log removed
 
     /**
@@ -77,6 +80,7 @@ export function setupChatSocket(io: Server) {
           senderId: userId,
           content: message.content,
           type: message.type,
+          mediaUrls: message.mediaUrls || [],
           status: "SENT",
           createdAt: message.createdAt,
           sender: {
@@ -241,6 +245,119 @@ export function setupChatSocket(io: Server) {
         io.emit("user:status", { userId, status: "online" });
       } catch (error) {
         console.error("Error updating user status to online:", error);
+      }
+    });
+
+    /**
+     * =====================================================
+     * WebRTC Signaling for Video/Voice Calls
+     * =====================================================
+     */
+
+    /**
+     * Initiate a call - send offer to target user
+     */
+    socket.on("call:offer", async (data: any) => {
+      try {
+        const { conversationId, offer, to, callType } = data;
+        
+        // Get caller info
+        const caller = await userService.getUserById(userId);
+        
+        // Send offer to the target user
+        io.to(to).emit("call:offer", {
+          from: userId,
+          offer,
+          callType,
+          conversationId,
+          user: caller ? {
+            id: caller.id,
+            name: caller.name,
+            avatar: caller.avatar,
+          } : null,
+        });
+        
+        console.log(`Call offer sent from ${userId} to ${to}`);
+      } catch (error) {
+        console.error("Error in call:offer:", error);
+        socket.emit("error", { message: "Failed to initiate call" });
+      }
+    });
+
+    /**
+     * Answer a call - send answer to caller
+     */
+    socket.on("call:answer", async (data: any) => {
+      try {
+        const { conversationId, answer, to } = data;
+        
+        // Send answer to the caller
+        io.to(to).emit("call:answer", {
+          from: userId,
+          answer,
+          conversationId,
+        });
+        
+        console.log(`Call answer sent from ${userId} to ${to}`);
+      } catch (error) {
+        console.error("Error in call:answer:", error);
+        socket.emit("error", { message: "Failed to answer call" });
+      }
+    });
+
+    /**
+     * ICE Candidate exchange for WebRTC
+     */
+    socket.on("call:ice-candidate", async (data: any) => {
+      try {
+        const { conversationId, candidate, to } = data;
+        
+        // Forward ICE candidate to the other peer
+        io.to(to).emit("call:ice-candidate", {
+          from: userId,
+          candidate,
+          conversationId,
+        });
+      } catch (error) {
+        console.error("Error in call:ice-candidate:", error);
+      }
+    });
+
+    /**
+     * Decline an incoming call
+     */
+    socket.on("call:decline", async (data: any) => {
+      try {
+        const { conversationId, to } = data;
+        
+        // Notify caller that call was declined
+        io.to(to).emit("call:declined", {
+          from: userId,
+          conversationId,
+        });
+        
+        console.log(`Call declined by ${userId}`);
+      } catch (error) {
+        console.error("Error in call:decline:", error);
+      }
+    });
+
+    /**
+     * End an active call
+     */
+    socket.on("call:end", async (data: any) => {
+      try {
+        const { conversationId, to } = data;
+        
+        // Notify other party that call ended
+        io.to(to).emit("call:ended", {
+          from: userId,
+          conversationId,
+        });
+        
+        console.log(`Call ended by ${userId}`);
+      } catch (error) {
+        console.error("Error in call:end:", error);
       }
     });
 

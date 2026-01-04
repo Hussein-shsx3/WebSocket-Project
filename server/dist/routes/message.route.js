@@ -2,8 +2,10 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const auth_middleware_1 = require("../middleware/auth.middleware");
+const upload_middleware_1 = require("../middleware/upload.middleware");
 const message_controller_1 = require("../controllers/message.controller");
 const router = (0, express_1.Router)();
+router.post("/upload", auth_middleware_1.authenticate, upload_middleware_1.upload.single("file"), message_controller_1.uploadMessageMedia);
 router.post("/mark-as-read", auth_middleware_1.authenticate, message_controller_1.markAsRead);
 router.get("/search", auth_middleware_1.authenticate, message_controller_1.searchMessages);
 router.post("/react", auth_middleware_1.authenticate, message_controller_1.reactToMessage);

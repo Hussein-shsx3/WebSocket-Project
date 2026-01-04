@@ -1,4 +1,5 @@
 import type { Socket } from "socket.io-client";
+import type { ConversationUser } from "@/services/conversations.service";
 
 // ============================================
 // SERVER → CLIENT EVENTS (What we receive)
@@ -21,6 +22,13 @@ export interface ServerToClientEvents {
 
   // Read receipts
   "user:read-receipt": (data: ReadReceiptData) => void;
+
+  // Call events
+  "call:offer": (data: CallOfferData) => void;
+  "call:answer": (data: CallAnswerData) => void;
+  "call:ice-candidate": (data: CallIceCandidateData) => void;
+  "call:declined": (data: CallEndData) => void;
+  "call:ended": (data: CallEndData) => void;
 
   // Errors
   error: (error: { message: string }) => void;
@@ -49,6 +57,13 @@ export interface ClientToServerEvents {
 
   // User status
   "user:online": () => void;
+
+  // Call events
+  "call:offer": (data: CallOfferSendData) => void;
+  "call:answer": (data: CallAnswerSendData) => void;
+  "call:ice-candidate": (data: CallIceCandidateSendData) => void;
+  "call:decline": (data: CallEndSendData) => void;
+  "call:end": (data: CallEndSendData) => void;
 }
 
 // ============================================
@@ -147,6 +162,65 @@ export interface ReactMessageData {
   messageId: string;
   conversationId: string;
   emoji: string;
+}
+
+// ============================================
+// CALL DATA TYPES
+// ============================================
+
+// Server -> Client
+export interface CallOfferData {
+  from: string;
+  offer: RTCSessionDescriptionInit;
+  callType: "AUDIO" | "VIDEO";
+  conversationId: string;
+  user: {
+    id: string;
+    name: string | null;
+    email: string;
+    avatar: string | null;
+  } | null;
+}
+
+export interface CallAnswerData {
+  from: string;
+  answer: RTCSessionDescriptionInit;
+  conversationId: string;
+}
+
+export interface CallIceCandidateData {
+  from: string;
+  candidate: RTCIceCandidateInit;
+  conversationId: string;
+}
+
+export interface CallEndData {
+  from: string;
+  conversationId: string;
+}
+
+// Client -> Server
+export interface CallOfferSendData {
+  conversationId: string;
+  offer: RTCSessionDescriptionInit;
+  to: string;
+  callType: "AUDIO" | "VIDEO";
+}
+
+export interface CallAnswerSendData {
+  conversationId: string;
+  answer: RTCSessionDescriptionInit;
+  to: string;
+}
+
+export interface CallIceCandidateSendData {
+  candidate: RTCIceCandidateInit;
+  to: string;
+}
+
+export interface CallEndSendData {
+  conversationId: string;
+  to: string;
 }
 
 // ============================================

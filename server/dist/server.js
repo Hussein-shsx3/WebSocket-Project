@@ -27,7 +27,9 @@ exports.io.use((socket, next) => {
         let token = socket.handshake.auth.token;
         if (!token && socket.handshake.headers.authorization) {
             const authHeader = socket.handshake.headers.authorization;
-            token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : authHeader;
+            token = authHeader.startsWith("Bearer ")
+                ? authHeader.slice(7)
+                : authHeader;
         }
         if (!token) {
             return next(new Error("No token provided"));
@@ -75,6 +77,8 @@ const startServer = async () => {
     try {
         const dbConnected = await connectDatabase();
         server.listen(env_config_1.config.PORT, () => {
+            console.log(`🚀 Server running on http://localhost:${env_config_1.config.PORT}`);
+            console.log(`✅ WebSocket server initialized with CORS origin: ${env_config_1.config.CLIENT_URL}`);
         });
     }
     catch (error) {

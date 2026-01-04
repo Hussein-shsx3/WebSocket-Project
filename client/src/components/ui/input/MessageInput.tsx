@@ -46,13 +46,20 @@ export const MessageInput = ({
 
   // Send typing indicator
   const handleTyping = () => {
-    // Emit typing start
-    socketEmitters.typingStart(conversationId);
+    const sendTypingStart = () => {
+      const success = socketEmitters.typingStart(conversationId);
+      if (!success) {
+        // Retry after 500ms if socket not connected
+        setTimeout(sendTypingStart, 500);
+      }
+    };
 
     // Clear existing timeout
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
     }
+
+    sendTypingStart();
 
     // Set new timeout to emit typing stop after 3 seconds
     typingTimeoutRef.current = setTimeout(() => {
@@ -186,15 +193,15 @@ export const MessageInput = ({
   };
 
   return (
-    <div className="p-4 border-t border-border bg-panel">
+    <div className="p-4 border-t border-border/50 bg-panel/80 backdrop-blur-sm">
       {/* File Preview - Show above input when files are attached */}
       {mediaUrls.length > 0 && (
-        <div className="mb-3 p-3 bg-muted rounded-lg border border-border">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-primary">Attachment</span>
+        <div className="mb-3 p-4 bg-main rounded-xl border border-border/50 animate-fade-in">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm font-semibold text-primary">📎 Attachment</span>
             <button
               onClick={clearMedia}
-              className="p-1 text-secondary hover:text-red-500 transition-colors rounded-full hover:bg-red-50 dark:hover:bg-red-900/20"
+              className="p-1.5 text-secondary hover:text-error-500 transition-all duration-200 rounded-lg hover:bg-error-50 dark:hover:bg-error-900/20 active:scale-95"
               title="Remove attachment"
             >
               <X className="w-4 h-4" />
@@ -202,13 +209,13 @@ export const MessageInput = ({
           </div>
           <div className="flex items-center gap-3">
             <div className="flex-shrink-0">
-              <div className="w-10 h-10 bg-primaryColor/10 rounded-lg flex items-center justify-center">
+              <div className="w-12 h-12 bg-gradient-to-br from-primaryColor/20 to-primaryColor/10 rounded-xl flex items-center justify-center">
                 <Paperclip className="w-5 h-5 text-primaryColor" />
               </div>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm text-primary truncate">File attached</p>
-              <p className="text-xs text-secondary">Ready to send</p>
+              <p className="text-sm font-medium text-primary truncate">File attached</p>
+              <p className="text-xs text-secondary mt-0.5">Ready to send</p>
             </div>
           </div>
         </div>
@@ -216,14 +223,18 @@ export const MessageInput = ({
 
       {/* Upload Loading State */}
       {isUploading && (
-        <div className="mb-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+        <div className="mb-3 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200/50 dark:border-blue-800/50 animate-fade-in">
           <div className="flex items-center gap-3">
             <div className="flex-shrink-0">
-              <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />
+              <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center">
+                <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />
+              </div>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm text-blue-700 dark:text-blue-300">Uploading file...</p>
-              <p className="text-xs text-blue-600 dark:text-blue-400">Please wait</p>
+              <p className="text-sm font-medium text-blue-700 dark:text-blue-300">Uploading file...</p>
+              <div className="w-full bg-blue-200 dark:bg-blue-800 rounded-full h-1 mt-2">
+                <div className="bg-blue-500 h-1 rounded-full animate-pulse upload-progress-60"></div>
+              </div>
             </div>
           </div>
         </div>
@@ -236,14 +247,14 @@ export const MessageInput = ({
           <button
             type="button"
             onClick={toggleEmojiPicker}
-            className="p-2 text-secondary hover:text-primary transition-colors rounded-lg hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+            className="p-2.5 text-secondary hover:text-primaryColor hover:bg-primaryColor/10 transition-all duration-200 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
             title="Add emoji"
             disabled={disabled || isSending}
           >
             <Smile className="w-5 h-5" />
           </button>
           {showEmojiPicker && (
-            <div className="absolute bottom-full mb-2 left-0 z-50">
+            <div className="absolute bottom-full mb-2 left-0 z-50 animate-scale-in">
               <EmojiPicker onEmojiClick={handleEmojiClick} />
             </div>
           )}
@@ -258,15 +269,8 @@ export const MessageInput = ({
             onKeyDown={handleKeyDown}
             placeholder="Type a message..."
             disabled={disabled || isSending || isUploading}
-            className="w-full px-4 py-3 bg-search-bg border border-border rounded-lg text-sm text-primary placeholder:text-secondary focus:outline-none focus:ring-2 focus:ring-primaryColor/30 focus:border-primaryColor disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full px-4 py-3 bg-main border border-border/50 rounded-xl text-sm text-primary placeholder:text-secondary focus:outline-none focus:ring-2 focus:ring-primaryColor/20 focus:border-primaryColor/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
           />
-
-          {/* Character count */}
-          {message.length > 0 && (
-            <div className="absolute -top-6 right-0 text-xs text-secondary">
-              {message.length}
-            </div>
-          )}
         </div>
 
         {/* Attachment Button */}
@@ -274,7 +278,7 @@ export const MessageInput = ({
           type="button"
           onClick={() => fileInputRef.current?.click()}
           disabled={disabled || isSending || isUploading}
-          className="p-2 text-secondary hover:text-primary transition-colors rounded-lg hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+          className="p-2.5 text-secondary hover:text-primaryColor hover:bg-primaryColor/10 transition-all duration-200 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 active:scale-95"
           title="Attach file"
         >
           {isUploading ? (
@@ -298,7 +302,7 @@ export const MessageInput = ({
           type="button"
           onClick={handleSend}
           disabled={(!message.trim() && mediaUrls.length === 0) || isSending || isUploading || disabled}
-          className="p-3 bg-primaryColor text-white rounded-lg hover:bg-primaryColor/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+          className="p-3 bg-gradient-to-r from-primaryColor to-primaryColor/90 text-white rounded-xl hover:shadow-md hover:shadow-primaryColor/20 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 active:scale-95"
           title="Send message"
         >
           {isSending ? (

@@ -6,19 +6,25 @@ import { axiosInstance } from "@/lib/axios";
 export interface FriendRequest {
   id: string;
   senderId: string;
-  recipientId: string;
-  sender: {
+  receiverId: string;
+  sender?: {
     id: string;
     name: string;
     email: string;
     avatar?: string;
   };
-  status: "pending" | "accepted" | "rejected";
+  receiver?: {
+    id: string;
+    name: string;
+    email: string;
+    avatar?: string;
+  };
+  status: "PENDING" | "ACCEPTED" | "REJECTED";
   createdAt: string;
 }
 
 export interface SendFriendRequestParams {
-  recipientId: string;
+  receiverId: string;
 }
 
 export interface SendFriendRequestResponse {
@@ -67,12 +73,11 @@ export const friendsService = {
     data: SendFriendRequestParams
   ): Promise<SendFriendRequestResponse> {
     const response = await axiosInstance.post<{
-      success: boolean;
       message: string;
-      data: SendFriendRequestResponse;
+      data: FriendRequest;
     }>("/friends/request", data);
 
-    return response.data.data;
+    return { friendRequest: response.data.data };
   },
 
   /**
@@ -111,14 +116,17 @@ export const friendsService = {
    */
   async getPendingRequests(): Promise<GetFriendRequestsResponse> {
     const response = await axiosInstance.get<{
-      success: boolean;
       message: string;
-      data: GetFriendRequestsResponse;
+      data: {
+        requests: FriendRequest[];
+        type: string;
+        pagination: { total: number; page: number; limit: number; pages: number };
+      };
     }>("/friends/requests", {
       params: { type: "pending" },
     });
 
-    return response.data.data;
+    return { friendRequests: response.data.data.requests };
   },
 
   /**
@@ -127,14 +135,17 @@ export const friendsService = {
    */
   async getSentRequests(): Promise<GetFriendRequestsResponse> {
     const response = await axiosInstance.get<{
-      success: boolean;
       message: string;
-      data: GetFriendRequestsResponse;
+      data: {
+        requests: FriendRequest[];
+        type: string;
+        pagination: { total: number; page: number; limit: number; pages: number };
+      };
     }>("/friends/requests", {
       params: { type: "sent" },
     });
 
-    return response.data.data;
+    return { friendRequests: response.data.data.requests };
   },
 
   /**
@@ -142,12 +153,14 @@ export const friendsService = {
    */
   async getFriends(): Promise<GetFriendsResponse> {
     const response = await axiosInstance.get<{
-      success: boolean;
       message: string;
-      data: GetFriendsResponse;
+      data: {
+        friends: Friend[];
+        pagination: { total: number; page: number; limit: number; pages: number };
+      };
     }>("/friends");
 
-    return response.data.data;
+    return { friends: response.data.data.friends };
   },
 
   /**

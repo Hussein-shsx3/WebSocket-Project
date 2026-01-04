@@ -122,7 +122,7 @@ export async function acceptFriendRequest(requestId: string, userId: string) {
     throw new BadRequestError("Cannot accept a rejected friend request");
   }
 
-  // Use transaction to update request and create friendship
+  // Use transaction to update request, create friendship, and create conversation
   const result = await prisma.$transaction(async (tx) => {
     // Update friend request status
     const updatedRequest = await tx.friendRequest.update({
@@ -138,7 +138,43 @@ export async function acceptFriendRequest(requestId: string, userId: string) {
       },
     });
 
-    return { request: updatedRequest, friendship };
+    // Check if conversation already exists between these users
+    const existingConversation = await tx.conversation.findFirst({
+      where: {
+        AND: [
+          { participants: { some: { userId: request.senderId } } },
+          { participants: { some: { userId: request.receiverId } } },
+        ],
+      },
+    });
+
+    // Create conversation if it doesn't exist
+    let conversation = existingConversation;
+    if (!existingConversation) {
+      conversation = await tx.conversation.create({
+        data: {
+          participants: {
+            createMany: {
+              data: [
+                { userId: request.senderId },
+                { userId: request.receiverId },
+              ],
+            },
+          },
+        },
+        include: {
+          participants: {
+            include: {
+              user: {
+                select: { id: true, name: true, email: true, avatar: true },
+              },
+            },
+          },
+        },
+      });
+    }
+
+    return { request: updatedRequest, friendship, conversation };
   });
 
   return result;

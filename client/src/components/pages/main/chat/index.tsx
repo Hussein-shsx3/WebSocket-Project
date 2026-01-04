@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { useConversationOtherUser } from "@/hooks/useConversations";
 import { useMessages } from "@/hooks/useMessages";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { useTypingUsers } from "@/hooks/useTyping";
+import { useCall } from "@/contexts/CallContext";
 import { socketEmitters } from "@/socket/emitters";
 import { ChatHeader } from "@/components/ui/display/ChatHeader";
 import { MessagesList } from "@/components/ui/display/MessagesList";
@@ -51,12 +53,44 @@ const Chat = ({ conversationId: propConversationId }: ChatProps) => {
     0
   );
 
+  // Get typing users
+  const { data: typingUsers = [] } = useTypingUsers(conversationId || "");
+
+  // Check if the other user is typing (exclude current user)
+  const isOtherUserTyping = typingUsers.some(userId => userId !== currentUser?.userId);
+
+  // Get the typing user object for display
+  const typingUser = isOtherUserTyping && otherUser ? otherUser : null;
+
+  // Get call functionality from context
+  const { startCall } = useCall();
+
+  // Call handlers
+  const handleVoiceCall = useCallback(() => {
+    if (conversationId && otherUser) {
+      startCall(conversationId, otherUser, "AUDIO");
+    }
+  }, [conversationId, otherUser, startCall]);
+
+  const handleVideoCall = useCallback(() => {
+    if (conversationId && otherUser) {
+      startCall(conversationId, otherUser, "VIDEO");
+    }
+  }, [conversationId, otherUser, startCall]);
+
   // Socket.IO: Open conversation when component mounts
   useEffect(() => {
     if (!conversationId) return;
 
-    // Emit conversation:open event
-    socketEmitters.openConversation(conversationId);
+    const openConversation = () => {
+      const success = socketEmitters.openConversation(conversationId);
+      if (!success) {
+        // Retry after 1 second if socket not connected
+        setTimeout(openConversation, 1000);
+      }
+    };
+
+    openConversation();
 
     // Cleanup: Emit conversation:close event when unmounting
     return () => {
@@ -124,7 +158,8 @@ const Chat = ({ conversationId: propConversationId }: ChatProps) => {
       {/* Chat Header */}
       <ChatHeader
         user={otherUser}
-        isTyping={false} // TODO: Get from typing state
+        onVoiceCall={handleVoiceCall}
+        onVideoCall={handleVideoCall}
       />
 
       {/* Messages List */}
@@ -132,6 +167,7 @@ const Chat = ({ conversationId: propConversationId }: ChatProps) => {
         messages={messages}
         currentUserId={currentUser.userId}
         isLoading={false}
+        typingUser={typingUser}
       />
 
       {/* Message Input */}

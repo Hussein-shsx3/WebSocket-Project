@@ -43,6 +43,7 @@ function setupChatSocket(io) {
             socket.disconnect();
             return;
         }
+        socket.join(userId);
         socket.on("conversation:open", async (conversationId) => {
             try {
                 socket.join(conversationId);
@@ -71,6 +72,7 @@ function setupChatSocket(io) {
                     senderId: userId,
                     content: message.content,
                     type: message.type,
+                    mediaUrls: message.mediaUrls || [],
                     status: "SENT",
                     createdAt: message.createdAt,
                     sender: {
@@ -168,6 +170,82 @@ function setupChatSocket(io) {
             }
             catch (error) {
                 console.error("Error updating user status to online:", error);
+            }
+        });
+        socket.on("call:offer", async (data) => {
+            try {
+                const { conversationId, offer, to, callType } = data;
+                const caller = await userService.getUserById(userId);
+                io.to(to).emit("call:offer", {
+                    from: userId,
+                    offer,
+                    callType,
+                    conversationId,
+                    user: caller ? {
+                        id: caller.id,
+                        name: caller.name,
+                        avatar: caller.avatar,
+                    } : null,
+                });
+                console.log(`Call offer sent from ${userId} to ${to}`);
+            }
+            catch (error) {
+                console.error("Error in call:offer:", error);
+                socket.emit("error", { message: "Failed to initiate call" });
+            }
+        });
+        socket.on("call:answer", async (data) => {
+            try {
+                const { conversationId, answer, to } = data;
+                io.to(to).emit("call:answer", {
+                    from: userId,
+                    answer,
+                    conversationId,
+                });
+                console.log(`Call answer sent from ${userId} to ${to}`);
+            }
+            catch (error) {
+                console.error("Error in call:answer:", error);
+                socket.emit("error", { message: "Failed to answer call" });
+            }
+        });
+        socket.on("call:ice-candidate", async (data) => {
+            try {
+                const { conversationId, candidate, to } = data;
+                io.to(to).emit("call:ice-candidate", {
+                    from: userId,
+                    candidate,
+                    conversationId,
+                });
+            }
+            catch (error) {
+                console.error("Error in call:ice-candidate:", error);
+            }
+        });
+        socket.on("call:decline", async (data) => {
+            try {
+                const { conversationId, to } = data;
+                io.to(to).emit("call:declined", {
+                    from: userId,
+                    conversationId,
+                });
+                console.log(`Call declined by ${userId}`);
+            }
+            catch (error) {
+                console.error("Error in call:decline:", error);
+            }
+        });
+        socket.on("call:end", async (data) => {
+            try {
+                const { conversationId, to } = data;
+                io.to(to).emit("call:ended", {
+                    from: userId,
+                    conversationId,
+                });
+                console.log(`Call ended by ${userId}`);
+            }
+            catch (error) {
+                console.error("Error in call:end:", error);
             }
         });
         socket.on("disconnect", async () => {
