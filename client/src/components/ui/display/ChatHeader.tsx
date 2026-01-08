@@ -32,7 +32,7 @@ export const ChatHeader = ({
   };
 
   return (
-    <div className="flex items-center gap-4 px-4 py-3 border-b border-border/50 bg-panel/80 backdrop-blur-sm sticky top-0 z-10">
+    <div className="flex items-center gap-4 px-4 py-3 border-b border-border bg-panel/80 backdrop-blur-sm sticky top-0 z-10">
       {/* Back Button (Mobile) */}
       {showBackButton && (
         <button

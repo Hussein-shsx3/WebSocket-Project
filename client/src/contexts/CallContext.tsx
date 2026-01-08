@@ -78,13 +78,14 @@ export const CallProvider = ({ children }: CallProviderProps) => {
   }, []);
 
   // Create peer connection
-  const createPeerConnection = useCallback((receiverId: string) => {
+  const createPeerConnection = useCallback((receiverId: string, conversationId?: string) => {
     const pc = new RTCPeerConnection(ICE_SERVERS);
 
     pc.onicecandidate = (event) => {
       if (event.candidate) {
         const socket = socketClient.getSocket();
         socket?.emit("call:ice-candidate", {
+          conversationId,
           candidate: event.candidate,
           to: receiverId,
         });
@@ -137,7 +138,7 @@ export const CallProvider = ({ children }: CallProviderProps) => {
       const stream = await getUserMedia(type === "VIDEO");
       if (!stream) return;
 
-      const pc = createPeerConnection(user.id);
+      const pc = createPeerConnection(user.id, conversationId);
       stream.getTracks().forEach((track) => pc.addTrack(track, stream));
 
       const offer = await pc.createOffer();
@@ -167,7 +168,7 @@ export const CallProvider = ({ children }: CallProviderProps) => {
       const stream = await getUserMedia(callState.callType === "VIDEO");
       if (!stream) return;
 
-      const pc = createPeerConnection(callState.user.id);
+      const pc = createPeerConnection(callState.user.id, callState.conversationId || undefined);
       stream.getTracks().forEach((track) => pc.addTrack(track, stream));
 
       await pc.setRemoteDescription(new RTCSessionDescription(callState.offer));

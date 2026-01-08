@@ -26,15 +26,11 @@ class SocketClient {
     // Socket.IO connects to the server root, not /api path
     const socketUrl = apiUrl.replace(/\/api\/?$/, "").replace(/\/$/, "");
 
-    // connecting to socket (log removed)
-
-    console.log("🔌 Connecting to Socket.IO server at:", socketUrl);
-    console.log("🔑 Token provided:", !!token);
-
     // Create new socket instance
     this.socket = io(socketUrl, {
       auth: { token }, // Send JWT token in auth object
-      transports: ["websocket", "polling"], // Allow both websocket and polling
+      // Allow engine.io to pick the initial transport (polling -> upgrade to websocket)
+      // This avoids forcing a direct websocket handshake which can fail in some dev setups.
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
@@ -74,7 +70,8 @@ class SocketClient {
 
     // ⚠️ Connection error
     this.socket.on("connect_error", (error) => {
-      console.error("❌ Socket connection error:", error.message);
+      // Log full error for easier debugging (includes stack and properties)
+      console.error("❌ Socket connection error:", error);
       this.updateState({
         status: "error",
         error: error.message,

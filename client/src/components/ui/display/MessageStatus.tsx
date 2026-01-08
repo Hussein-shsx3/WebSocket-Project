@@ -31,13 +31,13 @@ export const MessageStatus = ({
   const getStatusIcon = () => {
     switch (status) {
       case "SENDING":
-        return <Clock className="w-4 h-4 text-gray-400" />;
+        return <Clock className="w-4 h-4 text-gray-200" />;
 
       case "SENT":
-        return <Check className="w-4 h-4 text-gray-400" />;
+        return <Check className="w-4 h-4 text-gray-200" />;
 
       case "DELIVERED":
-        return <CheckCheck className="w-4 h-4 text-gray-400" />;
+        return <CheckCheck className="w-4 h-4 text-gray-200" />;
 
       case "READ":
         return <CheckCheck className="w-4 h-4 text-blue-500" />;

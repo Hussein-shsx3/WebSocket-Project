@@ -24,7 +24,7 @@ export const TypingIndicator = ({ user }: TypingIndicatorProps) => {
       {/* Typing Bubble */}
       <div className="flex flex-col max-w-xs lg:max-w-md">
         {/* Message Bubble */}
-        <div className="bg-panel dark:bg-header rounded-2xl rounded-bl-md px-4 py-3 border border-border/50 shadow-sm">
+        <div className="bg-panel dark:bg-header rounded-2xl rounded-bl-md px-4 py-3 border border-border shadow-sm">
           <div className="flex items-center gap-2">
             <div className="flex gap-1">
               <span className="w-2 h-2 bg-primaryColor rounded-full animate-bounce typing-dot-1"></span>

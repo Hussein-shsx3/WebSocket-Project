@@ -55,7 +55,7 @@ export function Sidebar() {
   return (
     <>
       {/* Desktop / Tablet sidebar on the left */}
-      <aside className="hidden sm:flex w-[70px] bg-sidebar flex-col items-center py-4 gap-3 border-r border-border/50">
+      <aside className="hidden sm:flex w-[70px] bg-sidebar flex-col items-center py-4 gap-3 border-r border-border">
         {/* Logo/Brand */}
         <div className="w-11 h-11 bg-gradient-to-br from-primaryColor to-primaryColor/80 rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-primaryColor/20">
           <MessageSquare className="w-6 h-6 text-white" strokeWidth={2} />
@@ -117,7 +117,7 @@ export function Sidebar() {
       </aside>
 
       {/* Mobile bottom bar under the page content */}
-      <nav className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-sidebar/95 backdrop-blur-lg border-t border-border/50 py-2 px-2 flex items-center justify-around w-full safe-area-bottom">
+      <nav className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-sidebar/95 backdrop-blur-lg border-t border-border py-2 px-2 flex items-center justify-around w-full safe-area-bottom">
         {mobileNavigation.map((item) => {
           const isActive = pathname.startsWith(item.href);
           const Icon = item.icon;
@@ -165,7 +165,7 @@ export function Sidebar() {
               />
               
               {/* Dropdown menu */}
-              <div className="absolute bottom-14 right-0 w-48 rounded-2xl bg-popover shadow-2xl border border-border/50 py-2 flex flex-col z-50 overflow-hidden">
+              <div className="absolute bottom-14 right-0 w-48 rounded-2xl bg-popover shadow-2xl border border-border py-2 flex flex-col z-50 overflow-hidden">
                 <Link
                   href="/profile"
                   className="px-4 py-3 text-sm flex items-center gap-3 hover:bg-hover transition-colors text-primary"

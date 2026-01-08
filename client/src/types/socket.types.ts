@@ -214,6 +214,7 @@ export interface CallAnswerSendData {
 }
 
 export interface CallIceCandidateSendData {
+  conversationId?: string;
   candidate: RTCIceCandidateInit;
   to: string;
 }

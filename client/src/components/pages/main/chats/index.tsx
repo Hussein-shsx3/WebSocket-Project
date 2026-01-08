@@ -56,7 +56,7 @@ const Chats = () => {
           <input
             type="text"
             placeholder="Search conversations..."
-            className="w-full pl-10 pr-4 py-2.5 bg-main border border-border/50 rounded-xl text-sm text-primary placeholder:text-secondary focus:outline-none focus:ring-2 focus:ring-primaryColor/20 focus:border-primaryColor/50 transition-all duration-200"
+            className="w-full pl-10 pr-4 py-2.5 bg-main border border-border rounded-xl text-sm text-primary placeholder:text-secondary focus:outline-none focus:ring-2 focus:ring-primaryColor/20 focus:border-primaryColor/50 transition-all duration-200"
           />
         </div>
       </div>
@@ -97,7 +97,7 @@ const Chats = () => {
                   onClick={() => handleConversationClick(conversation.id)}
                   className={`group w-full flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all duration-200 ${
                     isActive 
-                      ? 'bg-primaryColor/10 border border-primaryColor/20' 
+                      ? 'bg-primaryColor/10 border border-border' 
                       : 'hover:bg-hover border border-transparent'
                   }`}
                 >

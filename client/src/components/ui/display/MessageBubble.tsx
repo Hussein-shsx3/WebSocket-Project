@@ -3,6 +3,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { UserAvatar } from "./UserAvatar";
 import { MessageStatus } from "./MessageStatus";
 import { formatMessageTime } from "@/utils/message.utils";
@@ -71,8 +72,8 @@ export const MessageBubble = ({
       <div
         className={`group relative max-w-[75%] lg:max-w-[65%] rounded-2xl px-4 py-2.5 shadow-sm transition-all duration-200 ${
           isOwn
-            ? "bg-gradient-to-br from-primaryColor to-primaryColor/90 text-white rounded-br-md hover:shadow-md"
-            : "bg-panel dark:bg-header text-primary rounded-bl-md border border-border/50 hover:border-border"
+            ? "bg-primaryColor text-white rounded-br-md hover:shadow-md"
+            : "bg-panel dark:bg-header text-primary rounded-bl-md border border-border hover:border-border"
         } ${isHovered ? 'scale-[1.01]' : ''}`}
       >
         {/* Message Text */}
@@ -86,11 +87,15 @@ export const MessageBubble = ({
             {message.mediaUrls.map((url, index) => (
               <div key={index} className="rounded-xl overflow-hidden max-w-sm transition-transform duration-200 hover:scale-[1.02]">
                 {url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
-                  <img
+                  <Image
                     src={url}
                     alt={`Media ${index + 1}`}
+                    width={800}
+                    height={600}
+                    sizes="(max-width: 1024px) 100vw, 50vw"
                     className="w-full h-auto max-h-72 object-cover cursor-pointer transition-all duration-300 hover:brightness-95"
-                    onClick={() => window.open(url, '_blank')}
+                    onClick={() => window.open(url, "_blank")}
+                    unoptimized
                   />
                 ) : url.match(/\.(mp4|webm|ogg)$/i) ? (
                   <video

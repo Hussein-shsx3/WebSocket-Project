@@ -55,7 +55,7 @@ export const useWebRTC = ({ conversationId, receiverId }: UseWebRTCProps) => {
   }, []);
 
   // Create peer connection
-  const createPeerConnection = useCallback(() => {
+  const createPeerConnection = useCallback((convId?: string) => {
     const pc = new RTCPeerConnection(ICE_SERVERS);
 
     // Handle ICE candidates
@@ -63,6 +63,7 @@ export const useWebRTC = ({ conversationId, receiverId }: UseWebRTCProps) => {
       if (event.candidate) {
         const socket = socketClient.getSocket();
         socket?.emit("call:ice-candidate", {
+          conversationId: convId,
           candidate: event.candidate,
           to: receiverId,
         });
@@ -97,7 +98,7 @@ export const useWebRTC = ({ conversationId, receiverId }: UseWebRTCProps) => {
       const stream = await getUserMedia(video);
       if (!stream) return;
 
-      const pc = createPeerConnection();
+      const pc = createPeerConnection(conversationId);
 
       // Add local tracks to peer connection
       stream.getTracks().forEach((track) => {
@@ -132,7 +133,7 @@ export const useWebRTC = ({ conversationId, receiverId }: UseWebRTCProps) => {
       const stream = await getUserMedia(video);
       if (!stream) return;
 
-      const pc = createPeerConnection();
+      const pc = createPeerConnection(conversationId);
 
       // Add local tracks to peer connection
       stream.getTracks().forEach((track) => {

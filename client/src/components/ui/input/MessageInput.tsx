@@ -193,10 +193,10 @@ export const MessageInput = ({
   };
 
   return (
-    <div className="p-4 border-t border-border/50 bg-panel/80 backdrop-blur-sm">
+    <div className="p-4 border-t border-border bg-panel/80 backdrop-blur-sm">
       {/* File Preview - Show above input when files are attached */}
       {mediaUrls.length > 0 && (
-        <div className="mb-3 p-4 bg-main rounded-xl border border-border/50 animate-fade-in">
+        <div className="mb-3 p-4 bg-main rounded-xl border border-border animate-fade-in">
           <div className="flex items-center justify-between mb-3">
             <span className="text-sm font-semibold text-primary">📎 Attachment</span>
             <button
@@ -269,7 +269,7 @@ export const MessageInput = ({
             onKeyDown={handleKeyDown}
             placeholder="Type a message..."
             disabled={disabled || isSending || isUploading}
-            className="w-full px-4 py-3 bg-main border border-border/50 rounded-xl text-sm text-primary placeholder:text-secondary focus:outline-none focus:ring-2 focus:ring-primaryColor/20 focus:border-primaryColor/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+            className="w-full px-4 py-3 bg-main border border-border rounded-xl text-sm text-primary placeholder:text-secondary focus:outline-none focus:ring-2 focus:ring-primaryColor/20 focus:border-primaryColor/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
           />
         </div>
 
