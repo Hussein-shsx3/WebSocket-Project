@@ -2,14 +2,14 @@
 
 import { useState } from "react";
 import { AxiosError } from "axios";
-import { useRequestPasswordReset } from "@/hooks/useAuth";
+import { useForgotPassword as useForgotPasswordMutation } from "@/hooks/useAuth";
 
 export const useForgotPassword = () => {
   const [email, setEmail] = useState("");
   const [errors, setErrors] = useState<{ email?: string }>({});
   const [generalError, setGeneralError] = useState<string>("");
   const [successMessage, setSuccessMessage] = useState<string>("");
-  const forgotPasswordMutation = useRequestPasswordReset();
+  const forgotPasswordMutation = useForgotPasswordMutation();
 
   // Validation
   const validateForm = (): boolean => {

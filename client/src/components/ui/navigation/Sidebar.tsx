@@ -12,11 +12,9 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { ThemeToggle } from "./ThemeToggle";
 import { LogoutButton } from "../buttons";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 export function Sidebar() {
   const pathname = usePathname();
-  const currentUser = useCurrentUser();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const avatarRef = useRef<HTMLDivElement | null>(null);
 
@@ -31,9 +29,6 @@ export function Sidebar() {
   const mobileNavigation = navigation.filter(
     (item) => item.name !== "Settings"
   );
-
-  // Get user initials
-  const userInitials = currentUser?.email?.charAt(0).toUpperCase() || "U";
 
   // Close user menu when clicking outside
   useEffect(() => {
@@ -87,11 +82,6 @@ export function Sidebar() {
                   <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primaryColor rounded-r-full" />
                 )}
                 <Icon className="w-5 h-5" strokeWidth={2} />
-                
-                {/* Tooltip */}
-                <span className="absolute left-full ml-3 px-3 py-1.5 bg-popover text-primary text-xs font-medium rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-50">
-                  {item.name}
-                </span>
               </Link>
             );
           })}
@@ -110,7 +100,7 @@ export function Sidebar() {
               className="w-11 h-11 rounded-2xl bg-gradient-to-br from-primaryColor to-primaryColor/80 flex items-center justify-center text-white text-sm font-bold hover:shadow-lg hover:shadow-primaryColor/20 transition-all duration-200 hover:scale-105"
               title="Profile"
             >
-              {userInitials}
+              H
             </Link>
           </div>
         </div>
@@ -153,7 +143,7 @@ export function Sidebar() {
             onClick={() => setIsUserMenuOpen((open) => !open)}
             className="w-10 h-10 rounded-xl bg-gradient-to-br from-primaryColor to-primaryColor/80 flex items-center justify-center text-white text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primaryColor/50 shadow-lg shadow-primaryColor/20"
           >
-            {userInitials}
+            H
           </button>
 
           {isUserMenuOpen && (

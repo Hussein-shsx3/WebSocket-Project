@@ -73,7 +73,7 @@ export const useSignUp = () => {
     }
 
     registerMutation.mutate(formData, {
-      onSuccess: (data: RegisterResponse) => {
+      onSuccess: (data: RegisterResponse["data"]) => {
         router.push(
           `/verifyEmail?email=${encodeURIComponent(formData.email)}&token=${encodeURIComponent(data.verificationToken)}`
         );

@@ -235,6 +235,22 @@ class AuthService {
         });
         return { success: true, message: "Logged out" };
     }
+    async getCurrentUser(userId) {
+        const user = await db_1.default.user.findUnique({
+            where: { id: userId },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                role: true,
+                createdAt: true,
+            },
+        });
+        if (!user) {
+            throw new error_types_1.NotFoundError("User not found");
+        }
+        return { user };
+    }
 }
 exports.AuthService = AuthService;
 //# sourceMappingURL=auth.service.js.map

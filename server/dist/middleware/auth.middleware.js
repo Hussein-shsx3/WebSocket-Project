@@ -5,12 +5,11 @@ const jwt_util_1 = require("../utils/jwt.util");
 const error_types_1 = require("../types/error.types");
 const authenticate = (req, res, next) => {
     try {
-        const authHeader = req.headers.authorization;
-        if (!authHeader || !authHeader.startsWith("Bearer ")) {
-            throw new error_types_1.AuthenticationError("No token provided");
+        const accessToken = req.cookies?.accessToken;
+        if (!accessToken) {
+            throw new error_types_1.AuthenticationError("No access token provided");
         }
-        const token = authHeader.slice(7);
-        const decoded = (0, jwt_util_1.verifyAccessToken)(token);
+        const decoded = (0, jwt_util_1.verifyAccessToken)(accessToken);
         req.user = {
             userId: decoded.userId,
             email: decoded.email,
@@ -31,10 +30,9 @@ const authenticate = (req, res, next) => {
 exports.authenticate = authenticate;
 const optionalAuthenticate = (req, res, next) => {
     try {
-        const authHeader = req.headers.authorization;
-        if (authHeader && authHeader.startsWith("Bearer ")) {
-            const token = authHeader.slice(7);
-            const decoded = (0, jwt_util_1.verifyAccessToken)(token);
+        const accessToken = req.cookies?.accessToken;
+        if (accessToken) {
+            const decoded = (0, jwt_util_1.verifyAccessToken)(accessToken);
             req.user = {
                 userId: decoded.userId,
                 email: decoded.email,

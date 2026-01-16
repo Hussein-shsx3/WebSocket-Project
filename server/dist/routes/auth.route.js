@@ -12,5 +12,6 @@ router.post("/forgot-password", auth_controller_1.forgotPassword);
 router.post("/reset-password", auth_controller_1.resetPassword);
 router.post("/refresh-tokens", auth_controller_1.refreshTokens);
 router.post("/logout", auth_middleware_1.authenticate, auth_controller_1.logout);
+router.get("/me", auth_middleware_1.authenticate, auth_controller_1.getCurrentUser);
 exports.default = router;
 //# sourceMappingURL=auth.route.js.map

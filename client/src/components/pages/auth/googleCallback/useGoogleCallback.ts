@@ -2,7 +2,6 @@
 
 import { useMemo, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { tokenManager } from "@/lib/axios";
 
 export const useGoogleCallback = () => {
   const router = useRouter();
@@ -22,9 +21,7 @@ export const useGoogleCallback = () => {
       // Parse user data (validates JSON structure)
       JSON.parse(decodeURIComponent(userJson));
 
-      // Store access token
-      tokenManager.setAccessToken(token);
-
+      // Since server sets cookies, no need to store token manually
       return "";
     } catch (err) {
       console.error("Error processing Google callback:", err);

@@ -8,6 +8,7 @@ import {
   resetPassword,
   refreshTokens,
   logout,
+  getCurrentUser,
 } from "../controllers/auth.controller";
 import { authenticate } from "../middleware/auth.middleware";
 
@@ -28,5 +29,6 @@ router.post("/refresh-tokens", refreshTokens);
  * Protected Routes (require auth middleware)
  */
 router.post("/logout", authenticate, logout);
+router.get("/me", authenticate, getCurrentUser);
 
 export default router;

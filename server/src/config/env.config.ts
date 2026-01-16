@@ -17,9 +17,9 @@ export const config = {
 
   // JWT
   JWT_SECRET: process.env.JWT_SECRET || "your-super-secret-jwt-key",
-  JWT_EXPIRE: process.env.JWT_EXPIRE || "7d",
+  JWT_EXPIRE: process.env.JWT_EXPIRE || "15m",
   JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET || "your-refresh-secret",
-  JWT_REFRESH_EXPIRE: process.env.JWT_REFRESH_EXPIRE || "30d",
+  JWT_REFRESH_EXPIRE: process.env.JWT_REFRESH_EXPIRE || "7d",
 
   // File Upload
   MAX_FILE_SIZE: parseInt(process.env.MAX_FILE_SIZE || "52428800", 10), // 50MB

@@ -1,9 +1,9 @@
-import { MainLayout } from "@/components/layout/mainLayout";
+import { ProtectedLayout } from "@/components/layout/ProtectedLayout";
 
 export default function MainAppLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return <MainLayout>{children}</MainLayout>;
+  return <ProtectedLayout>{children}</ProtectedLayout>;
 }

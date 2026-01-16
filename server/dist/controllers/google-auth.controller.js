@@ -8,35 +8,32 @@ const googleCallback = async (req, res) => {
     try {
         const googleUser = req.user;
         if (!googleUser || !googleUser.id || !googleUser.email) {
-            res.status(401).json({
-                success: false,
-                message: "Authentication failed",
-            });
-            return;
+            return res.status(401).redirect(`${env_config_1.config.CLIENT_URL}/auth/error`);
         }
         const tokens = (0, jwt_util_1.generateAuthTokens)({
             userId: googleUser.id,
             email: googleUser.email,
             role: googleUser.role || "USER",
         });
+        res.cookie("accessToken", tokens.accessToken, {
+            httpOnly: true,
+            secure: env_config_1.config.NODE_ENV === "production",
+            sameSite: "strict",
+            maxAge: 15 * 60 * 1000,
+            path: "/",
+        });
         res.cookie("refreshToken", tokens.refreshToken, {
             httpOnly: true,
             secure: env_config_1.config.NODE_ENV === "production",
             sameSite: "strict",
-            maxAge: 30 * 24 * 60 * 60 * 1000,
+            maxAge: 7 * 24 * 60 * 60 * 1000,
+            path: "/",
         });
-        const redirectUrl = `${env_config_1.config.CLIENT_URL}/google-callback?token=${tokens.accessToken}&user=${encodeURIComponent(JSON.stringify({
-            id: googleUser.id,
-            email: googleUser.email,
-            name: googleUser.name || "",
-            avatar: googleUser.avatar || "",
-            role: googleUser.role || "USER",
-        }))}`;
-        res.redirect(redirectUrl);
+        res.redirect(`${env_config_1.config.CLIENT_URL}/chats`);
     }
     catch (error) {
         console.error("Google callback error:", error);
-        res.redirect(`${env_config_1.config.CLIENT_URL}/auth/error?message=Authentication failed`);
+        res.redirect(`${env_config_1.config.CLIENT_URL}/auth/error`);
     }
 };
 exports.googleCallback = googleCallback;

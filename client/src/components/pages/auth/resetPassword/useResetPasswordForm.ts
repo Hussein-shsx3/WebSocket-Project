@@ -68,7 +68,7 @@ export const useResetPasswordForm = () => {
     }
 
     resetPasswordMutation.mutate(
-      { token, newPassword: password },
+      { token, password },
       {
         onSuccess: () => {
           router.push("/signIn?message=Password reset successfully. Please sign in.");

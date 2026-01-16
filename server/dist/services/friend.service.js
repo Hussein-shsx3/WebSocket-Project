@@ -110,7 +110,39 @@ async function acceptFriendRequest(requestId, userId) {
                 friendId: request.receiverId,
             },
         });
-        return { request: updatedRequest, friendship };
+        const existingConversation = await tx.conversation.findFirst({
+            where: {
+                AND: [
+                    { participants: { some: { userId: request.senderId } } },
+                    { participants: { some: { userId: request.receiverId } } },
+                ],
+            },
+        });
+        let conversation = existingConversation;
+        if (!existingConversation) {
+            conversation = await tx.conversation.create({
+                data: {
+                    participants: {
+                        createMany: {
+                            data: [
+                                { userId: request.senderId },
+                                { userId: request.receiverId },
+                            ],
+                        },
+                    },
+                },
+                include: {
+                    participants: {
+                        include: {
+                            user: {
+                                select: { id: true, name: true, email: true, avatar: true },
+                            },
+                        },
+                    },
+                },
+            });
+        }
+        return { request: updatedRequest, friendship, conversation };
     });
     return result;
 }

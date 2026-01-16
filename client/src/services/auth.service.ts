@@ -1,5 +1,8 @@
 import { axiosInstance } from "@/lib/axios";
 
+/**
+ * Request/Response Types
+ */
 export interface LoginRequest {
   email: string;
   password: string;
@@ -11,118 +14,142 @@ export interface RegisterRequest {
   name: string;
 }
 
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  role?: string;
+  createdAt?: string;
+}
+
 export interface AuthResponse {
-  accessToken: string;
-  user: {
-    id: string;
-    email: string;
-    name: string;
+  success: boolean;
+  message: string;
+  data: {
+    user: User;
+    // NO accessToken - it's in httpOnly cookie now
   };
 }
 
 export interface RegisterResponse {
-  user: {
-    id: string;
-    email: string;
-    name: string;
+  success: boolean;
+  message: string;
+  data: {
+    user: User;
+    verificationToken: string;
   };
-  verificationToken: string;
 }
 
-export interface RefreshTokenResponse {
-  accessToken: string;
+export interface ApiResponse<T = any> {
+  success: boolean;
+  message: string;
+  data?: T;
 }
 
+/**
+ * Auth Service
+ * All token management is handled by httpOnly cookies
+ */
 export const authService = {
   /**
    * Login with email and password
+   * Server sets accessToken and refreshToken as httpOnly cookies
    */
-  async login(data: LoginRequest): Promise<AuthResponse> {
-    const response = await axiosInstance.post<{
-      success: boolean;
-      message: string;
-      data: { user: AuthResponse['user']; accessToken: string };
-    }>("/auth/login", data);
-    
-    return {
-      accessToken: response.data.data.accessToken,
-      user: response.data.data.user,
-    };
+  async login(data: LoginRequest): Promise<User> {
+    const response = await axiosInstance.post<AuthResponse>("/auth/login", data);
+    return response.data.data.user;
   },
 
   /**
    * Register a new user
    */
-  async register(data: RegisterRequest): Promise<RegisterResponse> {
-    const response = await axiosInstance.post<{
-      success: boolean;
-      message: string;
-      data: { user: RegisterResponse['user']; verificationToken: string };
-    }>("/auth/register", data);
-    
-    return {
-      user: response.data.data.user,
-      verificationToken: response.data.data.verificationToken,
-    };
+  async register(data: RegisterRequest): Promise<RegisterResponse["data"]> {
+    const response = await axiosInstance.post<RegisterResponse>(
+      "/auth/register",
+      data
+    );
+    return response.data.data;
   },
 
   /**
    * Logout user
+   * Server clears both cookies
    */
   async logout(): Promise<void> {
-    await axiosInstance.post("/auth/logout");
+    try {
+      await axiosInstance.post("/auth/logout");
+    } finally {
+      // Always redirect to login, even if request fails
+      if (typeof window !== "undefined") {
+        window.location.href = "/signIn";
+      }
+    }
   },
 
   /**
-   * Refresh access token using refresh token
+   * Refresh access token
+   * This is called automatically by axios interceptor
+   * You typically don't need to call this manually
+   * Server reads refreshToken from cookie and sets new accessToken cookie
    */
-  async refreshToken(refreshToken: string): Promise<RefreshTokenResponse> {
-    const response = await axiosInstance.post<RefreshTokenResponse>(
-      "/auth/refresh-tokens",
-      { refreshToken }
+  async refreshToken(): Promise<void> {
+    await axiosInstance.post("/auth/refresh-tokens");
+    // No return value needed - new cookie is set by server
+  },
+
+  /**
+   * Verify email with token
+   */
+  async verifyEmail(token: string): Promise<ApiResponse> {
+    const response = await axiosInstance.get<ApiResponse>(
+      "/auth/verify-email",
+      {
+        params: { token },
+      }
     );
-    return response.data;
-  },
-
-  /**
-   * Verify email
-   */
-  async verifyEmail(token: string) {
-    const response = await axiosInstance.get("/auth/verify-email", {
-      params: { token },
-    });
     return response.data;
   },
 
   /**
    * Resend verification email
    */
-  async resendVerification(email: string) {
-    const response = await axiosInstance.post("/auth/resend-verification", {
-      email,
-    });
+  async resendVerification(email: string): Promise<ApiResponse> {
+    const response = await axiosInstance.post<ApiResponse>(
+      "/auth/resend-verification",
+      { email }
+    );
     return response.data;
   },
 
   /**
    * Request password reset
    */
-  async requestPasswordReset(email: string) {
-    const response = await axiosInstance.post("/auth/forgot-password", {
-      email,
-    });
+  async forgotPassword(email: string): Promise<ApiResponse> {
+    const response = await axiosInstance.post<ApiResponse>(
+      "/auth/forgot-password",
+      { email }
+    );
     return response.data;
   },
 
   /**
    * Reset password with token
    */
-  async resetPassword(token: string, newPassword: string) {
-    const response = await axiosInstance.post("/auth/reset-password", {
-      token,
-      newPassword,
-    });
+  async resetPassword(token: string, password: string): Promise<ApiResponse> {
+    const response = await axiosInstance.post<ApiResponse>(
+      "/auth/reset-password",
+      { token, password }
+    );
     return response.data;
+  },
+
+  /**
+   * Get current authenticated user
+   * Useful for checking auth status or getting user info
+   */
+  async getCurrentUser(): Promise<User> {
+    const response = await axiosInstance.get<AuthResponse>("/auth/me");
+    return response.data.data.user;
   },
 
   /**
@@ -130,7 +157,7 @@ export const authService = {
    * Redirects user to Google login page
    */
   initiateGoogleAuth(): void {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
     window.location.href = `${apiUrl}/auth/google`;
   },
 };

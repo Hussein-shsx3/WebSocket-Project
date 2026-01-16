@@ -3,7 +3,7 @@ import { verifyAccessToken } from "../utils/jwt.util";
 import { AuthenticationError } from "../types/error.types";
 
 /**
- * Extend Passport User type to include custom fields
+ * Extend Express User type to include custom fields
  */
 declare global {
   namespace Express {
@@ -16,7 +16,8 @@ declare global {
 }
 
 /**
- * Authenticate Access Token Middleware
+ * Authenticate Access Token Middleware (Cookie-based)
+ * Reads accessToken from httpOnly cookie instead of Authorization header
  */
 export const authenticate = (
   req: Request,
@@ -24,19 +25,19 @@ export const authenticate = (
   next: NextFunction
 ): void => {
   try {
-    const authHeader = req.headers.authorization;
-    // auth header debug log removed
+    console.log("🔐 Auth middleware called for:", req.path);
+    // Get access token from cookie
+    const accessToken = req.cookies?.accessToken;
+    console.log("Access token present:", !!accessToken);
 
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      throw new AuthenticationError("No token provided");
+    if (!accessToken) {
+      throw new AuthenticationError("No access token provided");
     }
 
-    const token = authHeader.slice(7);
-    // token debug log removed
+    // Verify token
+    const decoded = verifyAccessToken(accessToken);
 
-    const decoded = verifyAccessToken(token);
-    // decoded token debug log removed
-
+    // Attach user to request
     req.user = {
       userId: decoded.userId,
       email: decoded.email,
@@ -46,7 +47,10 @@ export const authenticate = (
     next();
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error("❌ Auth Error:", errorMessage); // Debug log
+    console.error("❌ Auth Error:", errorMessage);
+
+    // Return 401 for expired/invalid tokens
+    // Client's axios interceptor will catch this and trigger refresh
     res.status(401).json({
       success: false,
       message: "Unauthorized",
@@ -57,6 +61,7 @@ export const authenticate = (
 
 /**
  * Optional Authenticate - Doesn't throw error if token missing
+ * Useful for routes that work for both authenticated and unauthenticated users
  */
 export const optionalAuthenticate = (
   req: Request,
@@ -64,11 +69,10 @@ export const optionalAuthenticate = (
   next: NextFunction
 ): void => {
   try {
-    const authHeader = req.headers.authorization;
+    const accessToken = req.cookies?.accessToken;
 
-    if (authHeader && authHeader.startsWith("Bearer ")) {
-      const token = authHeader.slice(7);
-      const decoded = verifyAccessToken(token);
+    if (accessToken) {
+      const decoded = verifyAccessToken(accessToken);
 
       req.user = {
         userId: decoded.userId,

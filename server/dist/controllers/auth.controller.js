@@ -1,11 +1,18 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.logout = exports.refreshTokens = exports.resetPassword = exports.forgotPassword = exports.resendVerification = exports.verifyEmail = exports.login = exports.register = void 0;
+exports.getCurrentUser = exports.logout = exports.refreshTokens = exports.resetPassword = exports.forgotPassword = exports.resendVerification = exports.verifyEmail = exports.login = exports.register = void 0;
 const zod_1 = require("zod");
 const auth_service_1 = require("../services/auth.service");
 const auth_dto_1 = require("../dto/auth.dto");
 const error_middleware_1 = require("../middleware/error.middleware");
 const authService = new auth_service_1.AuthService();
+const getCookieConfig = (maxAge) => ({
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge,
+    path: "/",
+});
 exports.register = (0, error_middleware_1.asyncHandler)(async (req, res) => {
     const parse = auth_dto_1.registerSchema.safeParse(req.body);
     if (!parse.success) {
@@ -29,18 +36,13 @@ exports.login = (0, error_middleware_1.asyncHandler)(async (req, res) => {
         return res.status(400).json({ success: false, errors });
     }
     const result = await authService.login(parse.data);
-    res.cookie("refreshToken", result.refreshToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    res.cookie("accessToken", result.accessToken, getCookieConfig(15 * 60 * 1000));
+    res.cookie("refreshToken", result.refreshToken, getCookieConfig(7 * 24 * 60 * 60 * 1000));
     return res.status(200).json({
         success: true,
         message: "Login successful",
         data: {
             user: result.user,
-            accessToken: result.accessToken,
         },
     });
 });
@@ -98,17 +100,18 @@ exports.resetPassword = (0, error_middleware_1.asyncHandler)(async (req, res) =>
 });
 exports.refreshTokens = (0, error_middleware_1.asyncHandler)(async (req, res) => {
     const refreshToken = req.cookies?.refreshToken;
+    if (!refreshToken) {
+        return res.status(401).json({
+            success: false,
+            message: "No refresh token provided",
+        });
+    }
     const result = await authService.refreshTokens(refreshToken);
-    res.cookie("refreshToken", result.tokens.refreshToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    res.cookie("accessToken", result.tokens.accessToken, getCookieConfig(15 * 60 * 1000));
+    res.cookie("refreshToken", result.tokens.refreshToken, getCookieConfig(7 * 24 * 60 * 60 * 1000));
     return res.status(200).json({
         success: true,
-        message: "Tokens refreshed",
-        data: { accessToken: result.tokens.accessToken },
+        message: "Tokens refreshed successfully",
     });
 });
 exports.logout = (0, error_middleware_1.asyncHandler)(async (req, res) => {
@@ -120,10 +123,33 @@ exports.logout = (0, error_middleware_1.asyncHandler)(async (req, res) => {
         });
     }
     await authService.logout(userId);
-    res.clearCookie("refreshToken");
+    res.clearCookie("accessToken", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+    });
+    res.clearCookie("refreshToken", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+    });
     return res.status(200).json({
         success: true,
         message: "Logged out successfully",
+    });
+});
+exports.getCurrentUser = (0, error_middleware_1.asyncHandler)(async (req, res) => {
+    const userId = req.user?.userId;
+    if (!userId) {
+        return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+    const result = await authService.getCurrentUser(userId);
+    return res.json({
+        success: true,
+        message: "User retrieved successfully",
+        data: result,
     });
 });
 //# sourceMappingURL=auth.controller.js.map

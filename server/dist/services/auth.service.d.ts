@@ -60,5 +60,14 @@ export declare class AuthService {
         success: boolean;
         message: string;
     }>;
+    getCurrentUser(userId: string): Promise<{
+        user: {
+            name: string | null;
+            id: string;
+            email: string;
+            role: import(".prisma/client").$Enums.UserRole;
+            createdAt: Date;
+        };
+    }>;
 }
 //# sourceMappingURL=auth.service.d.ts.map

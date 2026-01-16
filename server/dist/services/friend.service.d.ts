@@ -34,6 +34,13 @@ export declare function acceptFriendRequest(requestId: string, userId: string): 
         userId: string;
         friendId: string;
     };
+    conversation: {
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        isArchived: boolean;
+        lastMessageAt: Date | null;
+    } | null;
 }>;
 export declare function rejectFriendRequest(requestId: string, userId: string): Promise<{
     id: string;

@@ -5,16 +5,9 @@ import { asyncHandler } from "../middleware/error.middleware";
 
 export const googleCallback = async (req: Request, res: Response): Promise<void> => {
   try {
-    const googleUser = (req as any).user as
-      | { id: string; email: string; name?: string; avatar?: string; role?: string }
-      | undefined;
-
+    const googleUser = (req as any).user;
     if (!googleUser || !googleUser.id || !googleUser.email) {
-      res.status(401).json({
-        success: false,
-        message: "Authentication failed",
-      });
-      return;
+      return res.status(401).redirect(`${config.CLIENT_URL}/auth/error`);
     }
 
     const tokens = generateAuthTokens({
@@ -23,29 +16,28 @@ export const googleCallback = async (req: Request, res: Response): Promise<void>
       role: googleUser.role || "USER",
     });
 
+    // Set both cookies
+    res.cookie("accessToken", tokens.accessToken, {
+      httpOnly: true,
+      secure: config.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 15 * 60 * 1000, // 15 minutes
+      path: "/",
+    });
+
     res.cookie("refreshToken", tokens.refreshToken, {
       httpOnly: true,
       secure: config.NODE_ENV === "production",
       sameSite: "strict",
-      maxAge: 30 * 24 * 60 * 60 * 1000,
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      path: "/",
     });
 
-    const redirectUrl = `${config.CLIENT_URL}/google-callback?token=${tokens.accessToken}&user=${encodeURIComponent(
-      JSON.stringify({
-        id: googleUser.id,
-        email: googleUser.email,
-        name: googleUser.name || "",
-        avatar: googleUser.avatar || "",
-        role: googleUser.role || "USER",
-      })
-    )}`;
-
-    res.redirect(redirectUrl);
+    // Redirect to protected page
+    res.redirect(`${config.CLIENT_URL}/chats`);
   } catch (error) {
     console.error("Google callback error:", error);
-    res.redirect(
-      `${config.CLIENT_URL}/auth/error?message=Authentication failed`
-    );
+    res.redirect(`${config.CLIENT_URL}/auth/error`);
   }
 };
 

@@ -5,9 +5,6 @@ import {
   ConversationUser,
 } from "@/services/conversations.service";
 
-/**
- * Hook for getting or creating conversation with a friend
- */
 export const useGetOrCreateConversation = () => {
   const queryClient = useQueryClient();
 
@@ -15,7 +12,6 @@ export const useGetOrCreateConversation = () => {
     mutationFn: (data: GetOrCreateConversationRequest) =>
       conversationsService.getOrCreateConversation(data),
     onSuccess: () => {
-      // Invalidate conversations list to refetch
       queryClient.invalidateQueries({ queryKey: ["conversations"] });
     },
     onError: (error) => {
@@ -24,13 +20,6 @@ export const useGetOrCreateConversation = () => {
   });
 };
 
-/**
- * Hook for getting all conversations
- * @param limit - Maximum number of conversations to return (default: 50)
- * @param page - Page number for pagination (default: 1)
- * @param archived - Filter by archived status (optional)
- * @param enabled - Whether the query should run (default: true)
- */
 export const useConversations = (
   limit: number = 50,
   page: number = 1,
@@ -46,10 +35,6 @@ export const useConversations = (
   });
 };
 
-/**
- * Hook for getting single conversation
- * @param conversationId - ID of the conversation to fetch
- */
 export const useConversation = (conversationId: string | null) => {
   return useQuery({
     queryKey: ["conversation", conversationId],
@@ -60,10 +45,6 @@ export const useConversation = (conversationId: string | null) => {
   });
 };
 
-/**
- * Hook for getting other user in conversation
- * @param conversationId - ID of the conversation
- */
 export const useConversationOtherUser = (conversationId: string | null) => {
   return useQuery<ConversationUser>({
     queryKey: ["conversation", conversationId, "otherUser"],
@@ -73,9 +54,6 @@ export const useConversationOtherUser = (conversationId: string | null) => {
   });
 };
 
-/**
- * Hook for archiving conversation
- */
 export const useArchiveConversation = () => {
   const queryClient = useQueryClient();
 
@@ -92,9 +70,6 @@ export const useArchiveConversation = () => {
   });
 };
 
-/**
- * Hook for unarchiving conversation
- */
 export const useUnarchiveConversation = () => {
   const queryClient = useQueryClient();
 
@@ -110,9 +85,6 @@ export const useUnarchiveConversation = () => {
   });
 };
 
-/**
- * Hook for muting conversation
- */
 export const useMuteConversation = () => {
   const queryClient = useQueryClient();
 
@@ -128,9 +100,6 @@ export const useMuteConversation = () => {
   });
 };
 
-/**
- * Hook for unmuting conversation
- */
 export const useUnmuteConversation = () => {
   const queryClient = useQueryClient();
 
@@ -146,9 +115,6 @@ export const useUnmuteConversation = () => {
   });
 };
 
-/**
- * Hook for deleting conversation
- */
 export const useDeleteConversation = () => {
   const queryClient = useQueryClient();
 
