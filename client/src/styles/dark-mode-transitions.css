@@ -8,14 +8,14 @@
 :root,
 .dark {
   transition-property: background-color, border-color, color;
-  transition-duration: 300ms;
+  transition-duration: 200ms;
   transition-timing-function: ease-in-out;
 }
 
 /* Ensure all Tailwind color utilities inherit the transition */
 * {
   transition-property: background-color, border-color, color, box-shadow;
-  transition-duration: 300ms;
+  transition-duration: 200ms;
   transition-timing-function: ease-in-out;
 }
 

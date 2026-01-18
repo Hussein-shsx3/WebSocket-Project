@@ -14,10 +14,14 @@ export function ProtectedLayout({ children }: ProtectedLayoutProps) {
   const router = useRouter();
 
   useEffect(() => {
+    if (error) {
+      router.push("/signIn");
+      return;
+    }
     if (!isLoading && !user) {
       router.push("/signIn");
     }
-  }, [user, isLoading, router]);
+  }, [user, isLoading, error, router]);
 
   if (isLoading) {
     return (
@@ -28,7 +32,7 @@ export function ProtectedLayout({ children }: ProtectedLayoutProps) {
   }
 
   if (error || !user) {
-    return null; // Will redirect in useEffect
+    return null; 
   }
 
   return <MainLayout>{children}</MainLayout>;

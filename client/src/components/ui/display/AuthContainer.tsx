@@ -28,6 +28,7 @@ const AuthContainer = ({ children }: ContainerProps) => {
         alt="Authentication Image"
         width={830}
         height={830}
+        loading="eager"
       />
     </section>
   );

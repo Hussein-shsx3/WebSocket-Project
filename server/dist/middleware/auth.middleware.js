@@ -5,7 +5,12 @@ const jwt_util_1 = require("../utils/jwt.util");
 const error_types_1 = require("../types/error.types");
 const authenticate = (req, res, next) => {
     try {
-        const accessToken = req.cookies?.accessToken;
+        console.log("🔐 Auth middleware called for:", req.path);
+        const authHeader = req.headers.authorization;
+        const accessToken = authHeader && authHeader.startsWith('Bearer ')
+            ? authHeader.substring(7)
+            : null;
+        console.log("Access token present:", !!accessToken);
         if (!accessToken) {
             throw new error_types_1.AuthenticationError("No access token provided");
         }
@@ -30,7 +35,10 @@ const authenticate = (req, res, next) => {
 exports.authenticate = authenticate;
 const optionalAuthenticate = (req, res, next) => {
     try {
-        const accessToken = req.cookies?.accessToken;
+        const authHeader = req.headers.authorization;
+        const accessToken = authHeader && authHeader.startsWith('Bearer ')
+            ? authHeader.substring(7)
+            : null;
         if (accessToken) {
             const decoded = (0, jwt_util_1.verifyAccessToken)(accessToken);
             req.user = {

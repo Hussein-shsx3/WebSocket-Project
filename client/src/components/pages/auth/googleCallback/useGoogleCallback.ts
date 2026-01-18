@@ -9,24 +9,18 @@ export const useGoogleCallback = () => {
 
   // Process auth data - compute once without side effects
   const errorMessage = useMemo(() => {
-    const token = searchParams.get("token");
-    const userJson = searchParams.get("user");
+    const success = searchParams.get("success");
+    const error = searchParams.get("error");
 
-    // Validation: missing data
-    if (!token || !userJson) {
-      return "Invalid callback: missing token or user data";
+    if (error) {
+      return decodeURIComponent(error);
     }
 
-    try {
-      // Parse user data (validates JSON structure)
-      JSON.parse(decodeURIComponent(userJson));
-
-      // Since server sets cookies, no need to store token manually
+    if (success === "true") {
       return "";
-    } catch (err) {
-      console.error("Error processing Google callback:", err);
-      return "Failed to process authentication. Please try again.";
     }
+
+    return "Invalid callback parameters";
   }, [searchParams]);
 
   // Handle navigation after processing

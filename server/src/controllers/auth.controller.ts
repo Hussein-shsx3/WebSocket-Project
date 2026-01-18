@@ -15,11 +15,11 @@ const authService = new AuthService();
 /**
  * Cookie configuration helper
  */
-const getCookieConfig = (maxAge: number) => ({
+const getRefreshTokenCookieConfig = () => ({
   httpOnly: true, // Cannot be accessed by JavaScript
   secure: process.env.NODE_ENV === "production", // HTTPS only in production
-  sameSite: "lax" as const, // CSRF protection
-  maxAge, // in milliseconds
+  sameSite: "strict" as const, // CSRF protection
+  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   path: "/", // Available on all routes
 });
 
@@ -51,28 +51,15 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
 
   const result = await authService.login(parse.data);
 
-  console.log("✅ Login successful, setting cookies");
-  // Set both tokens as httpOnly cookies
-  // Access token - 15 minutes (for testing, change to 1h for production)
-  res.cookie(
-    "accessToken",
-    result.accessToken,
-    getCookieConfig(15 * 60 * 1000) // 15 minutes
-  );
+  // Set refresh token as HTTP-only cookie
+  res.cookie("refreshToken", result.refreshToken, getRefreshTokenCookieConfig());
 
-  // Refresh token - 7 days
-  res.cookie(
-    "refreshToken",
-    result.refreshToken,
-    getCookieConfig(7 * 24 * 60 * 60 * 1000) // 7 days
-  );
-
-  // Return user data only (NO tokens in response body)
   return res.status(200).json({
     success: true,
     message: "Login successful",
     data: {
       user: result.user,
+      accessToken: result.accessToken,
     },
   });
 });
@@ -153,39 +140,25 @@ export const resetPassword = asyncHandler(
 
 export const refreshTokens = asyncHandler(
   async (req: Request, res: Response) => {
-    console.log("🔄 Refresh tokens request received");
-    // Get refresh token from cookie
-    const refreshToken = req.cookies?.refreshToken;
-    console.log("Refresh token from cookie:", !!refreshToken);
+    const oldRefreshToken = req.cookies?.refreshToken;
 
-    if (!refreshToken) {
+    if (!oldRefreshToken) {
       return res.status(401).json({
         success: false,
-        message: "No refresh token provided",
+        message: "Refresh token missing",
       });
     }
 
-    const result = await authService.refreshTokens(refreshToken);
+    const { accessToken, refreshToken } =
+      await authService.refreshToken(oldRefreshToken);
 
-    console.log("✅ Refresh successful, setting new cookies");
-    // Set new access token as cookie
-    res.cookie(
-      "accessToken",
-      result.tokens.accessToken,
-      getCookieConfig(15 * 60 * 1000) // 15 minutes
-    );
+    // Set new refresh token as HTTP-only cookie
+    res.cookie("refreshToken", refreshToken, getRefreshTokenCookieConfig());
 
-    // Update refresh token cookie (rotation strategy)
-    res.cookie(
-      "refreshToken",
-      result.tokens.refreshToken,
-      getCookieConfig(7 * 24 * 60 * 60 * 1000) // 7 days
-    );
-
-    // Return success only (NO tokens in response body)
     return res.status(200).json({
       success: true,
-      message: "Tokens refreshed successfully",
+      message: "Token refreshed successfully",
+      data: { accessToken },
     });
   }
 );
@@ -202,18 +175,11 @@ export const logout = asyncHandler(async (req: Request, res: Response) => {
 
   await authService.logout(userId);
 
-  // Clear both cookies
-  res.clearCookie("accessToken", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-  });
-
+  // Clear refresh token cookie
   res.clearCookie("refreshToken", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    sameSite: "strict",
     path: "/",
   });
 
@@ -223,17 +189,20 @@ export const logout = asyncHandler(async (req: Request, res: Response) => {
   });
 });
 
-export const getCurrentUser = asyncHandler(async (req: Request, res: Response) => {
-  const userId = req.user?.userId;
-  if (!userId) {
-    return res.status(401).json({ success: false, message: "Unauthorized" });
+export const getCurrentUser = asyncHandler(
+  async (req: Request, res: Response) => {
+    const userId = req.user?.userId;
+    
+    if (!userId) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
+    const result = await authService.getCurrentUser(userId);
+
+    return res.json({
+      success: true,
+      message: "User retrieved successfully",
+      data: result,
+    });
   }
-
-  const result = await authService.getCurrentUser(userId);
-
-  return res.json({
-    success: true,
-    message: "User retrieved successfully",
-    data: result,
-  });
-});
+);

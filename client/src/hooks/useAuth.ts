@@ -77,6 +77,8 @@ export const useCurrentUser = () => {
       return user;
     },
     retry: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
     staleTime: 5 * 60 * 1000,
   });
 };

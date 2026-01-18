@@ -16,28 +16,27 @@ declare global {
 }
 
 /**
- * Authenticate Access Token Middleware (Cookie-based)
- * Reads accessToken from httpOnly cookie instead of Authorization header
+ * Authenticate Access Token Middleware (Header-based)
+ * Reads accessToken from Authorization header
  */
 export const authenticate = (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): void => {
   try {
-    console.log("🔐 Auth middleware called for:", req.path);
-    // Get access token from cookie
-    const accessToken = req.cookies?.accessToken;
-    console.log("Access token present:", !!accessToken);
+    const authHeader = req.headers.authorization;
 
-    if (!accessToken) {
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
       throw new AuthenticationError("No access token provided");
     }
+
+    const accessToken = authHeader.substring(7);
 
     // Verify token
     const decoded = verifyAccessToken(accessToken);
 
-    // Attach user to request
+    // Attach user info to request
     req.user = {
       userId: decoded.userId,
       email: decoded.email,
@@ -46,15 +45,32 @@ export const authenticate = (
 
     next();
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error("❌ Auth Error:", errorMessage);
+    // Handle specific JWT errors
+    if (error instanceof Error) {
+      if (error.message.includes("expired")) {
+        res.status(401).json({
+          success: false,
+          message: "Access token has expired",
+          code: "TOKEN_EXPIRED",
+        });
+        return;
+      }
 
-    // Return 401 for expired/invalid tokens
-    // Client's axios interceptor will catch this and trigger refresh
+      if (error.message.includes("invalid")) {
+        res.status(401).json({
+          success: false,
+          message: "Invalid access token",
+          code: "TOKEN_INVALID",
+        });
+        return;
+      }
+    }
+
+    // Generic unauthorized response
     res.status(401).json({
       success: false,
       message: "Unauthorized",
-      error: errorMessage,
+      error: error instanceof Error ? error.message : String(error),
     });
   }
 };
@@ -66,12 +82,13 @@ export const authenticate = (
 export const optionalAuthenticate = (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): void => {
   try {
-    const accessToken = req.cookies?.accessToken;
+    const authHeader = req.headers.authorization;
 
-    if (accessToken) {
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      const accessToken = authHeader.substring(7);
       const decoded = verifyAccessToken(accessToken);
 
       req.user = {
@@ -84,6 +101,7 @@ export const optionalAuthenticate = (
     next();
   } catch (error) {
     // Continue without authentication if token is invalid
+    // This is intentional for optional auth
     next();
   }
 };
@@ -97,6 +115,7 @@ export const isAuthenticated = (req: Request): boolean => {
 
 /**
  * Authorize by role
+ * Use after authenticate middleware
  */
 export const authorize = (...allowedRoles: string[]) => {
   return (req: Request, res: Response, next: NextFunction): void => {
@@ -108,12 +127,14 @@ export const authorize = (...allowedRoles: string[]) => {
       return;
     }
 
-    if (!allowedRoles.includes(req.user.role || "USER")) {
+    const userRole = req.user.role || "USER";
+
+    if (!allowedRoles.includes(userRole)) {
       res.status(403).json({
         success: false,
-        message:
-          "Insufficient permissions. Required roles: " +
-          allowedRoles.join(", "),
+        message: "Insufficient permissions",
+        required: allowedRoles,
+        current: userRole,
       });
       return;
     }

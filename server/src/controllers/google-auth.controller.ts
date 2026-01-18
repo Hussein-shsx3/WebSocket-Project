@@ -1,46 +1,67 @@
 import { Request, Response } from "express";
-import { generateAuthTokens } from "../utils/jwt.util";
+import { generateAccessToken, generateRefreshToken } from "../utils/jwt.util";
 import { config } from "../config/env.config";
 import { asyncHandler } from "../middleware/error.middleware";
+import prisma from "../config/db";
 
-export const googleCallback = async (req: Request, res: Response): Promise<void> => {
-  try {
+/**
+ * Cookie configuration helper
+ */
+const getRefreshTokenCookieConfig = () => ({
+  httpOnly: true,
+  secure: config.NODE_ENV === "production",
+  sameSite: "strict" as const,
+  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  path: "/", // Available on all routes
+});
+
+/**
+ * Google OAuth callback
+ */
+export const googleCallback = asyncHandler(
+  async (req: Request, res: Response) => {
     const googleUser = (req as any).user;
+
     if (!googleUser || !googleUser.id || !googleUser.email) {
-      return res.status(401).redirect(`${config.CLIENT_URL}/auth/error`);
+      return res.redirect(
+        `${config.CLIENT_URL}/google-callback?error=${encodeURIComponent(
+          "Authentication failed",
+        )}`,
+      );
     }
 
-    const tokens = generateAuthTokens({
+    // Generate tokens
+    const accessToken = generateAccessToken({
       userId: googleUser.id,
       email: googleUser.email,
       role: googleUser.role || "USER",
     });
 
-    // Set both cookies
-    res.cookie("accessToken", tokens.accessToken, {
-      httpOnly: true,
-      secure: config.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 15 * 60 * 1000, // 15 minutes
-      path: "/",
+    const refreshToken = generateRefreshToken({
+      userId: googleUser.id,
+      email: googleUser.email,
+      role: googleUser.role || "USER",
     });
 
-    res.cookie("refreshToken", tokens.refreshToken, {
-      httpOnly: true,
-      secure: config.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      path: "/",
+    // Store refresh token in DB
+    await prisma.user.update({
+      where: { id: googleUser.id },
+      data: { refreshToken },
     });
 
-    // Redirect to protected page
-    res.redirect(`${config.CLIENT_URL}/chats`);
-  } catch (error) {
-    console.error("Google callback error:", error);
-    res.redirect(`${config.CLIENT_URL}/auth/error`);
-  }
-};
+    // Set refresh token as HTTP-only cookie
+    res.cookie("refreshToken", refreshToken, getRefreshTokenCookieConfig());
 
+    // Redirect with access token in URL parameter
+    res.redirect(
+      `${config.CLIENT_URL}/google-callback?accessToken=${accessToken}`,
+    );
+  },
+);
+
+/**
+ * Initiates Google login
+ */
 export const googleAuth = (req: Request, res: Response): void => {
   res.json({
     success: true,
@@ -48,21 +69,37 @@ export const googleAuth = (req: Request, res: Response): void => {
   });
 };
 
-export const googleLogout = asyncHandler(async (req: Request, res: Response): Promise<void> => {
-  const userId = req.user?.userId;
+/**
+ * Logout Google user
+ */
+export const googleLogout = asyncHandler(
+  async (req: Request, res: Response) => {
+    const userId = req.user?.userId;
 
-  if (!userId) {
-    res.status(401).json({
-      success: false,
-      message: "Not authenticated",
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Not authenticated",
+      });
+    }
+
+    // Remove refresh token from DB
+    await prisma.user.update({
+      where: { id: userId },
+      data: { refreshToken: null },
     });
-    return;
-  }
 
-  res.clearCookie("refreshToken");
+    // Clear refresh token cookie
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: config.NODE_ENV === "production",
+      sameSite: "strict",
+      path: "/",
+    });
 
-  res.status(200).json({
-    success: true,
-    message: "Logged out successfully",
-  });
-});
+    return res.status(200).json({
+      success: true,
+      message: "Logged out successfully",
+    });
+  },
+);

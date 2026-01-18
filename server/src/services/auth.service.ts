@@ -5,7 +5,6 @@ import {
   generateAccessToken,
   generateRefreshToken,
   verifyRefreshToken,
-  generateAuthTokens,
 } from "../utils/jwt.util";
 import {
   ConflictError,
@@ -34,7 +33,7 @@ export class AuthService {
     // Hash password
     const hashedPassword = await bcrypt.hash(
       data.password,
-      parseInt(process.env.BCRYPT_ROUNDS || "10")
+      parseInt(process.env.BCRYPT_ROUNDS || "10"),
     );
 
     // Create user (role defaults to USER)
@@ -75,7 +74,7 @@ export class AuthService {
       user.email,
       verificationToken,
       verificationLink,
-      user.name || undefined
+      user.name || undefined,
     );
 
     return {
@@ -83,60 +82,36 @@ export class AuthService {
       verificationToken,
     };
   }
-
   async login(data: LoginDTO) {
-    // Find user by email
-    const user = await prisma.user.findUnique({
-      where: { email: data.email },
-      select: {
-        id: true,
-        email: true,
-        password: true,
-        name: true,
-        role: true,
-        createdAt: true,
-      },
-    });
-
-    if (!user) {
-      throw new AuthenticationError("Invalid email or password");
+    const user = await prisma.user.findUnique({ where: { email: data.email } });
+    if (!user || !user.password) {
+      throw new AuthenticationError("Invalid credentials");
     }
 
-    // Compare password
-    if (!user.password) {
-      throw new AuthenticationError("Invalid email or password");
-    }
-    const isPasswordValid = await bcrypt.compare(data.password, user.password);
-
-    if (!isPasswordValid) {
-      throw new AuthenticationError("Invalid email or password");
+    const valid = await bcrypt.compare(data.password, user.password);
+    if (!valid) {
+      throw new AuthenticationError("Invalid credentials");
     }
 
-    // Generate tokens
     const accessToken = generateAccessToken({
       userId: user.id,
       email: user.email,
       role: user.role,
     });
+
     const refreshToken = generateRefreshToken({
       userId: user.id,
       email: user.email,
       role: user.role,
     });
 
-    // Update refresh token in database
     await prisma.user.update({
       where: { id: user.id },
       data: { refreshToken },
     });
 
     return {
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        createdAt: user.createdAt,
-      },
+      user,
       accessToken,
       refreshToken,
     };
@@ -212,7 +187,7 @@ export class AuthService {
       user.email,
       verificationToken,
       verificationLink,
-      user.name || undefined
+      user.name || undefined,
     );
 
     return { success: true, message: "Verification email resent" };
@@ -250,7 +225,7 @@ export class AuthService {
       user.email,
       resetToken,
       resetLink,
-      user.name || undefined
+      user.name || undefined,
     );
 
     return {
@@ -271,7 +246,7 @@ export class AuthService {
 
     const hashed = await bcrypt.hash(
       newPassword,
-      parseInt(process.env.BCRYPT_ROUNDS || "10")
+      parseInt(process.env.BCRYPT_ROUNDS || "10"),
     );
 
     // Update user password and clear refresh token
@@ -294,46 +269,47 @@ export class AuthService {
     };
   }
 
-  async refreshTokens(refreshToken: string) {
-    if (!refreshToken) throw new AuthenticationError("Refresh token missing");
-    // verify refresh token
-    const decoded = verifyRefreshToken(refreshToken);
+async refreshToken(oldRefreshToken: string) {
+  const decoded = verifyRefreshToken(oldRefreshToken);
 
-    // Make sure token matches what we have stored for the user
-    const dbUser = await prisma.user.findUnique({
-      where: { id: decoded.userId },
-    });
-    if (!dbUser || !dbUser.refreshToken)
-      throw new AuthenticationError("Invalid session");
-    if (dbUser.refreshToken !== refreshToken)
-      throw new AuthenticationError("Invalid refresh token");
+  const user = await prisma.user.findUnique({
+    where: { id: decoded.userId },
+  });
 
-    // Generate new tokens
-    const tokens = generateAuthTokens({
-      userId: decoded.userId,
-      email: decoded.email,
-    });
-
-    // Update stored refresh token
-    await prisma.user.update({
-      where: { id: decoded.userId },
-      data: { refreshToken: tokens.refreshToken },
-    });
-
-    return { success: true, tokens };
+  if (!user || user.refreshToken !== oldRefreshToken) {
+    throw new AuthenticationError("Invalid refresh token");
   }
 
-  async logout(userId: string) {
-    // Remove stored refresh token and set status to offline
-    await prisma.user.update({
-      where: { id: userId },
-      data: {
-        refreshToken: null,
-        status: "offline",
-      },
-    });
-    return { success: true, message: "Logged out" };
-  }
+  const newAccessToken = generateAccessToken({
+    userId: user.id,
+    email: user.email,
+    role: user.role,
+  });
+
+  const newRefreshToken = generateRefreshToken({
+    userId: user.id,
+    email: user.email,
+    role: user.role,
+  });
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { refreshToken: newRefreshToken },
+  });
+
+  return { accessToken: newAccessToken, refreshToken: newRefreshToken };
+}
+
+
+async logout(userId: string) {
+  await prisma.user.update({
+    where: { id: userId },
+    data: { refreshToken: null },
+  });
+
+  return { success: true, message: "Logged out" };
+}
+
 
   async getCurrentUser(userId: string) {
     const user = await prisma.user.findUnique({

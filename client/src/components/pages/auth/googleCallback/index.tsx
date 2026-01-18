@@ -22,14 +22,14 @@ const GoogleCallback = () => {
         ) : (
           <>
             <FormHeader
-              title="Completing Sign In"
-              subtitle="Please wait while we complete your authentication..."
+              title="Sign In Successful"
+              subtitle="Welcome! Redirecting you to your dashboard..."
             />
             <div className="flex justify-center py-8">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primaryColor"></div>
             </div>
             <p className="text-center text-gray-600 text-sm">
-              Verifying your Google account and setting up your session...
+              Authentication completed successfully. Taking you to your chats...
             </p>
           </>
         )}
