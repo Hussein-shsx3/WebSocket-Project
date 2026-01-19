@@ -18,7 +18,7 @@ const authService = new AuthService();
 const getRefreshTokenCookieConfig = () => ({
   httpOnly: true, // Cannot be accessed by JavaScript
   secure: process.env.NODE_ENV === "production", // HTTPS only in production
-  sameSite: "strict" as const, // CSRF protection
+  sameSite: "lax" as const, // Allow cross-origin for localhost development
   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   path: "/", // Available on all routes
 });

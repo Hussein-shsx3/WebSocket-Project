@@ -5,15 +5,11 @@ const jwt_util_1 = require("../utils/jwt.util");
 const error_types_1 = require("../types/error.types");
 const authenticate = (req, res, next) => {
     try {
-        console.log("🔐 Auth middleware called for:", req.path);
         const authHeader = req.headers.authorization;
-        const accessToken = authHeader && authHeader.startsWith('Bearer ')
-            ? authHeader.substring(7)
-            : null;
-        console.log("Access token present:", !!accessToken);
-        if (!accessToken) {
+        if (!authHeader || !authHeader.startsWith("Bearer ")) {
             throw new error_types_1.AuthenticationError("No access token provided");
         }
+        const accessToken = authHeader.substring(7);
         const decoded = (0, jwt_util_1.verifyAccessToken)(accessToken);
         req.user = {
             userId: decoded.userId,
@@ -23,12 +19,28 @@ const authenticate = (req, res, next) => {
         next();
     }
     catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        console.error("❌ Auth Error:", errorMessage);
+        if (error instanceof Error) {
+            if (error.message.includes("expired")) {
+                res.status(401).json({
+                    success: false,
+                    message: "Access token has expired",
+                    code: "TOKEN_EXPIRED",
+                });
+                return;
+            }
+            if (error.message.includes("invalid")) {
+                res.status(401).json({
+                    success: false,
+                    message: "Invalid access token",
+                    code: "TOKEN_INVALID",
+                });
+                return;
+            }
+        }
         res.status(401).json({
             success: false,
             message: "Unauthorized",
-            error: errorMessage,
+            error: error instanceof Error ? error.message : String(error),
         });
     }
 };
@@ -36,10 +48,8 @@ exports.authenticate = authenticate;
 const optionalAuthenticate = (req, res, next) => {
     try {
         const authHeader = req.headers.authorization;
-        const accessToken = authHeader && authHeader.startsWith('Bearer ')
-            ? authHeader.substring(7)
-            : null;
-        if (accessToken) {
+        if (authHeader && authHeader.startsWith("Bearer ")) {
+            const accessToken = authHeader.substring(7);
             const decoded = (0, jwt_util_1.verifyAccessToken)(accessToken);
             req.user = {
                 userId: decoded.userId,
@@ -67,11 +77,13 @@ const authorize = (...allowedRoles) => {
             });
             return;
         }
-        if (!allowedRoles.includes(req.user.role || "USER")) {
+        const userRole = req.user.role || "USER";
+        if (!allowedRoles.includes(userRole)) {
             res.status(403).json({
                 success: false,
-                message: "Insufficient permissions. Required roles: " +
-                    allowedRoles.join(", "),
+                message: "Insufficient permissions",
+                required: allowedRoles,
+                current: userRole,
             });
             return;
         }

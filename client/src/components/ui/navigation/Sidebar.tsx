@@ -52,7 +52,7 @@ export function Sidebar() {
       {/* Desktop / Tablet sidebar on the left */}
       <aside className="hidden sm:flex w-[70px] bg-sidebar flex-col items-center py-4 gap-3 border-r border-border">
         {/* Logo/Brand */}
-        <div className="w-11 h-11 bg-gradient-to-br from-primaryColor to-primaryColor/80 rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-primaryColor/20">
+        <div className="w-11 h-11 bg-primaryColor rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-primaryColor/20">
           <MessageSquare className="w-6 h-6 text-white" strokeWidth={2} />
         </div>
 
@@ -97,7 +97,7 @@ export function Sidebar() {
           <div className="w-full flex items-center justify-center mt-2">
             <Link
               href="/profile"
-              className="w-11 h-11 rounded-2xl bg-gradient-to-br from-primaryColor to-primaryColor/80 flex items-center justify-center text-white text-sm font-bold hover:shadow-lg hover:shadow-primaryColor/20 transition-all duration-200 hover:scale-105"
+              className="w-11 h-11 rounded-2xl bg-primaryColor flex items-center justify-center text-white text-sm font-bold hover:shadow-lg hover:shadow-primaryColor/20 transition-all duration-200 hover:scale-105"
               title="Profile"
             >
               H

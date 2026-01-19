@@ -32,7 +32,7 @@ export function ProtectedLayout({ children }: ProtectedLayoutProps) {
   }
 
   if (error || !user) {
-    return null; 
+    return null;
   }
 
   return <MainLayout>{children}</MainLayout>;

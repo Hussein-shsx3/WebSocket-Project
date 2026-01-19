@@ -1,52 +1,61 @@
 // middleware.ts
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
-export function middleware(req: NextRequest) {
-  const { pathname } = req.nextUrl;
+const protectedRoutes = [
+  "/chats",
+  "/calls",
+  "/profile",
+  "/settings",
+  "/friendsRequests",
+];
 
-  const accessToken = req.cookies.get("accessToken")?.value;
-  const refreshToken = req.cookies.get("refreshToken")?.value;
-  const isAuthenticated = !!(accessToken || refreshToken);
+const authRoutes = [
+  "/signIn",
+  "/signUp",
+  "/forgot-password",
+  "/reset-password",
+  "/verify-email",
+];
 
-  const authRoutes = [
-    "/signIn",
-    "/signUp",
-    "/forgot-password",
-    "/reset-password",
-    "/verify-email",
-  ];
+export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
 
-  const protectedRoutes = [
-    "/",
-    "/chats",
-    "/calls",
-    "/profile",
-    "/settings",
-    "/friendsRequests",
-  ];
+  const refreshToken = request.cookies.get("refreshToken")?.value;
 
-  const isAuthRoute = authRoutes.some(route =>
-    pathname === route || pathname.startsWith(route + "/")
+  /* -----------------------------
+    1. Handle root path `/`
+  ------------------------------ */
+  if (pathname === "/") {
+    if (refreshToken) {
+      return NextResponse.redirect(new URL("/chats", request.url));
+    } else {
+      return NextResponse.redirect(new URL("/signIn", request.url));
+    }
+  }
+
+  const isProtectedRoute = protectedRoutes.some(
+    (route) => pathname === route || pathname.startsWith(route + "/")
   );
 
-  const isProtectedRoute = protectedRoutes.some(route =>
-    pathname === route || pathname.startsWith(route + "/")
+  const isAuthRoute = authRoutes.some(
+    (route) => pathname === route || pathname.startsWith(route + "/")
   );
 
-  /**
-   * 1️⃣ Protect private routes
-   */
-  if (isProtectedRoute && !isAuthenticated) {
-    const signInUrl = new URL("/signIn", req.url);
+  /* -----------------------------
+    2. Protected route without auth
+  ------------------------------ */
+  if (isProtectedRoute && !refreshToken) {
+    const signInUrl = new URL("/signIn", request.url);
     signInUrl.searchParams.set("redirect", pathname);
     return NextResponse.redirect(signInUrl);
   }
 
-  /**
-   * 2️⃣ Prevent logged-in users from auth pages
-   */
-  if (isAuthRoute && isAuthenticated) {
-    return NextResponse.redirect(new URL("/chats", req.url));
+  /* -----------------------------
+    3. Auth routes while logged in
+  ------------------------------ */
+  if (isAuthRoute && refreshToken) {
+    return NextResponse.redirect(new URL("/chats", request.url));
   }
 
   return NextResponse.next();
@@ -54,6 +63,6 @@ export function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!api|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    "/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

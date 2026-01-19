@@ -12,10 +12,19 @@ export declare class AuthService {
     }>;
     login(data: LoginDTO): Promise<{
         user: {
-            id: string;
             name: string | null;
+            id: string;
             email: string;
+            password: string | null;
+            avatar: string | null;
+            bio: string | null;
+            role: import(".prisma/client").$Enums.UserRole;
+            status: string;
+            emailVerified: boolean;
+            refreshToken: string | null;
+            googleId: string | null;
             createdAt: Date;
+            updatedAt: Date;
         };
         accessToken: string;
         refreshToken: string;
@@ -52,9 +61,9 @@ export declare class AuthService {
             };
         };
     }>;
-    refreshTokens(refreshToken: string): Promise<{
-        success: boolean;
-        tokens: import("../utils/jwt.util").AuthTokens;
+    refreshToken(oldRefreshToken: string): Promise<{
+        accessToken: string;
+        refreshToken: string;
     }>;
     logout(userId: string): Promise<{
         success: boolean;

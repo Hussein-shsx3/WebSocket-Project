@@ -6,11 +6,11 @@ const auth_service_1 = require("../services/auth.service");
 const auth_dto_1 = require("../dto/auth.dto");
 const error_middleware_1 = require("../middleware/error.middleware");
 const authService = new auth_service_1.AuthService();
-const getCookieConfig = (maxAge) => ({
+const getRefreshTokenCookieConfig = () => ({
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
-    maxAge,
+    maxAge: 7 * 24 * 60 * 60 * 1000,
     path: "/",
 });
 exports.register = (0, error_middleware_1.asyncHandler)(async (req, res) => {
@@ -36,6 +36,7 @@ exports.login = (0, error_middleware_1.asyncHandler)(async (req, res) => {
         return res.status(400).json({ success: false, errors });
     }
     const result = await authService.login(parse.data);
+    res.cookie("refreshToken", result.refreshToken, getRefreshTokenCookieConfig());
     return res.status(200).json({
         success: true,
         message: "Login successful",
@@ -97,39 +98,22 @@ exports.resetPassword = (0, error_middleware_1.asyncHandler)(async (req, res) =>
         data: result.data,
     });
 });
-const refreshTokens = async (req, res) => {
-    try {
-        console.log("🔄 Refresh tokens request received");
-        const authHeader = req.headers.authorization;
-        const refreshToken = authHeader && authHeader.startsWith('Bearer ')
-            ? authHeader.substring(7)
-            : null;
-        console.log("Refresh token from header:", !!refreshToken);
-        if (!refreshToken) {
-            return res.status(401).json({
-                success: false,
-                message: "No refresh token provided",
-            });
-        }
-        const result = await authService.refreshTokens(refreshToken);
-        console.log("✅ Refresh successful, returning new access token");
-        return res.status(200).json({
-            success: true,
-            message: "Tokens refreshed successfully",
-            data: {
-                accessToken: result.tokens.accessToken,
-            },
-        });
-    }
-    catch (error) {
-        console.error("❌ Refresh tokens failed:", error);
+exports.refreshTokens = (0, error_middleware_1.asyncHandler)(async (req, res) => {
+    const oldRefreshToken = req.cookies?.refreshToken;
+    if (!oldRefreshToken) {
         return res.status(401).json({
             success: false,
-            message: "Invalid refresh token",
+            message: "Refresh token missing",
         });
     }
-};
-exports.refreshTokens = refreshTokens;
+    const { accessToken, refreshToken } = await authService.refreshToken(oldRefreshToken);
+    res.cookie("refreshToken", refreshToken, getRefreshTokenCookieConfig());
+    return res.status(200).json({
+        success: true,
+        message: "Token refreshed successfully",
+        data: { accessToken },
+    });
+});
 exports.logout = (0, error_middleware_1.asyncHandler)(async (req, res) => {
     const userId = req.user?.userId;
     if (!userId) {
@@ -139,6 +123,12 @@ exports.logout = (0, error_middleware_1.asyncHandler)(async (req, res) => {
         });
     }
     await authService.logout(userId);
+    res.clearCookie("refreshToken", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        path: "/",
+    });
     return res.status(200).json({
         success: true,
         message: "Logged out successfully",

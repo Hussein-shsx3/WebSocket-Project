@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { generateAccessToken, generateRefreshToken } from "../utils/jwt.util";
+import { generateRefreshToken } from "../utils/jwt.util";
 import { config } from "../config/env.config";
 import { asyncHandler } from "../middleware/error.middleware";
 import prisma from "../config/db";
@@ -10,19 +10,21 @@ import prisma from "../config/db";
 const getRefreshTokenCookieConfig = () => ({
   httpOnly: true,
   secure: config.NODE_ENV === "production",
-  sameSite: "strict" as const,
+  sameSite: "lax" as const, // Allow cross-origin for localhost development
   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-  path: "/", // Available on all routes
+  path: "/",
 });
 
 /**
  * Google OAuth callback
+ * - Sets refresh token cookie
+ * - Redirects to frontend
  */
 export const googleCallback = asyncHandler(
   async (req: Request, res: Response) => {
     const googleUser = (req as any).user;
 
-    if (!googleUser || !googleUser.id || !googleUser.email) {
+    if (!googleUser?.id || !googleUser?.email) {
       return res.redirect(
         `${config.CLIENT_URL}/google-callback?error=${encodeURIComponent(
           "Authentication failed",
@@ -30,13 +32,7 @@ export const googleCallback = asyncHandler(
       );
     }
 
-    // Generate tokens
-    const accessToken = generateAccessToken({
-      userId: googleUser.id,
-      email: googleUser.email,
-      role: googleUser.role || "USER",
-    });
-
+    // Generate refresh token ONLY
     const refreshToken = generateRefreshToken({
       userId: googleUser.id,
       email: googleUser.email,
@@ -52,54 +48,17 @@ export const googleCallback = asyncHandler(
     // Set refresh token as HTTP-only cookie
     res.cookie("refreshToken", refreshToken, getRefreshTokenCookieConfig());
 
-    // Redirect with access token in URL parameter
-    res.redirect(
-      `${config.CLIENT_URL}/google-callback?accessToken=${accessToken}`,
-    );
+    // Redirect WITHOUT tokens
+    res.redirect(`${config.CLIENT_URL}/google-callback?success=true`);
   },
 );
 
 /**
  * Initiates Google login
  */
-export const googleAuth = (req: Request, res: Response): void => {
+export const googleAuth = (_req: Request, res: Response): void => {
   res.json({
     success: true,
     message: "Redirecting to Google login...",
   });
 };
-
-/**
- * Logout Google user
- */
-export const googleLogout = asyncHandler(
-  async (req: Request, res: Response) => {
-    const userId = req.user?.userId;
-
-    if (!userId) {
-      return res.status(401).json({
-        success: false,
-        message: "Not authenticated",
-      });
-    }
-
-    // Remove refresh token from DB
-    await prisma.user.update({
-      where: { id: userId },
-      data: { refreshToken: null },
-    });
-
-    // Clear refresh token cookie
-    res.clearCookie("refreshToken", {
-      httpOnly: true,
-      secure: config.NODE_ENV === "production",
-      sameSite: "strict",
-      path: "/",
-    });
-
-    return res.status(200).json({
-      success: true,
-      message: "Logged out successfully",
-    });
-  },
-);

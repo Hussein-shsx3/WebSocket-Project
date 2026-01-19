@@ -53,26 +53,13 @@ class AuthService {
         };
     }
     async login(data) {
-        const user = await db_1.default.user.findUnique({
-            where: { email: data.email },
-            select: {
-                id: true,
-                email: true,
-                password: true,
-                name: true,
-                role: true,
-                createdAt: true,
-            },
-        });
-        if (!user) {
-            throw new error_types_1.AuthenticationError("Invalid email or password");
+        const user = await db_1.default.user.findUnique({ where: { email: data.email } });
+        if (!user || !user.password) {
+            throw new error_types_1.AuthenticationError("Invalid credentials");
         }
-        if (!user.password) {
-            throw new error_types_1.AuthenticationError("Invalid email or password");
-        }
-        const isPasswordValid = await bcrypt_1.default.compare(data.password, user.password);
-        if (!isPasswordValid) {
-            throw new error_types_1.AuthenticationError("Invalid email or password");
+        const valid = await bcrypt_1.default.compare(data.password, user.password);
+        if (!valid) {
+            throw new error_types_1.AuthenticationError("Invalid credentials");
         }
         const accessToken = (0, jwt_util_1.generateAccessToken)({
             userId: user.id,
@@ -89,12 +76,7 @@ class AuthService {
             data: { refreshToken },
         });
         return {
-            user: {
-                id: user.id,
-                name: user.name,
-                email: user.email,
-                createdAt: user.createdAt,
-            },
+            user,
             accessToken,
             refreshToken,
         };
@@ -204,34 +186,34 @@ class AuthService {
             data: { user },
         };
     }
-    async refreshTokens(refreshToken) {
-        if (!refreshToken)
-            throw new error_types_1.AuthenticationError("Refresh token missing");
-        const decoded = (0, jwt_util_1.verifyRefreshToken)(refreshToken);
-        const dbUser = await db_1.default.user.findUnique({
+    async refreshToken(oldRefreshToken) {
+        const decoded = (0, jwt_util_1.verifyRefreshToken)(oldRefreshToken);
+        const user = await db_1.default.user.findUnique({
             where: { id: decoded.userId },
         });
-        if (!dbUser || !dbUser.refreshToken)
-            throw new error_types_1.AuthenticationError("Invalid session");
-        if (dbUser.refreshToken !== refreshToken)
+        if (!user || user.refreshToken !== oldRefreshToken) {
             throw new error_types_1.AuthenticationError("Invalid refresh token");
-        const tokens = (0, jwt_util_1.generateAuthTokens)({
-            userId: decoded.userId,
-            email: decoded.email,
+        }
+        const newAccessToken = (0, jwt_util_1.generateAccessToken)({
+            userId: user.id,
+            email: user.email,
+            role: user.role,
+        });
+        const newRefreshToken = (0, jwt_util_1.generateRefreshToken)({
+            userId: user.id,
+            email: user.email,
+            role: user.role,
         });
         await db_1.default.user.update({
-            where: { id: decoded.userId },
-            data: { refreshToken: tokens.refreshToken },
+            where: { id: user.id },
+            data: { refreshToken: newRefreshToken },
         });
-        return { success: true, tokens };
+        return { accessToken: newAccessToken, refreshToken: newRefreshToken };
     }
     async logout(userId) {
         await db_1.default.user.update({
             where: { id: userId },
-            data: {
-                refreshToken: null,
-                status: "offline",
-            },
+            data: { refreshToken: null },
         });
         return { success: true, message: "Logged out" };
     }

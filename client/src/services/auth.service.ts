@@ -1,7 +1,8 @@
-import { axiosInstance } from "@/lib/axios";
+// services/auth.service.ts
+import { axiosInstance, setAccessToken } from "@/lib/axios";
 
 /**
- * Request/Response Types
+ * Request Types
  */
 export interface LoginRequest {
   email: string;
@@ -14,6 +15,9 @@ export interface RegisterRequest {
   name: string;
 }
 
+/**
+ * Core Models
+ */
 export interface User {
   id: string;
   email: string;
@@ -22,12 +26,15 @@ export interface User {
   createdAt?: string;
 }
 
-export interface AuthResponse {
+/**
+ * Response Types
+ */
+export interface LoginResponse {
   success: boolean;
   message: string;
   data: {
     user: User;
-    // NO accessToken - it's in httpOnly cookie now
+    accessToken: string;
   };
 }
 
@@ -40,46 +47,60 @@ export interface RegisterResponse {
   };
 }
 
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   message: string;
   data?: T;
 }
 
+export interface CurrentUserResponse {
+  success: boolean;
+  message: string;
+  data: {
+    user: User;
+  };
+}
+
 /**
  * Auth Service
- * All token management is handled by httpOnly cookies
  */
 export const authService = {
   /**
-   * Login with email and password
-   * Server sets accessToken and refreshToken as httpOnly cookies
+   * Login
    */
-  async login(data: LoginRequest): Promise<User> {
-    const response = await axiosInstance.post<AuthResponse>("/auth/login", data);
-    return response.data.data.user;
+  async login(
+    data: LoginRequest,
+  ): Promise<{ user: User; accessToken: string }> {
+    const response = await axiosInstance.post<LoginResponse>(
+      "/auth/login",
+      data,
+    );
+
+    const { user, accessToken } = response.data.data;
+    setAccessToken(accessToken);
+
+    return { user, accessToken };
   },
 
   /**
-   * Register a new user
+   * Register
    */
   async register(data: RegisterRequest): Promise<RegisterResponse["data"]> {
     const response = await axiosInstance.post<RegisterResponse>(
       "/auth/register",
-      data
+      data,
     );
     return response.data.data;
   },
 
   /**
-   * Logout user
-   * Server clears both cookies
+   * Logout
    */
   async logout(): Promise<void> {
     try {
       await axiosInstance.post("/auth/logout");
     } finally {
-      // Always redirect to login, even if request fails
+      setAccessToken(null);
       if (typeof window !== "undefined") {
         window.location.href = "/signIn";
       }
@@ -88,76 +109,79 @@ export const authService = {
 
   /**
    * Refresh access token
-   * This is called automatically by axios interceptor
-   * You typically don't need to call this manually
-   * Server reads refreshToken from cookie and sets new accessToken cookie
    */
-  async refreshToken(): Promise<void> {
-    await axiosInstance.post("/auth/refresh-tokens");
-    // No return value needed - new cookie is set by server
+  async refreshToken(): Promise<string> {
+    const response = await axiosInstance.post<{
+      success: boolean;
+      data: { accessToken: string };
+    }>("/auth/refresh-tokens");
+
+    const accessToken = response.data.data.accessToken;
+    setAccessToken(accessToken);
+
+    return accessToken;
   },
 
   /**
-   * Verify email with token
-   */
-  async verifyEmail(token: string): Promise<ApiResponse> {
-    const response = await axiosInstance.get<ApiResponse>(
-      "/auth/verify-email",
-      {
-        params: { token },
-      }
-    );
-    return response.data;
-  },
-
-  /**
-   * Resend verification email
-   */
-  async resendVerification(email: string): Promise<ApiResponse> {
-    const response = await axiosInstance.post<ApiResponse>(
-      "/auth/resend-verification",
-      { email }
-    );
-    return response.data;
-  },
-
-  /**
-   * Request password reset
-   */
-  async forgotPassword(email: string): Promise<ApiResponse> {
-    const response = await axiosInstance.post<ApiResponse>(
-      "/auth/forgot-password",
-      { email }
-    );
-    return response.data;
-  },
-
-  /**
-   * Reset password with token
-   */
-  async resetPassword(token: string, password: string): Promise<ApiResponse> {
-    const response = await axiosInstance.post<ApiResponse>(
-      "/auth/reset-password",
-      { token, password }
-    );
-    return response.data;
-  },
-
-  /**
-   * Get current authenticated user
-   * Useful for checking auth status or getting user info
+   * Get current user
    */
   async getCurrentUser(): Promise<User> {
-    const response = await axiosInstance.get<AuthResponse>("/auth/me");
+    const response = await axiosInstance.get<CurrentUserResponse>("/auth/me");
     return response.data.data.user;
   },
 
   /**
-   * Initiate Google OAuth login
-   * Redirects user to Google login page
+   * Email verification
+   */
+  async verifyEmail(token: string): Promise<ApiResponse<void>> {
+    const response = await axiosInstance.get<ApiResponse<void>>(
+      "/auth/verify-email",
+      { params: { token } },
+    );
+    return response.data;
+  },
+
+  async resendVerification(email: string): Promise<ApiResponse<void>> {
+    const response = await axiosInstance.post<ApiResponse<void>>(
+      "/auth/resend-verification",
+      { email },
+    );
+    return response.data;
+  },
+
+  async forgotPassword(email: string): Promise<ApiResponse<void>> {
+    const response = await axiosInstance.post<ApiResponse<void>>(
+      "/auth/forgot-password",
+      { email },
+    );
+    return response.data;
+  },
+
+  async resetPassword(
+    token: string,
+    password: string,
+  ): Promise<ApiResponse<void>> {
+    const response = await axiosInstance.post<ApiResponse<void>>(
+      "/auth/reset-password",
+      { token, password },
+    );
+    return response.data;
+  },
+
+  /**
+   * Google OAuth
    */
   initiateGoogleAuth(): void {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
+    const apiUrl =
+      process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
+
     window.location.href = `${apiUrl}/auth/google`;
+  },
+
+  /**
+   * Clear access token manually
+   */
+  clearAccessToken(): void {
+    setAccessToken(null);
   },
 };
