@@ -4,6 +4,7 @@ import axios, {
   AxiosInstance,
   InternalAxiosRequestConfig,
 } from "axios";
+import Cookies from "js-cookie";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
@@ -26,24 +27,34 @@ const processQueue = (error: AxiosError | null = null) => {
 };
 
 /**
- * Get access token from memory (set after login)
+ * Access token helpers using js-cookie
  */
-let accessToken: string | null = null;
-
 export const setAccessToken = (token: string | null) => {
-  accessToken = token;
+  if (token) {
+    // Set cookie to expire in 15 minutes (1/96 of a day)
+    Cookies.set("accessToken", token, {
+      expires: 1 / 96, // 15 minutes
+      path: "/",
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production"
+    });
+  } else {
+    Cookies.remove("accessToken", { path: "/" });
+  }
 };
 
-export const getAccessToken = () => accessToken;
+export const getAccessToken = (): string | null => {
+  return Cookies.get("accessToken") || null;
+};
 
 /**
- * Request Interceptor - Attach access token to requests
+ * Request Interceptor - Attach access token from cookie
  */
 axiosInstance.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    // Attach access token if available
-    if (accessToken && config.headers) {
-      config.headers.Authorization = `Bearer ${accessToken}`;
+    const token = getAccessToken();
+    if (token && config.headers) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
@@ -81,12 +92,12 @@ axiosInstance.interceptors.response.use(
     if (authEndpoints.some((endpoint) => url.includes(endpoint))) {
       // If refresh token endpoint fails, redirect to login (but not if on auth pages)
       if (url.includes("/auth/refresh-tokens")) {
-        accessToken = null; // Clear token
+        setAccessToken(null); // Clear token
         if (typeof window !== "undefined") {
           const authRoutes = ["/signIn", "/signUp", "/forgot-password", "/reset-password", "/verify-email"];
           const currentPath = window.location.pathname;
           const isOnAuthPage = authRoutes.some(route => currentPath === route || currentPath.startsWith(route + "/"));
-          
+
           if (!isOnAuthPage) {
             window.location.href = "/signIn";
           }
@@ -97,12 +108,12 @@ axiosInstance.interceptors.response.use(
 
     // If already retried, give up and redirect
     if (originalRequest._retry) {
-      accessToken = null;
+      setAccessToken(null);
       if (typeof window !== "undefined") {
         const authRoutes = ["/signIn", "/signUp", "/forgot-password", "/reset-password", "/verify-email"];
         const currentPath = window.location.pathname;
         const isOnAuthPage = authRoutes.some(route => currentPath === route || currentPath.startsWith(route + "/"));
-        
+
         if (!isOnAuthPage) {
           window.location.href = "/signIn";
         }
@@ -116,9 +127,10 @@ axiosInstance.interceptors.response.use(
         failedQueue.push({ resolve, reject });
       })
         .then(() => {
-          // Update the original request with new token
-          if (originalRequest.headers && accessToken) {
-            originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+          // Update the queued request with new token
+          const token = getAccessToken();
+          if (originalRequest.headers && token) {
+            originalRequest.headers.Authorization = `Bearer ${token}`;
           }
           return axiosInstance(originalRequest);
         })
@@ -151,14 +163,14 @@ axiosInstance.interceptors.response.use(
     } catch (err) {
       // Refresh failed, clear token and redirect
       processQueue(err as AxiosError);
-      accessToken = null;
+      setAccessToken(null);
 
       if (typeof window !== "undefined") {
         // Don't redirect if already on auth pages
         const authRoutes = ["/signIn", "/signUp", "/forgot-password", "/reset-password", "/verify-email"];
         const currentPath = window.location.pathname;
         const isOnAuthPage = authRoutes.some(route => currentPath === route || currentPath.startsWith(route + "/"));
-        
+
         if (!isOnAuthPage) {
           window.location.href = "/signIn";
         }
