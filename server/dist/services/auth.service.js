@@ -208,6 +208,7 @@ class AuthService {
             where: { id: user.id },
             data: { refreshToken: newRefreshToken },
         });
+        console.log("Refresh token rotated and set in cookie.");
         return { accessToken: newAccessToken, refreshToken: newRefreshToken };
     }
     async logout(userId) {

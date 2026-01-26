@@ -9,8 +9,26 @@ import {
   resetPasswordSchema,
 } from "../dto/auth.dto";
 import { asyncHandler } from "../middleware/error.middleware";
+import { config } from "../config/env.config";
 
 const authService = new AuthService();
+
+/**
+ * Helper to parse JWT expire string (e.g., "7d") to milliseconds
+ */
+const parseJwtExpireToMs = (expire: string): number => {
+  const match = expire.match(/^(\d+)([smhd])$/);
+  if (!match) throw new Error(`Invalid expire format: ${expire}`);
+  const value = parseInt(match[1], 10);
+  const unit = match[2];
+  const multipliers: Record<string, number> = {
+    s: 1000,
+    m: 60 * 1000,
+    h: 60 * 60 * 1000,
+    d: 24 * 60 * 60 * 1000,
+  };
+  return value * multipliers[unit];
+};
 
 /**
  * Cookie configuration helper
@@ -19,7 +37,7 @@ const getRefreshTokenCookieConfig = () => ({
   httpOnly: true, // Cannot be accessed by JavaScript
   secure: process.env.NODE_ENV === "production", // HTTPS only in production
   sameSite: "lax" as const, // Allow cross-origin for localhost development
-  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  maxAge: parseJwtExpireToMs(config.JWT_REFRESH_EXPIRE), // Match JWT_REFRESH_EXPIRE
   path: "/", // Available on all routes
 });
 
@@ -168,6 +186,13 @@ export const refreshTokens = asyncHandler(
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
         path: "/",
+      });
+
+      // Debug logging for refresh failure
+      console.error("❌ Refresh token failed:", {
+        message: error?.message || "Unknown error",
+        stack: error?.stack,
+        userId: req.user?.userId || "unknown",
       });
 
       const message = error?.message || "Failed to refresh token";

@@ -5,12 +5,27 @@ const zod_1 = require("zod");
 const auth_service_1 = require("../services/auth.service");
 const auth_dto_1 = require("../dto/auth.dto");
 const error_middleware_1 = require("../middleware/error.middleware");
+const env_config_1 = require("../config/env.config");
 const authService = new auth_service_1.AuthService();
+const parseJwtExpireToMs = (expire) => {
+    const match = expire.match(/^(\d+)([smhd])$/);
+    if (!match)
+        throw new Error(`Invalid expire format: ${expire}`);
+    const value = parseInt(match[1], 10);
+    const unit = match[2];
+    const multipliers = {
+        s: 1000,
+        m: 60 * 1000,
+        h: 60 * 60 * 1000,
+        d: 24 * 60 * 60 * 1000,
+    };
+    return value * multipliers[unit];
+};
 const getRefreshTokenCookieConfig = () => ({
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
-    maxAge: 7 * 24 * 60 * 60 * 1000,
+    maxAge: parseJwtExpireToMs(env_config_1.config.JWT_REFRESH_EXPIRE),
     path: "/",
 });
 exports.register = (0, error_middleware_1.asyncHandler)(async (req, res) => {
@@ -106,13 +121,30 @@ exports.refreshTokens = (0, error_middleware_1.asyncHandler)(async (req, res) =>
             message: "Refresh token missing",
         });
     }
-    const { accessToken, refreshToken } = await authService.refreshToken(oldRefreshToken);
-    res.cookie("refreshToken", refreshToken, getRefreshTokenCookieConfig());
-    return res.status(200).json({
-        success: true,
-        message: "Token refreshed successfully",
-        data: { accessToken },
-    });
+    try {
+        const { accessToken, refreshToken } = await authService.refreshToken(oldRefreshToken);
+        res.cookie("refreshToken", refreshToken, getRefreshTokenCookieConfig());
+        return res.status(200).json({
+            success: true,
+            message: "Token refreshed successfully",
+            data: { accessToken },
+        });
+    }
+    catch (error) {
+        res.clearCookie("refreshToken", {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax",
+            path: "/",
+        });
+        console.error("❌ Refresh token failed:", {
+            message: error?.message || "Unknown error",
+            stack: error?.stack,
+            userId: req.user?.userId || "unknown",
+        });
+        const message = error?.message || "Failed to refresh token";
+        return res.status(401).json({ success: false, message });
+    }
 });
 exports.logout = (0, error_middleware_1.asyncHandler)(async (req, res) => {
     const userId = req.user?.userId;

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   MessageSquare,
+  MessageSquareCodeIcon,
   Phone,
   User,
   Settings,
@@ -50,10 +51,10 @@ export function Sidebar() {
   return (
     <>
       {/* Desktop / Tablet sidebar on the left */}
-      <aside className="hidden sm:flex w-[70px] bg-sidebar flex-col items-center py-4 gap-3 border-r border-border">
+      <aside className="hidden sm:flex w-[75px] bg-sidebar flex-col items-center py-4 gap-3 border-r border-border">
         {/* Logo/Brand */}
-        <div className="w-11 h-11 bg-primaryColor rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-primaryColor/20">
-          <MessageSquare className="w-6 h-6 text-white" strokeWidth={2} />
+        <div className="w-11 h-11 rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-primaryColor/20">
+          <MessageSquareCodeIcon className="w-6 h-6 text-white" strokeWidth={2} />
         </div>
 
         {/* Navigation Icons */}
@@ -141,7 +142,7 @@ export function Sidebar() {
           <button
             type="button"
             onClick={() => setIsUserMenuOpen((open) => !open)}
-            className="w-10 h-10 rounded-xl bg-gradient-to-br from-primaryColor to-primaryColor/80 flex items-center justify-center text-white text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primaryColor/50 shadow-lg shadow-primaryColor/20"
+            className="w-10 h-10 rounded-xl bg-primaryColor flex items-center justify-center text-white text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primaryColor/50 shadow-lg shadow-primaryColor/20"
           >
             H
           </button>

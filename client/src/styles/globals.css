@@ -7,7 +7,7 @@
   --primary-color: #4eac6d;
 
   /* Light Mode Colors */
-  --sidebar-bg: #37475a;
+  --sidebar-bg: #2e2e2e;
   --panel-bg: #f5f7fb;
   --main-bg: #e6ebf5;
   --header-bg: #ffffff;
@@ -23,7 +23,7 @@
 
 .dark {
   /* Dark Mode Colors */
-  --sidebar-bg: #36404a;
+  --sidebar-bg: #2e2e2e;
   --panel-bg: #262e35;
   --main-bg: #1b2028;
   --header-bg: #303841;

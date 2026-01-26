@@ -6,6 +6,7 @@ import {
   RegisterRequest,
   User,
 } from "@/services/auth.service";
+import { getAccessToken } from "@/lib/axios";
 
 /**
  * LOGIN
@@ -96,12 +97,18 @@ export const useAuthBootstrap = () => {
     queryKey: ["auth-bootstrap"],
     queryFn: async () => {
       try {
-        // Get new access token using refresh cookie
+        const accessToken = getAccessToken();
+        
+        // If we have a valid access token, just fetch user
+        if (accessToken) {
+          const user = await authService.getCurrentUser();
+          queryClient.setQueryData(["currentUser"], user);
+          return user;
+        }
+        
+        // Otherwise, refresh tokens
         await authService.refreshToken();
-
-        // Fetch user
         const user = await authService.getCurrentUser();
-
         queryClient.setQueryData(["currentUser"], user);
         return user;
       } catch {
