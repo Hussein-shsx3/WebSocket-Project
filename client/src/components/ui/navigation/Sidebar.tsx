@@ -4,14 +4,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   MessageSquare,
-  MessageSquareCodeIcon,
-  Phone,
+  MessageSquareText,
+  // Phone,
   User,
   Settings,
   UserPlus,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { ThemeToggle } from "./ThemeToggle";
+import { ThemeToggle } from "../buttons";
 import { LogoutButton } from "../buttons";
 
 export function Sidebar() {
@@ -20,9 +20,10 @@ export function Sidebar() {
   const avatarRef = useRef<HTMLDivElement | null>(null);
 
   const navigation = [
+    { name: "Profile", href: "/profile", icon: User },
     { name: "Chats", href: "/chats", icon: MessageSquare },
     { name: "Friend Requests", href: "/friendsRequests", icon: UserPlus },
-    { name: "Calls", href: "/calls", icon: Phone },
+    // { name: "Calls", href: "/calls", icon: Phone },
     { name: "Settings", href: "/settings", icon: Settings },
   ];
 
@@ -51,14 +52,14 @@ export function Sidebar() {
   return (
     <>
       {/* Desktop / Tablet sidebar on the left */}
-      <aside className="hidden sm:flex w-[75px] bg-sidebar flex-col items-center py-4 gap-3 border-r border-border">
+      <aside className="hidden sm:flex w-[76px] bg-sidebar flex-col items-center py-4 gap-3">
         {/* Logo/Brand */}
-        <div className="w-11 h-11 rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-primaryColor/20">
-          <MessageSquareCodeIcon className="w-6 h-6 text-white" strokeWidth={2} />
+        <div className="w-11 h-11 rounded-2xl flex items-center justify-center mb-4">
+          <MessageSquareText className="w-7 h-7 text-primaryColor" strokeWidth={2} />
         </div>
 
         {/* Navigation Icons */}
-        <nav className="flex-1 flex flex-col gap-2 w-full px-2">
+        <nav className="flex-1 flex flex-col gap-2 w-full px-0">
           {navigation.map((item) => {
             const isActive = pathname.startsWith(item.href);
             const Icon = item.icon;
@@ -73,16 +74,16 @@ export function Sidebar() {
                   ${
                     isActive
                       ? "bg-primaryColor/10 text-primaryColor"
-                      : "text-secondary hover:bg-hover hover:text-primary"
+                      : "text-secondary hover:text-[#e1e9f0]"
                   }
                 `}
                 title={item.name}
               >
                 {/* Active indicator */}
                 {isActive && (
-                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primaryColor rounded-r-full" />
+                  <div className="absolute right-0 top-1/2 -translate-y-1/2 w-[3.5px] h-5 bg-primaryColor rounded-full" />
                 )}
-                <Icon className="w-5 h-5" strokeWidth={2} />
+                <Icon className="w-6 h-6" strokeWidth={2} />
               </Link>
             );
           })}

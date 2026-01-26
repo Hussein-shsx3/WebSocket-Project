@@ -1,0 +1,41 @@
+import Image from "next/image";
+import Link from "next/link";
+
+const ProfileHeader = () => {
+  return (
+    <div>
+      <div className="w-full h-[165px] sticky top-0">
+        <h5 className="absolute z-10 text-white top-4 left-4 font-medium">
+          My Profile
+        </h5>
+        <Link
+          href={"/profile/edit"}
+          className="absolute z-10 top-4 right-4 p-2 bg-black/50 rounded-full hover:bg-black/70 transition-colors"
+        >
+          <svg
+            className="w-5 h-5 text-white"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+            />
+          </svg>
+        </Link>
+        <Image
+          src={"/images/img-4.jpg"}
+          fill
+          alt="Profile Image"
+          className="bg-contain"
+        />
+        <span className="absolute inset-0 bg-[radial-gradient(circle,rgba(0,0,0,0)_0%,rgba(0,0,0,0.6)_130%)]"></span>
+      </div>
+    </div>
+  );
+};
+
+export default ProfileHeader;

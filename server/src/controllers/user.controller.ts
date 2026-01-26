@@ -20,15 +20,16 @@ export const getProfile = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user?.userId;
 
   if (!userId) {
-    res.status(401).json({ message: "Unauthorized" });
+    res.status(401).json({ success: false, message: "Unauthorized" });
     return;
   }
 
   const user = await getUserProfile(userId);
 
   res.status(200).json({
+    success: true,
     message: "Profile retrieved successfully",
-    user,
+    data: user,
   });
 });
 
@@ -41,8 +42,9 @@ export const getUserByIdHandler = asyncHandler(async (req: Request, res: Respons
   const user = await getUserById(id);
 
   res.status(200).json({
+    success: true,
     message: "User retrieved successfully",
-    user,
+    data: user,
   });
 });
 
@@ -53,7 +55,7 @@ export const updateProfile = asyncHandler(async (req: Request, res: Response) =>
   const userId = req.user?.userId;
 
   if (!userId) {
-    res.status(401).json({ message: "Unauthorized" });
+    res.status(401).json({ success: false, message: "Unauthorized" });
     return;
   }
 
@@ -62,6 +64,7 @@ export const updateProfile = asyncHandler(async (req: Request, res: Response) =>
 
   if (!validationResult.success) {
     res.status(400).json({
+      success: false,
       message: "Validation failed",
       errors: validationResult.error.flatten().fieldErrors,
     });
@@ -71,8 +74,9 @@ export const updateProfile = asyncHandler(async (req: Request, res: Response) =>
   const updatedUser = await updateUserProfile(userId, validationResult.data);
 
   res.status(200).json({
+    success: true,
     message: "Profile updated successfully",
-    user: updatedUser,
+    data: updatedUser,
   });
 });
 
@@ -83,20 +87,21 @@ export const uploadAvatar = asyncHandler(async (req: Request, res: Response) => 
   const userId = req.user?.userId;
 
   if (!userId) {
-    res.status(401).json({ message: "Unauthorized" });
+    res.status(401).json({ success: false, message: "Unauthorized" });
     return;
   }
 
   if (!req.file) {
-    res.status(400).json({ message: "No file uploaded" });
+    res.status(400).json({ success: false, message: "No file uploaded" });
     return;
   }
 
   const updatedUser = await uploadUserAvatar(userId, req.file);
 
   res.status(200).json({
+    success: true,
     message: "Avatar uploaded successfully",
-    user: updatedUser,
+    data: updatedUser,
   });
 });
 
@@ -109,6 +114,7 @@ export const searchUsersHandler = asyncHandler(async (req: Request, res: Respons
 
   if (!validationResult.success) {
     res.status(400).json({
+      success: false,
       message: "Validation failed",
       errors: validationResult.error.flatten().fieldErrors,
     });
@@ -121,9 +127,12 @@ export const searchUsersHandler = asyncHandler(async (req: Request, res: Respons
   const users = await searchUsers(query, limitNumber);
 
   res.status(200).json({
+    success: true,
     message: "Users found",
-    count: users.length,
-    users,
+    data: {
+      count: users.length,
+      users,
+    },
   });
 });
 
@@ -134,22 +143,23 @@ export const updateStatus = asyncHandler(async (req: Request, res: Response) => 
   const userId = req.user?.userId;
 
   if (!userId) {
-    res.status(401).json({ message: "Unauthorized" });
+    res.status(401).json({ success: false, message: "Unauthorized" });
     return;
   }
 
   const { status } = req.body;
 
   if (!status) {
-    res.status(400).json({ message: "Status is required" });
+    res.status(400).json({ success: false, message: "Status is required" });
     return;
   }
 
   const updatedUser = await updateUserStatus(userId, status);
 
   res.status(200).json({
+    success: true,
     message: "Status updated successfully",
-    user: updatedUser,
+    data: updatedUser,
   });
 });
 
@@ -160,13 +170,22 @@ export const deleteAccount = asyncHandler(async (req: Request, res: Response) =>
   const userId = req.user?.userId;
 
   if (!userId) {
-    res.status(401).json({ message: "Unauthorized" });
+    res.status(401).json({ success: false, message: "Unauthorized" });
     return;
   }
 
   await deleteUserAccount(userId);
 
+  // Clear refresh token cookie on account deletion
+  res.clearCookie("refreshToken", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+  });
+
   res.status(200).json({
+    success: true,
     message: "Account deleted successfully",
   });
 });
@@ -183,6 +202,7 @@ export const getAllUsersHandler = asyncHandler(async (req: Request, res: Respons
   const total = await getTotalUsersCount();
 
   res.status(200).json({
+    success: true,
     message: "All users retrieved successfully",
     data: {
       users,

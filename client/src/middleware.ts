@@ -21,13 +21,14 @@ const authRoutes = [
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  const refreshToken = request.cookies.get("refreshToken")?.value;
+  // Simple check: does the refresh token cookie exist?
+  const hasRefreshToken = request.cookies.has("refreshToken");
 
   /* -----------------------------
     1. Handle root path `/`
   ------------------------------ */
   if (pathname === "/") {
-    if (refreshToken) {
+    if (hasRefreshToken) {
       return NextResponse.redirect(new URL("/chats", request.url));
     } else {
       return NextResponse.redirect(new URL("/signIn", request.url));
@@ -35,17 +36,17 @@ export function middleware(request: NextRequest) {
   }
 
   const isProtectedRoute = protectedRoutes.some(
-    (route) => pathname === route || pathname.startsWith(route + "/")
+    (route) => pathname === route || pathname.startsWith(route + "/"),
   );
 
   const isAuthRoute = authRoutes.some(
-    (route) => pathname === route || pathname.startsWith(route + "/")
+    (route) => pathname === route || pathname.startsWith(route + "/"),
   );
 
   /* -----------------------------
-    2. Protected route without auth
+    2. Protected route without refresh token
   ------------------------------ */
-  if (isProtectedRoute && !refreshToken) {
+  if (isProtectedRoute && !hasRefreshToken) {
     const signInUrl = new URL("/signIn", request.url);
     signInUrl.searchParams.set("redirect", pathname);
     return NextResponse.redirect(signInUrl);
@@ -54,7 +55,7 @@ export function middleware(request: NextRequest) {
   /* -----------------------------
     3. Auth routes while logged in
   ------------------------------ */
-  if (isAuthRoute && refreshToken) {
+  if (isAuthRoute && hasRefreshToken) {
     return NextResponse.redirect(new URL("/chats", request.url));
   }
 

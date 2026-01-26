@@ -9,36 +9,22 @@ import {
   resetPasswordSchema,
 } from "../dto/auth.dto";
 import { asyncHandler } from "../middleware/error.middleware";
-import { config } from "../config/env.config";
 
 const authService = new AuthService();
 
 /**
- * Helper to parse JWT expire string (e.g., "7d") to milliseconds
- */
-const parseJwtExpireToMs = (expire: string): number => {
-  const match = expire.match(/^(\d+)([smhd])$/);
-  if (!match) throw new Error(`Invalid expire format: ${expire}`);
-  const value = parseInt(match[1], 10);
-  const unit = match[2];
-  const multipliers: Record<string, number> = {
-    s: 1000,
-    m: 60 * 1000,
-    h: 60 * 60 * 1000,
-    d: 24 * 60 * 60 * 1000,
-  };
-  return value * multipliers[unit];
-};
-
-/**
  * Cookie configuration helper
  */
+const getCookieOptions = () => ({
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "lax" as const,
+  path: "/",
+});
+
 const getRefreshTokenCookieConfig = () => ({
-  httpOnly: true, // Cannot be accessed by JavaScript
-  secure: process.env.NODE_ENV === "production", // HTTPS only in production
-  sameSite: "lax" as const, // Allow cross-origin for localhost development
-  maxAge: parseJwtExpireToMs(config.JWT_REFRESH_EXPIRE), // Match JWT_REFRESH_EXPIRE
-  path: "/", // Available on all routes
+  ...getCookieOptions(),
+  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
 });
 
 export const register = asyncHandler(async (req: Request, res: Response) => {
@@ -70,7 +56,11 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
   const result = await authService.login(parse.data);
 
   // Set refresh token as HTTP-only cookie
-  res.cookie("refreshToken", result.refreshToken, getRefreshTokenCookieConfig());
+  res.cookie(
+    "refreshToken",
+    result.refreshToken,
+    getRefreshTokenCookieConfig(),
+  );
 
   return res.status(200).json({
     success: true,
@@ -115,7 +105,7 @@ export const resendVerification = asyncHandler(
       success: true,
       message: result.message,
     });
-  }
+  },
 );
 
 export const forgotPassword = asyncHandler(
@@ -132,7 +122,7 @@ export const forgotPassword = asyncHandler(
       success: true,
       message: result.message,
     });
-  }
+  },
 );
 
 export const resetPassword = asyncHandler(
@@ -145,7 +135,7 @@ export const resetPassword = asyncHandler(
 
     const result = await authService.resetPassword(
       parse.data.token,
-      parse.data.password
+      parse.data.password,
     );
 
     return res.status(200).json({
@@ -153,7 +143,7 @@ export const resetPassword = asyncHandler(
       message: result.message,
       data: result.data,
     });
-  }
+  },
 );
 
 export const refreshTokens = asyncHandler(
@@ -180,13 +170,8 @@ export const refreshTokens = asyncHandler(
         data: { accessToken },
       });
     } catch (error: any) {
-      // Clear refresh cookie so Next middleware won't treat the client as authenticated
-      res.clearCookie("refreshToken", {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        path: "/",
-      });
+      // Clear refresh cookie using consistent options
+      res.clearCookie("refreshToken", getCookieOptions());
 
       // Debug logging for refresh failure
       console.error("❌ Refresh token failed:", {
@@ -198,7 +183,7 @@ export const refreshTokens = asyncHandler(
       const message = error?.message || "Failed to refresh token";
       return res.status(401).json({ success: false, message });
     }
-  }
+  },
 );
 
 export const logout = asyncHandler(async (req: Request, res: Response) => {
@@ -213,13 +198,8 @@ export const logout = asyncHandler(async (req: Request, res: Response) => {
 
   await authService.logout(userId);
 
-  // Clear refresh token cookie
-  res.clearCookie("refreshToken", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-    path: "/",
-  });
+  // Clear refresh token cookie using consistent options
+  res.clearCookie("refreshToken", getCookieOptions());
 
   return res.status(200).json({
     success: true,
@@ -230,7 +210,7 @@ export const logout = asyncHandler(async (req: Request, res: Response) => {
 export const getCurrentUser = asyncHandler(
   async (req: Request, res: Response) => {
     const userId = req.user?.userId;
-    
+
     if (!userId) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
@@ -242,5 +222,5 @@ export const getCurrentUser = asyncHandler(
       message: "User retrieved successfully",
       data: result,
     });
-  }
+  },
 );

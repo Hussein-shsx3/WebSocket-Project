@@ -30,7 +30,7 @@ export function ThemeToggle({ showLabel = false }: ThemeToggleProps) {
   return (
     <button
       onClick={toggleTheme}
-      className="w-full h-12 flex items-center justify-center text-secondary hover:text-primary hover:bg-hover rounded-xl transition-all duration-200"
+      className="w-full h-12 flex items-center justify-center text-secondary hover:text-[#e1e9f0] rounded-xl transition-all duration-200"
       title="Toggle theme"
     >
       {theme === "dark" ? (

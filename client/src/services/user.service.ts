@@ -38,6 +38,15 @@ export interface UpdateProfileDTO {
 }
 
 /**
+ * Standard API Response
+ */
+interface ApiResponse<T> {
+  success: boolean;
+  message: string;
+  data: T;
+}
+
+/**
  * User Service
  * Handles user-related API calls
  */
@@ -46,11 +55,9 @@ export const userService = {
    * Get current user profile
    */
   async getUserProfile(): Promise<UserProfile> {
-    const response = await axiosInstance.get<{
-      success: boolean;
-      message: string;
-      data: UserProfile;
-    }>("/users/profile");
+    const response = await axiosInstance.get<ApiResponse<UserProfile>>(
+      "/users/profile"
+    );
 
     return response.data.data;
   },
@@ -59,11 +66,10 @@ export const userService = {
    * Update user profile
    */
   async updateUserProfile(data: UpdateProfileDTO): Promise<UserProfile> {
-    const response = await axiosInstance.patch<{
-      success: boolean;
-      message: string;
-      data: UserProfile;
-    }>("/users/profile", data);
+    const response = await axiosInstance.patch<ApiResponse<UserProfile>>(
+      "/users/profile",
+      data
+    );
 
     return response.data.data;
   },
@@ -71,19 +77,19 @@ export const userService = {
   /**
    * Upload user avatar
    */
-  async uploadUserAvatar(file: File): Promise<{ avatar: string }> {
+  async uploadUserAvatar(file: File): Promise<UserProfile> {
     const formData = new FormData();
     formData.append("avatar", file);
 
-    const response = await axiosInstance.post<{
-      success: boolean;
-      message: string;
-      data: { avatar: string };
-    }>("/users/avatar", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
+    const response = await axiosInstance.post<ApiResponse<UserProfile>>(
+      "/users/avatar",
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
 
     return response.data.data;
   },
@@ -92,10 +98,10 @@ export const userService = {
    * Update user status
    */
   async updateUserStatus(status: string): Promise<{ success: boolean }> {
-    const response = await axiosInstance.patch<{
-      success: boolean;
-      message: string;
-    }>("/users/status", { status });
+    const response = await axiosInstance.patch<ApiResponse<{ status: string }>>(
+      "/users/status",
+      { status }
+    );
 
     return { success: response.data.success };
   },
@@ -115,13 +121,25 @@ export const userService = {
   /**
    * Search users by name or email
    */
-  async searchUsers(query: string, limit: number = 10): Promise<UserSearchResult[]> {
-    const response = await axiosInstance.get<{
-      message: string;
-      count: number;
-      users: UserSearchResult[];
-    }>(`/users/search?query=${encodeURIComponent(query)}&limit=${limit}`);
+  async searchUsers(
+    query: string,
+    limit: number = 10
+  ): Promise<UserSearchResult[]> {
+    const response = await axiosInstance.get<
+      ApiResponse<{ count: number; users: UserSearchResult[] }>
+    >(`/users/search?query=${encodeURIComponent(query)}&limit=${limit}`);
 
-    return response.data.users;
+    return response.data.data.users;
+  },
+
+  /**
+   * Get user by ID (public profile)
+   */
+  async getUserById(userId: string): Promise<UserSearchResult> {
+    const response = await axiosInstance.get<ApiResponse<UserSearchResult>>(
+      `/users/${userId}`
+    );
+
+    return response.data.data;
   },
 };
