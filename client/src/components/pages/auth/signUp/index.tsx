@@ -3,13 +3,14 @@
 import AuthContainer from "@/components/ui/display/AuthContainer";
 import {
   Button,
-  GoogleButton,
   FormHeader,
   Input,
   AuthSwitchLink,
 } from "@/components/ui/form";
+import { GoogleButton } from "@/components/ui/buttons";
 import ErrorAlert from "@/components/ui/feedback/ErrorAlert";
 import { useSignUp } from "./useSignUp";
+import { authService } from "@/services/auth.service";
 
 const SignUp = () => {
   const {
@@ -65,7 +66,10 @@ const SignUp = () => {
           {isLoading ? "Creating Account..." : "Sign Up"}
         </Button>
 
-        <GoogleButton text="Sign Up with Google" />
+        <GoogleButton
+          onClick={authService.initiateGoogleAuth}
+          text="Sign Up with Google"
+        />
 
         <AuthSwitchLink mode="signUp" />
       </form>

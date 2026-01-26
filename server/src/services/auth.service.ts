@@ -269,47 +269,45 @@ export class AuthService {
     };
   }
 
-async refreshToken(oldRefreshToken: string) {
-  const decoded = verifyRefreshToken(oldRefreshToken);
+  async refreshToken(oldRefreshToken: string) {
+    const decoded = verifyRefreshToken(oldRefreshToken);
 
-  const user = await prisma.user.findUnique({
-    where: { id: decoded.userId },
-  });
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId },
+    });
 
-  if (!user || user.refreshToken !== oldRefreshToken) {
-    throw new AuthenticationError("Invalid refresh token");
+    if (!user || user.refreshToken !== oldRefreshToken) {
+      throw new AuthenticationError("Invalid refresh token");
+    }
+
+    const newAccessToken = generateAccessToken({
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+    });
+
+    const newRefreshToken = generateRefreshToken({
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+    });
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { refreshToken: newRefreshToken },
+    });
+    console.log("Refresh token rotated and set in cookie.");
+    return { accessToken: newAccessToken, refreshToken: newRefreshToken };
   }
 
-  const newAccessToken = generateAccessToken({
-    userId: user.id,
-    email: user.email,
-    role: user.role,
-  });
+  async logout(userId: string) {
+    await prisma.user.update({
+      where: { id: userId },
+      data: { refreshToken: null },
+    });
 
-  const newRefreshToken = generateRefreshToken({
-    userId: user.id,
-    email: user.email,
-    role: user.role,
-  });
-
-  await prisma.user.update({
-    where: { id: user.id },
-    data: { refreshToken: newRefreshToken },
-  });
-
-  return { accessToken: newAccessToken, refreshToken: newRefreshToken };
-}
-
-
-async logout(userId: string) {
-  await prisma.user.update({
-    where: { id: userId },
-    data: { refreshToken: null },
-  });
-
-  return { success: true, message: "Logged out" };
-}
-
+    return { success: true, message: "Logged out" };
+  }
 
   async getCurrentUser(userId: string) {
     const user = await prisma.user.findUnique({

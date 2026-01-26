@@ -2,39 +2,53 @@
 
 import { useMemo, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Cookies from "js-cookie";
+import axios from "@/lib/axios"; 
 
 export const useGoogleCallback = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Process auth data - compute once without side effects
-  const errorMessage = useMemo(() => {
-    const success = searchParams.get("success");
+  // Extract params
+  const { accessToken, errorMessage } = useMemo(() => {
+    const token = searchParams.get("accessToken");
     const error = searchParams.get("error");
 
     if (error) {
-      return decodeURIComponent(error);
+      return {
+        accessToken: null,
+        errorMessage: decodeURIComponent(error),
+      };
     }
 
-    if (success === "true") {
-      return "";
+    if (!token) {
+      return {
+        accessToken: null,
+        errorMessage: "Authentication failed. No access token received.",
+      };
     }
 
-    return "Invalid callback parameters";
+    return { accessToken: token, errorMessage: "" };
   }, [searchParams]);
 
-  // Handle navigation after processing
   useEffect(() => {
     if (errorMessage) {
-      // Redirect to sign in on error after delay
       const timer = setTimeout(() => router.push("/signIn"), 2000);
       return () => clearTimeout(timer);
-    } else {
-      // Redirect to main app on success
+    }
+
+    if (accessToken) {
+      Cookies.set("accessToken", accessToken, {
+        expires: 0.01,
+        sameSite: "lax",
+      });
+
+      axios.defaults.headers.common.Authorization = `Bearer ${accessToken}`;
+
       const timer = setTimeout(() => router.push("/chats"), 1000);
       return () => clearTimeout(timer);
     }
-  }, [errorMessage, router]);
+  }, [accessToken, errorMessage, router]);
 
   return { errorMessage };
 };

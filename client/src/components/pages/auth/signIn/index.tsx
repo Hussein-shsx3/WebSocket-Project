@@ -3,15 +3,16 @@
 import AuthContainer from "@/components/ui/display/AuthContainer";
 import {
   Button,
-  GoogleButton,
   FormHeader,
   Milestone,
   Input,
   ForgetPassword,
   AuthSwitchLink,
 } from "@/components/ui/form";
+import { GoogleButton } from "@/components/ui/buttons";
 import ErrorAlert from "@/components/ui/feedback/ErrorAlert";
 import { useSignIn } from "./useSignIn";
+import { authService } from "@/services/auth.service";
 
 const SignIn = () => {
   const {
@@ -63,7 +64,7 @@ const SignIn = () => {
 
         <Milestone title="Sign in with" />
 
-        <GoogleButton />
+        <GoogleButton onClick={authService.initiateGoogleAuth} />
 
         <AuthSwitchLink mode="signIn" />
       </form>

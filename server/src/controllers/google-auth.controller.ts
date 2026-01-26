@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { generateRefreshToken } from "../utils/jwt.util";
+import { generateRefreshToken, generateAccessToken } from "../utils/jwt.util";
 import { config } from "../config/env.config";
 import { asyncHandler } from "../middleware/error.middleware";
 import prisma from "../config/db";
@@ -26,18 +26,19 @@ export const googleCallback = asyncHandler(
 
     if (!googleUser?.id || !googleUser?.email) {
       return res.redirect(
-        `${config.CLIENT_URL}/google-callback?error=${encodeURIComponent(
-          "Authentication failed",
-        )}`,
+        `${config.CLIENT_URL}/google-callback?error=auth_failed`,
       );
     }
 
-    // Generate refresh token ONLY
-    const refreshToken = generateRefreshToken({
+    const payload = {
       userId: googleUser.id,
       email: googleUser.email,
       role: googleUser.role || "USER",
-    });
+    };
+
+    // 🔐 Tokens
+    const accessToken = generateAccessToken(payload);
+    const refreshToken = generateRefreshToken(payload);
 
     // Store refresh token in DB
     await prisma.user.update({
@@ -45,11 +46,13 @@ export const googleCallback = asyncHandler(
       data: { refreshToken },
     });
 
-    // Set refresh token as HTTP-only cookie
+    // HTTP-only refresh cookie
     res.cookie("refreshToken", refreshToken, getRefreshTokenCookieConfig());
 
-    // Redirect WITHOUT tokens
-    res.redirect(`${config.CLIENT_URL}/google-callback?success=true`);
+    // ⬅️ Send access token to frontend
+    res.redirect(
+      `${config.CLIENT_URL}/google-callback?accessToken=${accessToken}`,
+    );
   },
 );
 

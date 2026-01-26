@@ -149,17 +149,30 @@ export const refreshTokens = asyncHandler(
       });
     }
 
-    const { accessToken, refreshToken } =
-      await authService.refreshToken(oldRefreshToken);
+    try {
+      const { accessToken, refreshToken } =
+        await authService.refreshToken(oldRefreshToken);
 
-    // Set new refresh token as HTTP-only cookie
-    res.cookie("refreshToken", refreshToken, getRefreshTokenCookieConfig());
+      // Set new refresh token as HTTP-only cookie
+      res.cookie("refreshToken", refreshToken, getRefreshTokenCookieConfig());
 
-    return res.status(200).json({
-      success: true,
-      message: "Token refreshed successfully",
-      data: { accessToken },
-    });
+      return res.status(200).json({
+        success: true,
+        message: "Token refreshed successfully",
+        data: { accessToken },
+      });
+    } catch (error: any) {
+      // Clear refresh cookie so Next middleware won't treat the client as authenticated
+      res.clearCookie("refreshToken", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+      });
+
+      const message = error?.message || "Failed to refresh token";
+      return res.status(401).json({ success: false, message });
+    }
   }
 );
 

@@ -3,7 +3,7 @@
 import React from "react";
 
 interface GoogleButtonProps {
-  onClick?: () => void;
+  onClick: () => void;
   isLoading?: boolean;
   text?: string;
 }
@@ -13,19 +13,10 @@ const GoogleButton: React.FC<GoogleButtonProps> = ({
   isLoading = false,
   text = "Sign in with Google",
 }) => {
-  const handleClick = () => {
-    if (onClick) {
-      onClick();
-    } else {
-      // Default: redirect to Google OAuth endpoint
-      window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/auth/google`;
-    }
-  };
-
   return (
     <button
       type="button"
-      onClick={handleClick}
+      onClick={onClick}
       disabled={isLoading}
       className="w-full flex items-center justify-center gap-3 px-4 py-2.5 my-3 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md transition-all duration-200 hover:bg-gray-50 active:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
     >
@@ -69,6 +60,7 @@ const GoogleButton: React.FC<GoogleButtonProps> = ({
           />
         </svg>
       )}
+
       <span>{isLoading ? "Signing in..." : text}</span>
     </button>
   );
