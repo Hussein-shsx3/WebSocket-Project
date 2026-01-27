@@ -44,7 +44,12 @@ const Profile = () => {
 
   return (
     <div>
-      <ProfileHeader />
+      {/* Use ProfileHeader with Edit Button */}
+      <ProfileHeader 
+        title="My Profile"
+        showEditButton={true}
+      />
+      
       <div className="w-full border-b-[1px] border-border flex flex-col translate-y-[-40px] items-center justify-center gap-2 pb-4 px-4">
         <div className="relative w-[75px] h-[75px] rounded-full border-4 border-gray-300 overflow-hidden">
           {user.avatar ? (

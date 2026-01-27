@@ -11,13 +11,23 @@ import {
   UserPlus,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { ThemeToggle } from "../buttons";
 import { LogoutButton } from "../buttons";
+import { useUserProfile } from "@/hooks/useUserProfile";
 
 export function Sidebar() {
   const pathname = usePathname();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const avatarRef = useRef<HTMLDivElement | null>(null);
+  const { data: user } = useUserProfile();
+
+  const getInitials = (name: string) => {
+    const parts = name.split(' ');
+    return parts.length > 1 
+      ? parts[0][0] + parts[parts.length - 1][0] 
+      : parts[0]?.[0] || '';
+  };
 
   const navigation = [
     { name: "Profile", href: "/profile", icon: User },
@@ -99,10 +109,21 @@ export function Sidebar() {
           <div className="w-full flex items-center justify-center mt-2">
             <Link
               href="/profile"
-              className="w-11 h-11 rounded-2xl bg-primaryColor flex items-center justify-center text-white text-sm font-bold hover:shadow-lg hover:shadow-primaryColor/20 transition-all duration-200 hover:scale-105"
+              className="relative w-11 h-11 rounded-2xl flex items-center justify-center text-white text-sm font-bold hover:shadow-lg hover:shadow-primaryColor/20 transition-all duration-200 hover:scale-105 overflow-hidden"
               title="Profile"
             >
-              H
+              {user?.avatar ? (
+                <Image
+                  src={user.avatar}
+                  alt="User Avatar"
+                  fill
+                  className="rounded-2xl object-cover"
+                />
+              ) : (
+                <span className="bg-primaryColor w-full h-full flex items-center justify-center">
+                  {getInitials(user?.name || "")}
+                </span>
+              )}
             </Link>
           </div>
         </div>
@@ -143,9 +164,20 @@ export function Sidebar() {
           <button
             type="button"
             onClick={() => setIsUserMenuOpen((open) => !open)}
-            className="w-10 h-10 rounded-xl bg-primaryColor flex items-center justify-center text-white text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primaryColor/50 shadow-lg shadow-primaryColor/20"
+            className="relative w-10 h-10 rounded-xl flex items-center justify-center text-white text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primaryColor/50 shadow-lg shadow-primaryColor/20 overflow-hidden"
           >
-            H
+            {user?.avatar ? (
+              <Image
+                src={user.avatar}
+                alt="User Avatar"
+                fill
+                className="rounded-xl object-cover"
+              />
+            ) : (
+              <span className="bg-primaryColor w-full h-full flex items-center justify-center">
+                {getInitials(user?.name || "")}
+              </span>
+            )}
           </button>
 
           {isUserMenuOpen && (
