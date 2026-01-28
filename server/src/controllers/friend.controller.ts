@@ -26,7 +26,7 @@ export const sendFriendRequestHandler = asyncHandler(
     const userId = req.user?.userId;
 
     if (!userId) {
-      res.status(401).json({ message: "Unauthorized" });
+      res.status(401).json({ success: false, message: "Unauthorized" });
       return;
     }
 
@@ -35,6 +35,7 @@ export const sendFriendRequestHandler = asyncHandler(
 
     if (!validationResult.success) {
       res.status(400).json({
+        success: false,
         message: "Validation failed",
         errors: validationResult.error.flatten().fieldErrors,
       });
@@ -46,6 +47,7 @@ export const sendFriendRequestHandler = asyncHandler(
     const friendRequest = await sendFriendRequest(userId, receiverId);
 
     res.status(201).json({
+      success: true,
       message: "Friend request sent successfully",
       data: friendRequest,
     });
@@ -62,13 +64,14 @@ export const acceptFriendRequestHandler = asyncHandler(
     const { requestId } = req.params;
 
     if (!userId) {
-      res.status(401).json({ message: "Unauthorized" });
+      res.status(401).json({ success: false, message: "Unauthorized" });
       return;
     }
 
     const result = await acceptFriendRequest(requestId, userId);
 
     res.status(200).json({
+      success: true,
       message: "Friend request accepted successfully",
       data: result,
     });
@@ -85,13 +88,14 @@ export const rejectFriendRequestHandler = asyncHandler(
     const { requestId } = req.params;
 
     if (!userId) {
-      res.status(401).json({ message: "Unauthorized" });
+      res.status(401).json({ success: false, message: "Unauthorized" });
       return;
     }
 
     const result = await rejectFriendRequest(requestId, userId);
 
     res.status(200).json({
+      success: true,
       message: "Friend request rejected successfully",
       data: result,
     });
@@ -108,13 +112,16 @@ export const cancelFriendRequestHandler = asyncHandler(
     const { requestId } = req.params;
 
     if (!userId) {
-      res.status(401).json({ message: "Unauthorized" });
+      res.status(401).json({ success: false, message: "Unauthorized" });
       return;
     }
 
     const result = await cancelFriendRequest(requestId, userId);
 
-    res.status(200).json(result);
+    res.status(200).json({
+      success: true,
+      message: result.message,
+    });
   }
 );
 
@@ -128,7 +135,7 @@ export const getFriendRequestsHandler = asyncHandler(
     const userId = req.user?.userId;
 
     if (!userId) {
-      res.status(401).json({ message: "Unauthorized" });
+      res.status(401).json({ success: false, message: "Unauthorized" });
       return;
     }
 
@@ -137,6 +144,7 @@ export const getFriendRequestsHandler = asyncHandler(
 
     if (!validationResult.success) {
       res.status(400).json({
+        success: false,
         message: "Validation failed",
         errors: validationResult.error.flatten().fieldErrors,
       });
@@ -157,6 +165,7 @@ export const getFriendRequestsHandler = asyncHandler(
         : "Sent friend requests retrieved successfully";
 
     res.status(200).json({
+      success: true,
       message,
       data: {
         requests,
@@ -181,7 +190,7 @@ export const getFriendsHandler = asyncHandler(
     const userId = req.user?.userId;
 
     if (!userId) {
-      res.status(401).json({ message: "Unauthorized" });
+      res.status(401).json({ success: false, message: "Unauthorized" });
       return;
     }
 
@@ -190,6 +199,7 @@ export const getFriendsHandler = asyncHandler(
 
     if (!validationResult.success) {
       res.status(400).json({
+        success: false,
         message: "Validation failed",
         errors: validationResult.error.flatten().fieldErrors,
       });
@@ -205,6 +215,7 @@ export const getFriendsHandler = asyncHandler(
     const total = await getFriendsCount(userId, search);
 
     res.status(200).json({
+      success: true,
       message: "Friends retrieved successfully",
       data: {
         friends,
@@ -229,12 +240,15 @@ export const removeFriendHandler = asyncHandler(
     const { friendId } = req.params;
 
     if (!userId) {
-      res.status(401).json({ message: "Unauthorized" });
+      res.status(401).json({ success: false, message: "Unauthorized" });
       return;
     }
 
     const result = await removeFriend(userId, friendId);
 
-    res.status(200).json(result);
+    res.status(200).json({
+      success: true,
+      message: result.message,
+    });
   }
 );

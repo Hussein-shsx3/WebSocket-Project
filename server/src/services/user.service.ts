@@ -125,13 +125,21 @@ export const uploadUserAvatar = async (userId: string, file: Express.Multer.File
 
 /**
  * Search users by name or email
+ * IMPORTANT: Excludes the current user from results
  */
-export const searchUsers = async (query: string, limit: number = 10) => {
+export const searchUsers = async (query: string, limit: number = 10, currentUserId?: string) => {
   const users = await prisma.user.findMany({
     where: {
-      OR: [
-        { name: { contains: query, mode: "insensitive" } },
-        { email: { contains: query, mode: "insensitive" } },
+      AND: [
+        // Exclude current user
+        ...(currentUserId ? [{ id: { not: currentUserId } }] : []),
+        // Search query
+        {
+          OR: [
+            { name: { contains: query, mode: "insensitive" } },
+            { email: { contains: query, mode: "insensitive" } },
+          ],
+        },
       ],
     },
     select: {
@@ -227,5 +235,3 @@ export const getAllUsers = async (limit: number = 10, skip: number = 0) => {
 export const getTotalUsersCount = async () => {
   return prisma.user.count();
 };
-
-

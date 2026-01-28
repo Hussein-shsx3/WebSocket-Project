@@ -1,6 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { userService, UserProfile, UpdateProfileDTO } from "@/services/user.service";
+import {
+  userService,
+  UserProfile,
+  UpdateProfileDTO,
+} from "@/services/user.service";
 
 /**
  * Hook to get current user profile
@@ -25,12 +29,15 @@ export const useUpdateProfile = () => {
     onSuccess: (updatedUser) => {
       // Update cached profile data
       queryClient.setQueryData(["userProfile"], updatedUser);
-      
+
       // Also update the currentUser cache from auth
-      queryClient.setQueryData(["currentUser"], (old: any) => ({
-        ...old,
-        ...updatedUser,
-      }));
+      queryClient.setQueryData(
+        ["currentUser"],
+        (old: UserProfile | undefined) => ({
+          ...old,
+          ...updatedUser,
+        }),
+      );
     },
     onError: (error) => {
       console.error("Update profile failed:", error);
@@ -49,12 +56,15 @@ export const useUploadAvatar = () => {
     onSuccess: (updatedUser) => {
       // Update cached profile data
       queryClient.setQueryData(["userProfile"], updatedUser);
-      
+
       // Also update the currentUser cache
-      queryClient.setQueryData(["currentUser"], (old: any) => ({
-        ...old,
-        avatar: updatedUser.avatar,
-      }));
+      queryClient.setQueryData(
+        ["currentUser"],
+        (old: UserProfile | undefined) => ({
+          ...old,
+          avatar: updatedUser.avatar,
+        }),
+      );
     },
     onError: (error) => {
       console.error("Avatar upload failed:", error);
@@ -72,10 +82,13 @@ export const useUpdateStatus = () => {
     mutationFn: (status: string) => userService.updateUserStatus(status),
     onSuccess: (_, status) => {
       // Optimistically update the cache
-      queryClient.setQueryData(["userProfile"], (old: UserProfile | undefined) => {
-        if (!old) return old;
-        return { ...old, status };
-      });
+      queryClient.setQueryData(
+        ["userProfile"],
+        (old: UserProfile | undefined) => {
+          if (!old) return old;
+          return { ...old, status };
+        },
+      );
     },
     onError: (error) => {
       console.error("Status update failed:", error);
@@ -97,7 +110,7 @@ export const useDeleteAccount = () => {
     onSuccess: () => {
       // Clear all cached data
       queryClient.clear();
-      
+
       // Redirect to sign in page
       router.push("/signIn");
     },

@@ -109,6 +109,8 @@ export const uploadAvatar = asyncHandler(async (req: Request, res: Response) => 
  * Search users
  */
 export const searchUsersHandler = asyncHandler(async (req: Request, res: Response) => {
+  const userId = req.user?.userId; // Get current user ID
+
   // Validate query parameters
   const validationResult = searchUsersSchema.safeParse(req.query);
 
@@ -124,7 +126,8 @@ export const searchUsersHandler = asyncHandler(async (req: Request, res: Respons
   const { query, limit } = validationResult.data;
   const limitNumber = limit ? parseInt(limit, 10) : 10;
 
-  const users = await searchUsers(query, limitNumber);
+  // Pass current user ID to exclude them from results
+  const users = await searchUsers(query, limitNumber, userId);
 
   res.status(200).json({
     success: true,
