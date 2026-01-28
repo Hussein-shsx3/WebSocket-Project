@@ -66,7 +66,7 @@ const Profile = () => {
           )}
         </div>
         <h6 className="text-primary font-medium">{user.name || "User Name"}</h6>
-        <p className="text-sm text-secondary text-center">
+        <p className="text-xs text-secondary text-center">
           {user.bio || "No bio available."}
         </p>
       </div>
