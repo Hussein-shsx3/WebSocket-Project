@@ -17,8 +17,8 @@ const ProfileHeader = ({
   backgroundImage = "/images/img-4.jpg",
 }: ProfileHeaderProps) => {
   return (
-    <div>
-      <div className="w-full h-[165px] sticky top-0">
+    <div className="sticky top-0">
+      <div className="w-full h-[165px] relative">
         <h5 className="absolute z-10 text-white top-4 left-4 font-medium">
           {title}
         </h5>
@@ -74,6 +74,8 @@ const ProfileHeader = ({
           fill
           alt="Profile Background"
           className="object-cover"
+          sizes="100vw"
+          loading="eager"
         />
         <span className="absolute inset-0 bg-[radial-gradient(circle,rgba(0,0,0,0)_0%,rgba(0,0,0,0.6)_130%)]"></span>
       </div>

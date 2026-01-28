@@ -54,7 +54,7 @@ export default function RootLayout({
       className={`${inter.variable} ${poppins.variable}`}
       suppressHydrationWarning
     >
-      <body className={`${inter.className} antialiased overflow-hidden`}>
+      <body className={`${inter.className} antialiased overflow-auto`}>
         <Providers>
           {children}
         </Providers>

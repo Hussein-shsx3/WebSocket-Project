@@ -6,7 +6,7 @@ interface PanelProps {
 
 export function Panel({ children }: PanelProps) {
   return (
-    <section className="relative w-full md:w-[300px] bg-panel flex flex-col overflow-hidden">
+    <section className="relative w-full md:w-[300px] bg-panel flex flex-col overflow-y-auto">
       {children}
     </section>
   );

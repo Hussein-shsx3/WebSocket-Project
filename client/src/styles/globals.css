@@ -8,10 +8,10 @@
 
   /* Light Mode Colors */
   --sidebar-bg: #2e2e2e;
-  --panel-bg: #f5f7fb;
-  --main-bg: #e6ebf5;
+  --panel-bg: #ffffff;
+  --main-bg: #e1eae4;
   --header-bg: #ffffff;
-  --text-primary: #32373b;
+  --text-primary: #495057;
   --text-secondary: #7a7f9a;
   --border-color: #e1e5eb;
   --hover-bg: #eef0f5;
@@ -24,10 +24,10 @@
 .dark {
   /* Dark Mode Colors */
   --sidebar-bg: #2e2e2e;
-  --panel-bg: #262e35;
-  --main-bg: #1b2028;
+  --panel-bg: #262626;
+  --main-bg: #313a34;
   --header-bg: #303841;
-  --text-primary: #e1e9f0;
+  --text-primary: #adb5bd;
   --text-secondary: #9ca3af;
   --border-color: #38424d;
   --hover-bg: #303841;

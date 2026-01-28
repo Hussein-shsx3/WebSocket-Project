@@ -109,7 +109,7 @@ export function Sidebar() {
           <div className="w-full flex items-center justify-center mt-2">
             <Link
               href="/profile"
-              className="relative w-11 h-11 rounded-2xl flex items-center justify-center text-white text-sm font-bold hover:shadow-lg hover:shadow-primaryColor/20 transition-all duration-200 hover:scale-105 overflow-hidden"
+              className="relative w-11 h-11 rounded-full flex items-center justify-center text-white text-sm font-bold hover:shadow-lg hover:shadow-primaryColor/20 transition-all duration-200 hover:scale-105 overflow-hidden"
               title="Profile"
             >
               {user?.avatar ? (
@@ -117,7 +117,9 @@ export function Sidebar() {
                   src={user.avatar}
                   alt="User Avatar"
                   fill
-                  className="rounded-2xl object-cover"
+                  className="rounded-full object-cover"
+                  sizes="44px"
+                  loading="eager"
                 />
               ) : (
                 <span className="bg-primaryColor w-full h-full flex items-center justify-center">
@@ -160,18 +162,20 @@ export function Sidebar() {
         })}
 
         {/* User avatar with dropdown menu */}
-        <div ref={avatarRef} className="relative h-12 w-14 flex items-center justify-center">
+        <div ref={avatarRef} className="relative h-12 w-12 flex items-center justify-center">
           <button
             type="button"
             onClick={() => setIsUserMenuOpen((open) => !open)}
-            className="relative w-10 h-10 rounded-xl flex items-center justify-center text-white text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primaryColor/50 shadow-lg shadow-primaryColor/20 overflow-hidden"
+            className="relative w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primaryColor/50 shadow-lg shadow-primaryColor/20 overflow-hidden"
           >
             {user?.avatar ? (
               <Image
                 src={user.avatar}
                 alt="User Avatar"
                 fill
-                className="rounded-xl object-cover"
+                className="rounded-full object-cover"
+                sizes="40px"
+                loading="eager"
               />
             ) : (
               <span className="bg-primaryColor w-full h-full flex items-center justify-center">
@@ -181,18 +185,12 @@ export function Sidebar() {
           </button>
 
           {isUserMenuOpen && (
-            <>
-              {/* Backdrop overlay */}
-              <div
-                className="fixed inset-0 bg-black/30 backdrop-blur-sm z-30"
-                onClick={() => setIsUserMenuOpen(false)}
-              />
-              
+            <>    
               {/* Dropdown menu */}
-              <div className="absolute bottom-14 right-0 w-48 rounded-2xl bg-popover shadow-2xl border border-border py-2 flex flex-col z-50 overflow-hidden">
+              <div className="absolute bottom-14 right-0 w-40 rounded-2xl bg-popover shadow-2xl border border-border py-2 flex flex-col z-50 overflow-hidden">
                 <Link
                   href="/profile"
-                  className="px-4 py-3 text-sm flex items-center gap-3 hover:bg-hover transition-colors text-primary"
+                  className="w-full px-4 py-3 text-sm flex items-center gap-3 hover:bg-hover transition-colors text-primary"
                   onClick={() => setIsUserMenuOpen(false)}
                 >
                   <User className="w-5 h-5 text-primaryColor" />
@@ -201,7 +199,7 @@ export function Sidebar() {
                 
                 <Link
                   href="/settings"
-                  className="px-4 py-3 text-sm flex items-center gap-3 hover:bg-hover transition-colors text-primary"
+                  className="w-full px-4 py-3 text-sm flex items-center gap-3 hover:bg-hover transition-colors text-primary"
                   onClick={() => setIsUserMenuOpen(false)}
                 >
                   <Settings className="w-5 h-5 text-primaryColor" />
@@ -211,13 +209,13 @@ export function Sidebar() {
                 <div className="h-px bg-border/50 my-1" />
 
                 {/* Theme Toggle in dropdown */}
-                <div className="px-4 py-2">
+                <div className="w-full px-4 py-2">
                   <ThemeToggle showLabel />
                 </div>
 
-                <div className="h-px bg-border/50 my-1" />
+                <div className="h-px bg-border my-1" />
 
-                <div className="px-2 py-1">
+                <div className="w-full">
                   <LogoutButton />
                 </div>
               </div>

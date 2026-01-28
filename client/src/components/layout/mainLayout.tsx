@@ -15,7 +15,7 @@ export function MainLayout({ children }: MainLayoutProps) {
   const isConversationPage = pathname?.startsWith("/chats/") && pathname !== "/chats";
 
   return (
-    <div className="h-screen w-full flex overflow-hidden bg-main">
+    <div className="min-h-screen h-auto md:h-screen w-full flex md:overflow-hidden bg-main pb-16 md:pb-0">
       <Sidebar />
       <Panel>
         {children}

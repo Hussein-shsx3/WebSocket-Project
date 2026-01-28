@@ -51,7 +51,7 @@ const Profile = () => {
       />
       
       <div className="w-full border-b-[1px] border-border flex flex-col translate-y-[-40px] items-center justify-center gap-2 pb-4 px-4">
-        <div className="relative w-[75px] h-[75px] rounded-full border-4 border-gray-300 overflow-hidden">
+        <div className="relative w-[75px] h-[75px] rounded-full border-2 border-gray-200 overflow-hidden">
           {user.avatar ? (
             <Image
               src={user.avatar}

@@ -100,7 +100,7 @@ const EditProfile = () => {
       {/* Avatar Section */}
       <div className="w-full border-b-[1px] border-border flex flex-col translate-y-[-40px] items-center justify-center gap-2 pb-4 px-4">
         <div 
-          className="relative w-[75px] h-[75px] rounded-full border-4 border-gray-300 overflow-hidden cursor-pointer group"
+          className="relative w-[75px] h-[75px] rounded-full border-2 border-gray-200 overflow-hidden cursor-pointer group"
           onClick={handleAvatarClick}
         >
           {currentAvatar ? (
@@ -109,6 +109,8 @@ const EditProfile = () => {
               alt="User Avatar"
               fill
               className="rounded-full object-cover"
+              sizes="75px"
+              loading="eager"
             />
           ) : (
             <div className="bg-primaryColor w-full h-full flex items-center justify-center text-white font-semibold text-xl">
