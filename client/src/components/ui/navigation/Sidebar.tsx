@@ -15,12 +15,14 @@ import Image from "next/image";
 import { ThemeToggle } from "../buttons";
 import { LogoutButton } from "../buttons";
 import { useUserProfile } from "@/hooks/useUserProfile";
+import { usePendingFriendRequests } from "@/hooks/useFriends";
 
 export function Sidebar() {
   const pathname = usePathname();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const avatarRef = useRef<HTMLDivElement | null>(null);
   const { data: user } = useUserProfile();
+  const { data: pendingRequests } = usePendingFriendRequests();
 
   const getInitials = (name: string) => {
     const parts = name.split(' ');
@@ -73,6 +75,7 @@ export function Sidebar() {
           {navigation.map((item) => {
             const isActive = pathname.startsWith(item.href);
             const Icon = item.icon;
+            const hasFriendRequests = item.name === "Friend Requests" && pendingRequests && pendingRequests.length > 0;
 
             return (
               <Link
@@ -93,7 +96,14 @@ export function Sidebar() {
                 {isActive && (
                   <div className="absolute right-0 top-1/2 -translate-y-1/2 w-[3.5px] h-5 bg-primaryColor rounded-full" />
                 )}
-                <Icon className="w-6 h-6" strokeWidth={2} />
+                <div className="relative">
+                  <Icon className="w-6 h-6" strokeWidth={2} />
+                  {/* Friend Requests Badge */}
+                  {hasFriendRequests && (
+                    <span className="absolute -top-1 -right-2 bg-primaryColor text-white text-xs rounded-full w-2 h-2 flex items-center justify-center font-medium">
+                    </span>
+                  )}
+                </div>
               </Link>
             );
           })}
@@ -136,6 +146,7 @@ export function Sidebar() {
         {mobileNavigation.map((item) => {
           const isActive = pathname.startsWith(item.href);
           const Icon = item.icon;
+          const hasFriendRequests = item.name === "Friend Requests" && pendingRequests && pendingRequests.length > 0;
 
           return (
             <Link
@@ -152,10 +163,15 @@ export function Sidebar() {
               `}
               title={item.name}
             >
-              <div className={`p-2 rounded-xl transition-all duration-200 ${
+              <div className={`p-2 rounded-xl transition-all duration-200 relative ${
                 isActive ? "bg-primaryColor/10" : ""
               }`}>
                 <Icon className="w-5 h-5" strokeWidth={2} />
+                {/* Friend Requests Badge */}
+                {hasFriendRequests && (
+                  <span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs rounded-full w-3 h-3 flex items-center justify-center font-medium">
+                  </span>
+                )}
               </div>
             </Link>
           );

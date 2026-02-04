@@ -12,7 +12,8 @@ import {
   useCancelFriendRequest,
   useFriendsList,
 } from "@/hooks/useFriends";
-import Image from "next/image";
+import { UserListItem } from "@/components/ui/display/UserListItem";
+import { Check, X } from "lucide-react";
 
 const FriendsRequests = () => {
   const [activeTab, setActiveTab] = useState<"search" | "pending" | "sent">(
@@ -47,14 +48,6 @@ const FriendsRequests = () => {
     setTimeout(() => {
       setDebouncedQuery(value);
     }, 500);
-  };
-
-  const getInitials = (name: string | null) => {
-    if (!name) return "?";
-    const parts = name.split(" ");
-    return parts.length > 1
-      ? parts[0][0] + parts[parts.length - 1][0]
-      : parts[0]?.[0] || "?";
   };
 
   const handleSendRequest = (userId: string) => {
@@ -122,20 +115,25 @@ const FriendsRequests = () => {
         >
           Received
           {pendingRequests && pendingRequests.length > 0 && (
-            <span className="absolute top-1 right-1 bg-error-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+            <span className="absolute top-1 right-1 bg-primaryColor text-white text-[11px] rounded-full w-4 h-4 flex items-center justify-center">
               {pendingRequests.length}
             </span>
           )}
         </button>
         <button
           onClick={() => setActiveTab("sent")}
-          className={`flex-1 px-2 py-3 text-xs font-medium transition-colors ${
+          className={`flex-1 px-2 py-3 text-xs font-medium transition-colors relative ${
             activeTab === "sent"
               ? "text-primaryColor border-b-2 border-primaryColor"
               : "text-secondary hover:text-primary"
           }`}
         >
           Sent
+          {sentRequests && sentRequests.length > 0 && (
+            <span className="absolute top-1 right-1 bg-primaryColor text-white text-[11px] rounded-full w-4 h-4 flex items-center justify-center">
+              {sentRequests.length}
+            </span>
+          )}
         </button>
       </div>
 
@@ -143,9 +141,9 @@ const FriendsRequests = () => {
       <div className="flex-1 overflow-y-auto">
         {/* Search Tab */}
         {activeTab === "search" && (
-          <div className="p-4 space-y-4">
+          <div className="py-4 space-y-4">
             {/* Search Input */}
-            <div className="relative">
+            <div className="relative px-1">
               <svg
                 className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-secondary"
                 fill="none"
@@ -181,80 +179,60 @@ const FriendsRequests = () => {
                     const status = getUserStatus(user.id);
 
                     return (
-                      <div
+                      <UserListItem
                         key={user.id}
-                        className="flex items-center gap-3 p-2  rounded-lg hover:bg-border transition-colors"
-                      >
-                        <div className="relative w-9 h-9 rounded-full overflow-hidden flex-shrink-0">
-                          {user.avatar ? (
-                            <Image
-                              src={user.avatar}
-                              alt={user.name || "User"}
-                              fill
-                              className="object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full bg-primaryColor flex items-center justify-center text-white font-semibold">
-                              {getInitials(user.name)}
+                        user={user}
+                        containerClassName="hover:bg-border transition-colors"
+                        titleClassName="text-[13px] font-normal"
+                        subtitleClassName="text-[10px]"
+                        trailing={
+                          status === "friend" ? (
+                            <div className="flex items-center gap-2 px-2 py-2 bg-success-100 text-success-700 rounded-lg text-xs font-medium">
+                              <svg
+                                className="w-3 h-3"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M5 13l4 4L19 7"
+                                />
+                              </svg>
+                              Friends
                             </div>
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-medium text-sm text-primary truncate">
-                            {user.name || "Unknown"}
-                          </h4>
-                          <p className="text-xs text-secondary truncate">
-                            {user.email}
-                          </p>
-                        </div>
-
-                        {/* Status-based button */}
-                        {status === "friend" ? (
-                          <div className="flex items-center gap-2 px-2 py-2 bg-success-100 text-success-700 rounded-lg text-xs font-medium">
-                            <svg
-                              className="w-3 h-3"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
+                          ) : status === "pending" ? (
+                            <div className="flex items-center gap-2 px-2 py-2 bg-warning-100 text-warning-700 rounded-lg text-xs font-medium">
+                              <svg
+                                className="w-3 h-3 animate-pulse"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                                />
+                              </svg>
+                              Pending
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => handleSendRequest(user.id)}
+                              disabled={sendRequestMutation.isPending}
+                              className="px-2 py-2 bg-primaryColor text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 text-xs font-medium"
                             >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M5 13l4 4L19 7"
-                              />
-                            </svg>
-                            Friends
-                          </div>
-                        ) : status === "pending" ? (
-                          <div className="flex items-center gap-2 px-2 py-2 bg-warning-100 text-warning-700 rounded-lg text-xs font-medium">
-                            <svg
-                              className="w-3 h-3 animate-pulse"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                              />
-                            </svg>
-                            Pending
-                          </div>
-                        ) : (
-                          <button
-                            onClick={() => handleSendRequest(user.id)}
-                            disabled={sendRequestMutation.isPending}
-                            className="px-2 py-2 bg-primaryColor text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 text-xs font-medium"
-                          >
-                            {sendRequestMutation.isPending
-                              ? "Sending..."
-                              : "Add Friend"}
-                          </button>
-                        )}
-                      </div>
+                              {sendRequestMutation.isPending
+                                ? "Sending..."
+                                : "Add Friend"}
+                            </button>
+                          )
+                        }
+                      />
                     );
                   })}
               </div>
@@ -298,82 +276,39 @@ const FriendsRequests = () => {
 
         {/* Pending Requests Tab */}
         {activeTab === "pending" && (
-          <div className="p-4 space-y-2">
+          <div className="py-4 space-y-2">
             {isPendingLoading ? (
               <div className="flex justify-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primaryColor"></div>
               </div>
             ) : pendingRequests && pendingRequests.length > 0 ? (
               pendingRequests.map((request) => (
-                <div
+                <UserListItem
                   key={request.id}
-                  className="flex items-center gap-3 p-2  rounded-lg"
-                >
-                  <div className="relative w-9 h-9 rounded-full overflow-hidden flex-shrink-0">
-                    {request.sender?.avatar ? (
-                      <Image
-                        src={request.sender.avatar}
-                        alt={request.sender.name || "User"}
-                        fill
-                        className="object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-primaryColor flex items-center justify-center text-white font-semibold">
-                        {getInitials(request.sender?.name || null)}
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h4 className="text-sm font-medium text-primary truncate">
-                      {request.sender?.name || "Unknown"}
-                    </h4>
-                    <p className="text-xs text-secondary truncate">
-                      {request.sender?.email}
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleAcceptRequest(request.id)}
-                      disabled={acceptRequestMutation.isPending}
-                      className="p-2 bg-success-500 text-xs text-white rounded-lg hover:bg-success-600 transition-colors disabled:opacity-50"
-                      title="Accept"
-                    >
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
+                  user={request.sender || { id: request.id }}
+                  titleClassName="text-[13px] font-normal"
+                  subtitleClassName="text-[10px]"
+                  trailing={
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleAcceptRequest(request.id)}
+                        disabled={acceptRequestMutation.isPending}
+                        className="p-1 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 active:scale-95"
+                        title="Accept"
                       >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                    </button>
-                    <button
-                      onClick={() => handleRejectRequest(request.id)}
-                      disabled={rejectRequestMutation.isPending}
-                      className="p-2 bg-error-500 text-xs text-white rounded-lg hover:bg-error-600 transition-colors disabled:opacity-50"
-                      title="Reject"
-                    >
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
+                        <Check className="w-4 h-4" strokeWidth={2.5} />
+                      </button>
+                      <button
+                        onClick={() => handleRejectRequest(request.id)}
+                        disabled={rejectRequestMutation.isPending}
+                        className="p-1 bg-red-700 hover:bg-red-800 text-white rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 active:scale-95"
+                        title="Reject"
                       >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M6 18L18 6M6 6l12 12"
-                        />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
+                        <X className="w-4 h-4" strokeWidth={2.5} />
+                      </button>
+                    </div>
+                  }
+                />
               ))
             ) : (
               <div className="text-center py-8 text-secondary">
@@ -398,50 +333,33 @@ const FriendsRequests = () => {
 
         {/* Sent Requests Tab */}
         {activeTab === "sent" && (
-          <div className="p-4 space-y-2">
+          <div className="py-4 space-y-2">
             {isSentLoading ? (
               <div className="flex justify-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primaryColor"></div>
               </div>
             ) : sentRequests && sentRequests.length > 0 ? (
               sentRequests.map((request) => (
-                <div
+                <UserListItem
                   key={request.id}
-                  className="flex items-center gap-3 p-2  rounded-lg"
-                >
-                  <div className="relative w-9 h-9 rounded-full overflow-hidden flex-shrink-0">
-                    {request.receiver?.avatar ? (
-                      <Image
-                        src={request.receiver.avatar}
-                        alt={request.receiver.name || "User"}
-                        fill
-                        className="object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-primaryColor flex items-center justify-center text-white font-semibold">
-                        {getInitials(request.receiver?.name || null)}
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-medium text-sm text-primary truncate">
-                      {request.receiver?.name || "Unknown"}
-                    </h4>
-                    <p className="text-xs text-secondary truncate">
-                      {request.receiver?.email}
-                    </p>
+                  user={request.receiver || { id: request.id }}
+                  titleClassName="text-[13px] font-normal"
+                  subtitleClassName="text-[10px]"
+                  footer={
                     <p className="text-xs text-warning-500 mt-1">Pending</p>
-                  </div>
-                  <button
-                    onClick={() => handleCancelRequest(request.id)}
-                    disabled={cancelRequestMutation.isPending}
-                    className="px-3 py-2 bg-error-500 text-white rounded-lg hover:bg-error-600 transition-colors disabled:opacity-50 text-xs font-medium"
-                  >
-                    {cancelRequestMutation.isPending
-                      ? "Canceling..."
-                      : "Cancel"}
-                  </button>
-                </div>
+                  }
+                  trailing={
+                    <button
+                      onClick={() => handleCancelRequest(request.id)}
+                      disabled={cancelRequestMutation.isPending}
+                      className="px-3 py-2 bg-error-500 text-white rounded-lg hover:bg-error-600 transition-colors disabled:opacity-50 text-xs font-medium"
+                    >
+                      {cancelRequestMutation.isPending
+                        ? "Canceling..."
+                        : "Cancel"}
+                    </button>
+                  }
+                />
               ))
             ) : (
               <div className="text-center py-8 text-secondary">
