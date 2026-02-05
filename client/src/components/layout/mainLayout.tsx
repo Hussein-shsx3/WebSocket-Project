@@ -17,7 +17,7 @@ export function MainLayout({ children }: MainLayoutProps) {
   return (
     <div className="min-h-screen h-auto md:h-screen w-full flex md:overflow-hidden bg-main pb-16 md:pb-0">
       <Sidebar />
-      <Panel>
+      <Panel hideOnMobile={isConversationPage}>
         {children}
       </Panel>
       {isConversationPage && (
