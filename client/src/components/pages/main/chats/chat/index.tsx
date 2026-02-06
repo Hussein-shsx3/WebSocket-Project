@@ -498,7 +498,6 @@ const Chat = () => {
     typingUsers,
     startTyping,
     stopTyping,
-    isConnected,
   } = useChatSocket({
     conversationId,
     enabled: !!conversationId,
@@ -709,6 +708,7 @@ const Chat = () => {
       {/* ==================== HEADER ==================== */}
       <ChatHeader
         user={otherUser}
+        conversationId={conversationId}
         isLoading={isUserLoading}
         isTyping={typingUsers.length > 0}
         onCallClick={handleVoiceCall}
@@ -909,14 +909,6 @@ const Chat = () => {
             <Send className="w-5 h-5" />
           </button>
         </div>
-
-        {/* Connection indicator */}
-        {!isConnected && (
-          <div className="flex items-center justify-center gap-2 mt-2 py-1.5 px-3 bg-red-500/10 rounded-lg">
-            <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-            <span className="text-xs text-red-500">Reconnecting...</span>
-          </div>
-        )}
       </div>
     </div>
   );

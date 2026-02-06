@@ -11,11 +11,11 @@ import {
   UserPlus,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import Image from "next/image";
 import { ThemeToggle } from "../buttons";
 import { LogoutButton } from "../buttons";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { usePendingFriendRequests } from "@/hooks/useFriends";
+import { Avatar } from "../display/Avatar";
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -23,13 +23,6 @@ export function Sidebar() {
   const avatarRef = useRef<HTMLDivElement | null>(null);
   const { data: user } = useUserProfile();
   const { data: pendingRequests } = usePendingFriendRequests();
-
-  const getInitials = (name: string) => {
-    const parts = name.split(' ');
-    return parts.length > 1 
-      ? parts[0][0] + parts[parts.length - 1][0] 
-      : parts[0]?.[0] || '';
-  };
 
   const navigation = [
     { name: "Profile", href: "/profile", icon: User },
@@ -119,23 +112,14 @@ export function Sidebar() {
           <div className="w-full flex items-center justify-center mt-2">
             <Link
               href="/profile"
-              className="relative w-11 h-11 rounded-full flex items-center justify-center text-white text-sm font-bold hover:shadow-lg hover:shadow-primaryColor/20 transition-all duration-200 hover:scale-105 overflow-hidden"
+              className="hover:shadow-lg hover:shadow-primaryColor/20 transition-all duration-200 hover:scale-105 rounded-full"
               title="Profile"
             >
-              {user?.avatar ? (
-                <Image
-                  src={user.avatar}
-                  alt="User Avatar"
-                  fill
-                  className="rounded-full object-cover"
-                  sizes="44px"
-                  loading="eager"
-                />
-              ) : (
-                <span className="bg-primaryColor w-full h-full flex items-center justify-center">
-                  {getInitials(user?.name || "")}
-                </span>
-              )}
+              <Avatar
+                src={user?.avatar}
+                name={user?.name}
+                size="md"
+              />
             </Link>
           </div>
         </div>
@@ -179,26 +163,13 @@ export function Sidebar() {
 
         {/* User avatar with dropdown menu */}
         <div ref={avatarRef} className="relative h-12 w-12 flex items-center justify-center">
-          <button
-            type="button"
+          <Avatar
+            src={user?.avatar}
+            name={user?.name}
+            size="sm"
             onClick={() => setIsUserMenuOpen((open) => !open)}
-            className="relative w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primaryColor/50 shadow-lg shadow-primaryColor/20 overflow-hidden"
-          >
-            {user?.avatar ? (
-              <Image
-                src={user.avatar}
-                alt="User Avatar"
-                fill
-                className="rounded-full object-cover"
-                sizes="40px"
-                loading="eager"
-              />
-            ) : (
-              <span className="bg-primaryColor w-full h-full flex items-center justify-center">
-                {getInitials(user?.name || "")}
-              </span>
-            )}
-          </button>
+            className="focus:outline-none focus:ring-2 focus:ring-primaryColor/50 shadow-lg shadow-primaryColor/20"
+          />
 
           {isUserMenuOpen && (
             <>    

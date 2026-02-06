@@ -168,7 +168,7 @@ const Chats = () => {
       <div className="flex border-b border-border bg-panel px-3">
         <button
           onClick={() => setActiveTab("conversations")}
-          className={`flex items-center gap-2 px-4 py-3 text-xs font-medium transition-all duration-200 relative ${
+          className={`flex w-[50%] justify-center items-center gap-2 px-4 py-3 text-xs font-medium transition-all duration-200 relative ${
             activeTab === "conversations"
               ? "text-primaryColor"
               : "text-secondary hover:text-primary"
@@ -182,7 +182,7 @@ const Chats = () => {
         </button>
         <button
           onClick={() => setActiveTab("friends")}
-          className={`flex items-center gap-2 px-4 py-3 text-xs font-medium transition-all duration-200 relative ${
+          className={`flex w-[50%] justify-center items-center gap-2 px-4 py-3 text-xs font-medium transition-all duration-200 relative ${
             activeTab === "friends"
               ? "text-primaryColor"
               : "text-secondary hover:text-primary"

@@ -1,8 +1,12 @@
 "use client";
 
-import Image from "next/image";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { ArrowLeft, Phone, Video, MoreVertical } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, Phone, Video, MoreVertical, UserX, User } from "lucide-react";
+import { Avatar } from "@/components/ui/display/Avatar";
+import { useRemoveFriend } from "@/hooks/useFriends";
+import { useDeleteConversation } from "@/hooks/useConversations";
 
 // =====================================================
 // TYPES
@@ -18,25 +22,14 @@ interface ChatUser {
 
 interface ChatHeaderProps {
   user?: ChatUser | null;
+  conversationId?: string;
   isLoading?: boolean;
   isTyping?: boolean;
   onCallClick?: () => void;
   onVideoClick?: () => void;
-  onMenuClick?: () => void;
 }
 
-// =====================================================
-// UTILITY FUNCTIONS
-// =====================================================
 
-const getInitials = (name?: string | null) => {
-  if (!name) return "?";
-  const parts = name.trim().split(/\s+/);
-  if (parts.length > 1) {
-    return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
-  }
-  return parts[0]?.[0]?.toUpperCase() || "?";
-};
 
 // =====================================================
 // LOADING SKELETON
@@ -58,13 +51,62 @@ const HeaderSkeleton = () => (
 
 export function ChatHeader({
   user,
+  conversationId,
   isLoading = false,
   isTyping = false,
   onCallClick,
   onVideoClick,
-  onMenuClick,
 }: ChatHeaderProps) {
+  const router = useRouter();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const removeFriendMutation = useRemoveFriend();
+  const deleteConversationMutation = useDeleteConversation();
   const isOnline = user?.status === "online";
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleRemoveFriend = () => {
+    if (!user?.id) return;
+    if (confirm(`Are you sure you want to remove ${user.name || "this user"} from your friends? This will also delete the conversation.`)) {
+      // First delete the conversation, then remove the friend
+      if (conversationId) {
+        deleteConversationMutation.mutate(conversationId, {
+          onSuccess: () => {
+            removeFriendMutation.mutate(user.id, {
+              onSuccess: () => {
+                router.push("/chats");
+              },
+            });
+          },
+          onError: () => {
+            // Even if conversation deletion fails, try to remove friend
+            removeFriendMutation.mutate(user.id, {
+              onSuccess: () => {
+                router.push("/chats");
+              },
+            });
+          },
+        });
+      } else {
+        removeFriendMutation.mutate(user.id, {
+          onSuccess: () => {
+            router.push("/chats");
+          },
+        });
+      }
+    }
+    setIsMenuOpen(false);
+  };
 
   return (
     <header className="flex items-center justify-between px-4 py-3 bg-panel border-b border-border flex-shrink-0">
@@ -83,27 +125,13 @@ export function ChatHeader({
         ) : (
           <>
             {/* Avatar */}
-            <div className="relative">
-              <div className="w-11 h-11 rounded-full overflow-hidden ring-2 ring-border/50">
-                {user?.avatar ? (
-                  <Image
-                    src={user.avatar}
-                    alt={user.name || "User"}
-                    width={44}
-                    height={44}
-                    className="object-cover w-full h-full"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-primaryColor to-primaryColor/70 flex items-center justify-center text-white font-semibold">
-                    {getInitials(user?.name)}
-                  </div>
-                )}
-              </div>
-              {/* Online indicator */}
-              {isOnline && (
-                <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-[2.5px] border-panel rounded-full" />
-              )}
-            </div>
+            <Avatar
+              src={user?.avatar}
+              name={user?.name}
+              size="md"
+              showStatus={true}
+              status={user?.status}
+            />
 
             {/* Name and status */}
             <div>
@@ -140,12 +168,39 @@ export function ChatHeader({
         >
           <Video className="w-[18px] h-[18px]" />
         </button>
-        <button
-          onClick={onMenuClick}
-          className="p-2.5 rounded-xl hover:bg-hover transition-colors text-secondary hover:text-primary"
-        >
-          <MoreVertical className="w-[18px] h-[18px]" />
-        </button>
+        <div ref={menuRef} className="relative">
+          <button
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className="p-2.5 rounded-xl hover:bg-hover transition-colors text-secondary hover:text-primary"
+          >
+            <MoreVertical className="w-[18px] h-[18px]" />
+          </button>
+
+          {/* Dropdown Menu */}
+          {isMenuOpen && (
+            <div className="absolute bg-sidebar top-[140%] right-0 mt-1 w-44 bg-popover rounded-xl border border-border shadow-xl z-50 overflow-hidden">
+              <button
+                onClick={() => {
+                  router.push(`/profile/${user?.id}`);
+                  setIsMenuOpen(false);
+                }}
+                className="w-full flex items-center gap-2.5 px-3 py-2.5 text-xs text-primary hover:bg-hover transition-colors"
+              >
+                <User className="w-4 h-4 text-primaryColor" />
+                View Profile
+              </button>
+              <div className="h-px bg-border mx-2" />
+              <button
+                onClick={handleRemoveFriend}
+                disabled={removeFriendMutation.isPending}
+                className="w-full flex items-center gap-2.5 px-3 py-2.5 text-xs text-red-500 hover:bg-red-500/10 transition-colors disabled:opacity-50"
+              >
+                <UserX className="w-4 h-4" />
+                {removeFriendMutation.isPending ? "Removing..." : "Remove Friend"}
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </header>
   );

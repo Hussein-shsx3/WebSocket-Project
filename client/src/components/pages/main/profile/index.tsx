@@ -1,18 +1,11 @@
 "use client";
 
 import ProfileHeader from "@/components/ui/display/ProfileHeader";
-import Image from "next/image";
+import { Avatar } from "@/components/ui/display/Avatar";
 import { useUserProfile } from "@/hooks/useUserProfile";
 
 const Profile = () => {
   const { data: user, isLoading, isError, error } = useUserProfile();
-
-  const getInitials = (name: string) => {
-    const parts = name.split(' ');
-    return parts.length > 1 
-      ? parts[0][0] + parts[parts.length - 1][0] 
-      : parts[0]?.[0] || '';
-  };
 
   if (isLoading) {
     return (
@@ -40,8 +33,6 @@ const Profile = () => {
     );
   }
 
-  const initials = user.name ? getInitials(user.name) : '';
-
   return (
     <div>
       {/* Use ProfileHeader with Edit Button */}
@@ -51,20 +42,11 @@ const Profile = () => {
       />
       
       <div className="w-full border-b-[1px] border-border flex flex-col translate-y-[-40px] items-center justify-center gap-2 pb-4 px-4">
-        <div className="relative w-[75px] h-[75px] rounded-full border-2 border-gray-200 overflow-hidden">
-          {user.avatar ? (
-            <Image
-              src={user.avatar}
-              alt="User Avatar"
-              fill
-              className="rounded-full object-cover"
-            />
-          ) : (
-            <div className="bg-primaryColor w-full h-full flex items-center justify-center text-white font-semibold text-xl">
-              {initials}
-            </div>
-          )}
-        </div>
+        <Avatar
+          src={user.avatar}
+          name={user.name}
+          size="xl"
+        />
         <h6 className="text-primary font-medium">{user.name || "User Name"}</h6>
         <p className="text-xs text-secondary text-center">
           {user.bio || "No bio available."}
