@@ -1,6 +1,11 @@
 import { axiosInstance } from "@/lib/axios";
 
 /**
+ * User Status Type
+ */
+export type UserStatus = "online" | "offline" | "away";
+
+/**
  * User Profile DTO
  */
 export interface UserProfile {
@@ -9,7 +14,7 @@ export interface UserProfile {
   name: string | null;
   avatar: string | null;
   bio: string | null;
-  status: string;
+  status: UserStatus;
   role: string;
   emailVerified: boolean;
   createdAt: string;
@@ -25,7 +30,7 @@ export interface UserSearchResult {
   email: string;
   avatar: string | null;
   bio: string | null;
-  status: string;
+  status: UserStatus;
 }
 
 /**

@@ -102,12 +102,17 @@ const uploadUserAvatar = async (userId, file) => {
     return updatedUser;
 };
 exports.uploadUserAvatar = uploadUserAvatar;
-const searchUsers = async (query, limit = 10) => {
+const searchUsers = async (query, limit = 10, currentUserId) => {
     const users = await db_1.default.user.findMany({
         where: {
-            OR: [
-                { name: { contains: query, mode: "insensitive" } },
-                { email: { contains: query, mode: "insensitive" } },
+            AND: [
+                ...(currentUserId ? [{ id: { not: currentUserId } }] : []),
+                {
+                    OR: [
+                        { name: { contains: query, mode: "insensitive" } },
+                        { email: { contains: query, mode: "insensitive" } },
+                    ],
+                },
             ],
         },
         select: {

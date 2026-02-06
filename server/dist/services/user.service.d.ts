@@ -38,7 +38,7 @@ export declare const uploadUserAvatar: (userId: string, file: Express.Multer.Fil
     status: string;
     updatedAt: Date;
 }>;
-export declare const searchUsers: (query: string, limit?: number) => Promise<{
+export declare const searchUsers: (query: string, limit?: number, currentUserId?: string) => Promise<{
     name: string | null;
     id: string;
     email: string;

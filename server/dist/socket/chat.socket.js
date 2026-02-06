@@ -197,12 +197,14 @@ function setupChatSocket(io) {
         socket.on("call:answer", async (data) => {
             try {
                 const { conversationId, answer, to } = data;
+                console.log(`📞 Call answer received from ${userId}, sending to ${to}`);
+                console.log(`📞 Rooms that ${to} should be in:`, io.sockets.adapter.rooms.get(to));
                 io.to(to).emit("call:answer", {
                     from: userId,
                     answer,
                     conversationId,
                 });
-                console.log(`Call answer sent from ${userId} to ${to}`);
+                console.log(`📞 Call answer emitted to room: ${to}`);
             }
             catch (error) {
                 console.error("Error in call:answer:", error);

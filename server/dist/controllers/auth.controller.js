@@ -5,28 +5,16 @@ const zod_1 = require("zod");
 const auth_service_1 = require("../services/auth.service");
 const auth_dto_1 = require("../dto/auth.dto");
 const error_middleware_1 = require("../middleware/error.middleware");
-const env_config_1 = require("../config/env.config");
 const authService = new auth_service_1.AuthService();
-const parseJwtExpireToMs = (expire) => {
-    const match = expire.match(/^(\d+)([smhd])$/);
-    if (!match)
-        throw new Error(`Invalid expire format: ${expire}`);
-    const value = parseInt(match[1], 10);
-    const unit = match[2];
-    const multipliers = {
-        s: 1000,
-        m: 60 * 1000,
-        h: 60 * 60 * 1000,
-        d: 24 * 60 * 60 * 1000,
-    };
-    return value * multipliers[unit];
-};
-const getRefreshTokenCookieConfig = () => ({
+const getCookieOptions = () => ({
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
-    maxAge: parseJwtExpireToMs(env_config_1.config.JWT_REFRESH_EXPIRE),
     path: "/",
+});
+const getRefreshTokenCookieConfig = () => ({
+    ...getCookieOptions(),
+    maxAge: 7 * 24 * 60 * 60 * 1000,
 });
 exports.register = (0, error_middleware_1.asyncHandler)(async (req, res) => {
     const parse = auth_dto_1.registerSchema.safeParse(req.body);
@@ -131,12 +119,7 @@ exports.refreshTokens = (0, error_middleware_1.asyncHandler)(async (req, res) =>
         });
     }
     catch (error) {
-        res.clearCookie("refreshToken", {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "lax",
-            path: "/",
-        });
+        res.clearCookie("refreshToken", getCookieOptions());
         console.error("❌ Refresh token failed:", {
             message: error?.message || "Unknown error",
             stack: error?.stack,
@@ -155,12 +138,7 @@ exports.logout = (0, error_middleware_1.asyncHandler)(async (req, res) => {
         });
     }
     await authService.logout(userId);
-    res.clearCookie("refreshToken", {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
-        path: "/",
-    });
+    res.clearCookie("refreshToken", getCookieOptions());
     return res.status(200).json({
         success: true,
         message: "Logged out successfully",
