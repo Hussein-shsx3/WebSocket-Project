@@ -199,17 +199,17 @@ export function SocketProvider({ children }: SocketProviderProps) {
      */
     const handleUserTyping = (data: {
       conversationId: string;
-      odTimeuserId: string;
+      userId: string;
       isTyping: boolean;
     }) => {
       if (data.isTyping) {
         setTypingUsers((prev) => {
-          if (prev.some((u) => u.odTimeuserId === data.odTimeuserId)) return prev;
-          return [...prev, { odTimeuserId: data.odTimeuserId, conversationId: data.conversationId }];
+          if (prev.some((u) => u.userId === data.userId)) return prev;
+          return [...prev, { userId: data.userId, conversationId: data.conversationId }];
         });
       } else {
         setTypingUsers((prev) =>
-          prev.filter((u) => u.odTimeuserId !== data.odTimeuserId)
+          prev.filter((u) => u.userId !== data.userId)
         );
       }
     };
@@ -220,7 +220,7 @@ export function SocketProvider({ children }: SocketProviderProps) {
     const handleUserStatus = (data: UserStatus) => {
       setUserStatuses((prev) => ({
         ...prev,
-        [data.odTimeuserId]: data.status,
+        [data.userId]: data.status,
       }));
     };
 

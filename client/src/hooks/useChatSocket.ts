@@ -168,7 +168,7 @@ export function useChatSocket({
   // Filter typing users for current conversation
   const currentTypingUsers = typingUsers
     .filter((u) => u.conversationId === conversationId)
-    .map((u) => u.odTimeuserId);
+    .map((u) => u.userId);
 
   // =====================================================
   // RETURN
