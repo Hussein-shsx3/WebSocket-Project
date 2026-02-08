@@ -173,7 +173,7 @@ export const authService = {
    */
   initiateGoogleAuth(): void {
     const apiUrl =
-      process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
+      (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/") + "api/v1";
 
     window.location.href = `${apiUrl}/auth/google`;
   },

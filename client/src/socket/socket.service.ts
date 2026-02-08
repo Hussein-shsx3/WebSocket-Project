@@ -17,7 +17,7 @@ import Cookies from "js-cookie";
  */
 
 // Server URL from environment
-const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:3001";
+const SOCKET_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
 /**
  * Socket Events - These match the server's chat.socket.ts
