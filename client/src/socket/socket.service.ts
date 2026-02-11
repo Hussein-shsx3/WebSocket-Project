@@ -92,13 +92,11 @@ class SocketService {
 
     // Setup connection event handlers
     this.socket.on("connect", () => {
-      console.log("✅ Socket connected:", this.socket?.id);
       // Emit user online status
       this.socket?.emit("user:online");
     });
 
     this.socket.on("disconnect", (reason) => {
-      console.log("❌ Socket disconnected:", reason);
     });
 
     this.socket.on("connect_error", (error) => {

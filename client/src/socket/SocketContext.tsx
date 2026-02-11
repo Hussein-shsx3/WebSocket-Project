@@ -128,7 +128,6 @@ export function SocketProvider({ children }: SocketProviderProps) {
      * Connection established
      */
     const handleConnect = () => {
-      console.log("🔌 Socket connected");
       setIsConnected(true);
     };
 
@@ -136,7 +135,6 @@ export function SocketProvider({ children }: SocketProviderProps) {
      * Connection lost
      */
     const handleDisconnect = () => {
-      console.log("🔌 Socket disconnected");
       setIsConnected(false);
     };
 
@@ -145,8 +143,6 @@ export function SocketProvider({ children }: SocketProviderProps) {
      * This is the main event for real-time chat
      */
     const handleMessageReceived = (message: Message) => {
-      console.log("📩 Message received:", message.id);
-      
       // Add message to state (only if it's for current conversation)
       setMessages((prev) => {
         // Check if message already exists (to avoid duplicates)
@@ -167,8 +163,6 @@ export function SocketProvider({ children }: SocketProviderProps) {
       newContent: string;
       isEdited: boolean;
     }) => {
-      console.log("✏️ Message edited:", data.messageId);
-      
       setMessages((prev) =>
         prev.map((m) =>
           m.id === data.messageId
@@ -185,8 +179,6 @@ export function SocketProvider({ children }: SocketProviderProps) {
       messageId: string;
       conversationId: string;
     }) => {
-      console.log("🗑️ Message deleted:", data.messageId);
-      
       setMessages((prev) =>
         prev.map((m) =>
           m.id === data.messageId ? { ...m, isDeleted: true } : m
@@ -232,7 +224,6 @@ export function SocketProvider({ children }: SocketProviderProps) {
       userId: string;
       readAt: string;
     }) => {
-      console.log("👁️ Messages read by:", data.userId);
       // You can update message status here if needed
     };
 

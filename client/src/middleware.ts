@@ -21,14 +21,18 @@ const authRoutes = [
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Simple check: does the refresh token cookie exist?
+  // Check for authentication tokens
+  // - refreshToken: HTTP-only cookie set by server (may not work cross-origin)
+  // - accessToken: Client-side cookie set by frontend (works same-origin)
   const hasRefreshToken = request.cookies.has("refreshToken");
+  const hasAccessToken = request.cookies.has("accessToken");
+  const isAuthenticated = hasRefreshToken || hasAccessToken;
 
   /* -----------------------------
     1. Handle root path `/`
   ------------------------------ */
   if (pathname === "/") {
-    if (hasRefreshToken) {
+    if (isAuthenticated) {
       return NextResponse.redirect(new URL("/chats", request.url));
     } else {
       return NextResponse.redirect(new URL("/signIn", request.url));
@@ -44,9 +48,9 @@ export function middleware(request: NextRequest) {
   );
 
   /* -----------------------------
-    2. Protected route without refresh token
+    2. Protected route without authentication
   ------------------------------ */
-  if (isProtectedRoute && !hasRefreshToken) {
+  if (isProtectedRoute && !isAuthenticated) {
     const signInUrl = new URL("/signIn", request.url);
     signInUrl.searchParams.set("redirect", pathname);
     return NextResponse.redirect(signInUrl);
@@ -55,7 +59,7 @@ export function middleware(request: NextRequest) {
   /* -----------------------------
     3. Auth routes while logged in
   ------------------------------ */
-  if (isAuthRoute && hasRefreshToken) {
+  if (isAuthRoute && isAuthenticated) {
     return NextResponse.redirect(new URL("/chats", request.url));
   }
 
