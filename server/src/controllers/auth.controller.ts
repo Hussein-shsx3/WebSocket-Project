@@ -14,13 +14,20 @@ const authService = new AuthService();
 
 /**
  * Cookie configuration helper
+ * 
+ * For cross-origin deployments (frontend and backend on different domains):
+ * - sameSite: "none" allows cookies to be sent cross-origin
+ * - secure: true is REQUIRED when sameSite is "none"
  */
-const getCookieOptions = () => ({
-  httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: "lax" as const,
-  path: "/",
-});
+const getCookieOptions = () => {
+  const isProduction = process.env.NODE_ENV === "production";
+  return {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? ("none" as const) : ("lax" as const),
+    path: "/",
+  };
+};
 
 const getRefreshTokenCookieConfig = () => ({
   ...getCookieOptions(),

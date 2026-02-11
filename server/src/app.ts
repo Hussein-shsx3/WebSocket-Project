@@ -46,16 +46,20 @@ app.use(cookieParser());
  * This persists authentication across page reloads during OAuth flow
  * 
  * For production, replace MemoryStore with a database store (Redis, MongoDB, etc)
+ * 
+ * Cross-origin note: When frontend and backend are on different domains,
+ * sameSite must be "none" with secure: true for cookies to work
  */
+const isProduction = config.NODE_ENV === "production";
 app.use(
   session({
     secret: config.JWT_SECRET, // Use same secret as JWT for consistency
     resave: false, // Don't save session if unmodified
     saveUninitialized: false, // Don't create session until modified
     cookie: {
-      secure: config.NODE_ENV === "production", // HTTPS only in production
+      secure: isProduction, // HTTPS only in production
       httpOnly: true, // Prevent client-side JS from accessing session cookie
-      sameSite: "strict", // CSRF protection
+      sameSite: isProduction ? "none" : "strict", // "none" for cross-origin in production
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
     },
   })

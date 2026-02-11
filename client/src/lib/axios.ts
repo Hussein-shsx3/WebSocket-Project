@@ -32,10 +32,14 @@ export const setAccessToken = (token: string | null) => {
   if (token) {
     // Session cookie - no expiration, browser will keep it until tab closes
     // The JWT itself has expiration, cookie doesn't need one
+    const isProduction = process.env.NODE_ENV === "production";
     Cookies.set("accessToken", token, {
       path: "/",
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
+      // For cross-origin deployments (frontend and backend on different domains):
+      // - sameSite: "none" allows cookies to be sent cross-origin
+      // - secure: true is REQUIRED when sameSite is "none"
+      sameSite: isProduction ? "none" : "lax",
+      secure: isProduction,
     });
   } else {
     Cookies.remove("accessToken", { path: "/" });
