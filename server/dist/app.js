@@ -52,6 +52,15 @@ exports.app.get("/api/health", (req, res) => {
         timestamp: new Date().toISOString(),
     });
 });
+exports.app.get("/", (req, res) => {
+    res.status(200).json({
+        success: true,
+        message: "WebSocket Chat API Server",
+        version: "1.0.0",
+        health: "OK",
+        timestamp: new Date().toISOString(),
+    });
+});
 exports.app.use("/api/v1/auth", auth_route_1.default);
 exports.app.use("/api/v1/auth", google_auth_route_1.default);
 exports.app.use("/api/v1/users", user_route_1.default);

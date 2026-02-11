@@ -83,6 +83,19 @@ app.get("/api/health", (req: Request, res: Response) => {
 });
 
 /**
+ * Root Route for Render Health Checks
+ */
+app.get("/", (req: Request, res: Response) => {
+  res.status(200).json({
+    success: true,
+    message: "WebSocket Chat API Server",
+    version: "1.0.0",
+    health: "OK",
+    timestamp: new Date().toISOString(),
+  });
+});
+
+/**
  * API Routes
  */
 // Authentication Routes (traditional email/password)
